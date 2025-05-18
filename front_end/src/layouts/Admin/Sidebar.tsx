@@ -13,47 +13,47 @@ const AdminSidebar = () => {
             <nav>
                 <ul className="space-y-2 text-sm">
                     <li>
-                        <Link to={"#"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
+                        <Link to={"/dashboard"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
                             <i className="fas fa-home w-5 mr-2 hover:text-gray-500" /> Tổng quan
                         </Link>
                     </li>
                     <li>
-                        <Link to={"#"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
+                        <Link to={"/dashboard/statistics"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
                             <i className="fas fa-chart-line w-5 mr-2 hover:text-gray-500" /> Thống kê
                         </Link>
                     </li>
                     <li>
-                        <Link to={"#"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
+                        <Link to={"/dashboard/products"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
                             <i className="fas fa-cube w-5 mr-2 hover:text-gray-500" /> Sản phẩm
                         </Link>
                     </li>
                     <li>
-                        <Link to={"#"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
+                        <Link to={"/dashboard/categories"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
                             <i className="fas fa-th-list w-5 mr-2 hover:text-gray-500" /> Danh mục
                         </Link>
                     </li>
                     <li>
-                        <Link to={"#"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
+                        <Link to={"/dashboard/orders"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
                             <i className="fas fa-receipt w-5 mr-2 hover:text-gray-500" /> Đơn hàng
                         </Link>
                     </li>
                     <li>
-                        <Link to={"#"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
+                        <Link to={"/dashboard/users"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
                             <i className="fas fa-users w-5 mr-2 hover:text-gray-500" /> Người dùng
                         </Link>
                     </li>
                     <li>
-                        <Link to={"#"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
+                        <Link to={"/dashboard/reviews"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
                             <i className="fas fa-comment-dots w-5 mr-2 hover:text-gray-500" /> Đánh giá
                         </Link>
                     </li>
                     <li>
-                        <Link to={"#"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
+                        <Link to={"/dashboard/variants"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
                             <i className="fas fa-sliders-h w-5 mr-2 hover:text-gray-500" /> Biến thể
                         </Link>
                     </li>
                     <li>
-                        <Link to={"#"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
+                        <Link to={"/dashboard/vouchers"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
                             <i className="fas fa-ticket-alt w-5 mr-2 hover:text-gray-500" /> Mã giảm giá
                         </Link>
                     </li>

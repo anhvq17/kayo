@@ -1,1 +1,7 @@
-// Quản lý người dùng
+const UserManager = () => {
+  return (
+    <div>Hùng</div>
+  )
+}
+
+export default UserManager

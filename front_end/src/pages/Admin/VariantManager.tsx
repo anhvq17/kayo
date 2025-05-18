@@ -1,1 +1,7 @@
-// Quản lý biến thể sản phẩm
+const VariantManager = () => {
+  return (
+    <div>Quang</div>
+  )
+}
+
+export default VariantManager

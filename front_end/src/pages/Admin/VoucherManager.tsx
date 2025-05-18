@@ -1,1 +1,7 @@
-// Quản lý mã giảm giá
+const VoucherManager = () => {
+  return (
+    <div>Thái</div>
+  )
+}
+
+export default VoucherManager
