@@ -1,6 +1,6 @@
 const ProductManager = () => {
   return (
-    <div>ạbasjas</div>
+    <div>trườngádasdas</div>
   )
 }
 
