@@ -1,0 +1,33 @@
+{
+  "variants": [
+    {
+      "volume": "101",
+      "price": 1500000,
+      "stock_quantity": 10,
+      "image": "https://picsum.photos/200",
+      "productId": "101",
+      "id": "1"
+    },
+    {
+      "id": "90e1",
+      "volume": "500",
+      "price": "1000",
+      "stock_quantity": "10",
+      "image": "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ekko_19.jpg"
+    },
+    {
+      "id": "cdd7",
+      "volume": "33",
+      "price": "33333",
+      "stock_quantity": "33",
+      "image": "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ahri_85.jpg"
+    },
+    {
+      "volume": "50",
+      "price": "4004",
+      "stock_quantity": "10",
+      "image": "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ahri_85.jpg",
+      "id": "ecda"
+    }
+  ]
+}
