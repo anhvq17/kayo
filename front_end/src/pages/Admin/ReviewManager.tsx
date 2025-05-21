@@ -1,12 +1,27 @@
 import React, { useState } from 'react';
-import { Table, Button } from 'antd';
 
-const products = [
+interface Product {
+  id: number;
+  name: string;
+}
+
+interface Review {
+  _id: string;
+  userId: string;
+  productId: number;
+  star: number;
+  image: string;
+  comment: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const products: Product[] = [
   { id: 1, name: 'Narciso Rodriguez' },
   { id: 2, name: 'Gucci' },
 ];
 
-const reviews = [
+const reviews: Review[] = [
   {
     _id: 'r1',
     userId: 'u1',
@@ -41,16 +56,17 @@ const reviews = [
     _id: 'r4',
     userId: 'u4',
     productId: 2,
-    star: 4,
+    star: 2,
     image: 'https://product.hstatic.net/1000025647/product/nuoc_hoa_gucci_guilty_pour_femme_edp_50ml_f4e42fc4aa6549c6ae31fbda6e2d60f5_1024x1024.png',
-    comment: 'Tạm ổn',
+    comment: 'Không đáng tiền',
     createdAt: '2024-05-03T09:00:00Z',
     updatedAt: '2024-05-03T09:00:00Z',
   },
 ];
 
 const ReviewManager = () => {
-  const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]);
+  const [expandedRowKeys, setExpandedRowKeys] = useState<number[]>([]);
+  const [hiddenReviews, setHiddenReviews] = useState<Set<string>>(new Set());
 
   const toggleExpand = (id: number) => {
     setExpandedRowKeys((prev) =>
@@ -58,58 +74,100 @@ const ReviewManager = () => {
     );
   };
 
-  const productColumns = [
-    { title: 'ID', dataIndex: 'id' },
-    { title: 'Tên sản phẩm', dataIndex: 'name' },
-    {
-      title: '',
-      render: (_: any, record: any) => (
-        <Button type="link" onClick={() => toggleExpand(record.id)}>
-          {expandedRowKeys.includes(record.id) ? 'Ẩn đánh giá' : 'Xem đánh giá'}
-        </Button>
-      ),
-    },
-  ];
-
-  const expandedRowRender = (record: any) => {
-    const related = reviews.filter((r) => r.productId === record.id);
-    return (
-      <Table
-        rowKey="_id"
-        dataSource={related}
-        pagination={false}
-        columns={[
-          { title: 'Người dùng', dataIndex: 'userId' },
-          { title: 'Sao', dataIndex: 'star' },
-          { title: 'Nội dung', dataIndex: 'comment' },
-          {
-            title: 'Ảnh',
-            dataIndex: 'image',
-            render: (img: string) =>
-              img ? <img src={img} alt="review" width={40} /> : 'Không có',
-          },
-          { title: 'Tạo lúc', dataIndex: 'createdAt' },
-          { title: 'Cập nhật', dataIndex: 'updatedAt' },
-        ]}
-      />
-    );
+  const toggleHideReview = (reviewId: string) => {
+    setHiddenReviews((prev) => {
+      const updated = new Set(prev);
+      updated.has(reviewId) ? updated.delete(reviewId) : updated.add(reviewId);
+      return updated;
+    });
   };
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Tổng hợp đánh giá theo sản phẩm</h1>
-      <Table
-        rowKey="id"
-        dataSource={products}
-        columns={productColumns}
-        expandable={{
-          expandedRowRender,
-          expandedRowKeys,
-          onExpandedRowsChange: (keys: React.Key[]) => setExpandedRowKeys(keys),
-        }}
-      />
+      <h1 className="text-2xl font-bold mb-6">Tổng hợp đánh giá theo sản phẩm</h1>
+
+      <table className="w-full table-auto border border-gray-300 mb-8">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="border px-4 py-2 text-left">ID</th>
+            <th className="border px-4 py-2 text-left">Tên sản phẩm</th>
+            <th className="border px-4 py-2 text-left">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {products.map((product) => (
+            <React.Fragment key={product.id}>
+              <tr>
+                <td className="border px-4 py-2">{product.id}</td>
+                <td className="border px-4 py-2">{product.name}</td>
+                <td className="border px-4 py-2">
+                  <button
+                    onClick={() => toggleExpand(product.id)}
+                    className="text-blue-600 hover:underline"
+                  >
+                    {expandedRowKeys.includes(product.id) ? 'Ẩn đánh giá' : 'Xem đánh giá'}
+                  </button>
+                </td>
+              </tr>
+              {expandedRowKeys.includes(product.id) && (
+                <tr>
+                  <td colSpan={3} className="p-4 bg-gray-50">
+                    <table className="w-full table-auto border border-gray-300">
+                      <thead>
+                        <tr className="bg-gray-200">
+                          <th className="border px-2 py-1">Người dùng</th>
+                          <th className="border px-2 py-1">Sao</th>
+                          <th className="border px-2 py-1">Nội dung</th>
+                          <th className="border px-2 py-1">Ảnh</th>
+                          <th className="border px-2 py-1">Tạo lúc</th>
+                          <th className="border px-2 py-1">Cập nhật</th>
+                          <th className="border px-2 py-1">Hành động</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reviews
+                          .filter((r) => r.productId === product.id)
+                          .map((r) => (
+                            <tr key={r._id}>
+                              <td className="border px-2 py-1">
+                                {hiddenReviews.has(r._id) ? 'Đã ẩn' : r.userId}
+                              </td>
+                              <td className="border px-2 py-1">{r.star}</td>
+                              <td className="border px-2 py-1">
+                                {hiddenReviews.has(r._id) ? 'Đã bị ẩn' : r.comment}
+                              </td>
+                              <td className="border px-2 py-1">
+                                {hiddenReviews.has(r._id) ? (
+                                  'Đã ẩn'
+                                ) : (
+                                  <img src={r.image} alt="ảnh" className="w-10 h-10 object-cover" />
+                                )}
+                              </td>
+                              <td className="border px-2 py-1">{r.createdAt}</td>
+                              <td className="border px-2 py-1">{r.updatedAt}</td>
+                              <td className="border px-2 py-1 text-center">
+                                <button
+                                  onClick={() => toggleHideReview(r._id)}
+                                  className="text-sm text-blue-600 underline hover:text-blue-800"
+                                  title={hiddenReviews.has(r._id) ? 'Hiện đánh giá' : 'Ẩn đánh giá'}
+                                >
+                                  {hiddenReviews.has(r._id) ? 'Hiện' : 'Ẩn'}
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
 
 export default ReviewManager;
+ 
