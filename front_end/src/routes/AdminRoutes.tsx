@@ -11,8 +11,6 @@ import VariantManager from "../pages/Admin/VariantManager"
 import VoucherManager from "../pages/Admin/VoucherManager"
 
 import NotFound from "../pages/NotFound"
-import EditVariant from "../pages/Admin/variants/EditVariant"
-import AddVariant from "../pages/Admin/variants/AddVariant"
 
 const AdminRoutes = {
   path: '/dashboard',
@@ -26,8 +24,6 @@ const AdminRoutes = {
     { path: 'reviews', element: <ReviewManager /> },
     { path: 'users', element: <UserManager /> },
     { path: 'variants', element: <VariantManager /> },
-    { path: 'variants/:id', element: <EditVariant /> },  // <-- Thêm dòng này
-    { path: 'variants/add', element: <AddVariant /> },  // <-- Thêm dòng này
     { path: 'vouchers', element: <VoucherManager /> },
 
     // Khi đường dẫn sai hoặc không tồn tại, dẫn đến trang NotFound
