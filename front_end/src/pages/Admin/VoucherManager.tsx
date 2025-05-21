@@ -1,6 +1,6 @@
 const VoucherManager = () => {
   return (
-    <div>Thái</div>
+    <div>Đức Thái</div>
   )
 }
 
