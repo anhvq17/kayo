@@ -1,11 +1,11 @@
-
-import { Table } from 'antd';
+import React, { useState } from 'react';
+import { Table, Button } from 'antd';
 
 const products = [
   { id: 1, name: 'Narciso Rodriguez' },
   { id: 2, name: 'Gucci' },
-  
-]
+];
+
 const reviews = [
   {
     _id: 'r1',
@@ -46,14 +46,29 @@ const reviews = [
     comment: 'Tạm ổn',
     createdAt: '2024-05-03T09:00:00Z',
     updatedAt: '2024-05-03T09:00:00Z',
-  }
-  
+  },
 ];
 
 const ReviewManager = () => {
+  const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]);
+
+  const toggleExpand = (id: number) => {
+    setExpandedRowKeys((prev) =>
+      prev.includes(id) ? prev.filter((key) => key !== id) : [...prev, id]
+    );
+  };
+
   const productColumns = [
     { title: 'ID', dataIndex: 'id' },
     { title: 'Tên sản phẩm', dataIndex: 'name' },
+    {
+      title: '',
+      render: (_: any, record: any) => (
+        <Button type="link" onClick={() => toggleExpand(record.id)}>
+          {expandedRowKeys.includes(record.id) ? 'Ẩn đánh giá' : 'Xem đánh giá'}
+        </Button>
+      ),
+    },
   ];
 
   const expandedRowRender = (record: any) => {
@@ -64,14 +79,14 @@ const ReviewManager = () => {
         dataSource={related}
         pagination={false}
         columns={[
-          { title: 'User ID', dataIndex: 'userId' },
+          { title: 'Người dùng', dataIndex: 'userId' },
           { title: 'Sao', dataIndex: 'star' },
           { title: 'Nội dung', dataIndex: 'comment' },
           {
             title: 'Ảnh',
             dataIndex: 'image',
             render: (img: string) =>
-              img ? <img src={img} width={40} alt="ảnh" /> : 'Không có',
+              img ? <img src={img} alt="review" width={40} /> : 'Không có',
           },
           { title: 'Tạo lúc', dataIndex: 'createdAt' },
           { title: 'Cập nhật', dataIndex: 'updatedAt' },
@@ -87,7 +102,11 @@ const ReviewManager = () => {
         rowKey="id"
         dataSource={products}
         columns={productColumns}
-        expandable={{ expandedRowRender }}
+        expandable={{
+          expandedRowRender,
+          expandedRowKeys,
+          onExpandedRowsChange: (keys: React.Key[]) => setExpandedRowKeys(keys),
+        }}
       />
     </div>
   );
