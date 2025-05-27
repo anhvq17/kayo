@@ -20,7 +20,6 @@ const EditVariant = () => {
     const fetchVariant = async () => {
       try {
         const { data } = await axios.get(`http://localhost:3000/variants/${id}`);
-        // Set giá trị cho form
         setValue("volume", data.volume);
         setValue("price", data.price);
         setValue("stock_quantity", data.stock_quantity);
@@ -45,8 +44,8 @@ const EditVariant = () => {
   };
 
   return (
-    <div className="max-w-screen-md p-8 m-auto bg-white shadow-lg rounded-lg">
-      <h1 className="text-3xl font-bold mb-6">Sửa biến thể</h1>
+    <div className="p-4">
+      <h1 className="text-2xl font-semibold mb-6">Cập nhật biến thể</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
         <div>
@@ -90,8 +89,8 @@ const EditVariant = () => {
         </div>
 
         <div>
-          <button type="submit" className="w-full bg-yellow-500 text-white py-3 rounded-md hover:bg-yellow-600">
-            Cập nhật biến thể
+          <button type="submit" className="w-full bg-gray-600 text-white py-3 rounded-md hover:bg-gray-700">
+            Xác nhận
           </button>
         </div>
       </form>

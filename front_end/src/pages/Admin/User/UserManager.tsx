@@ -6,7 +6,7 @@ const users = [
     password: "123456",
     phone: "0123456789",
     address: "Hà Nội",
-    avatar: "https://i.pravatar.cc/50?img=1",
+    avatar: "https://i.pravatar.cc/200",
     role: "Admin",
     isActive: true,
     createdAt: "2024-05-01T10:00:00Z",
@@ -19,7 +19,7 @@ const users = [
     password: "abcdef",
     phone: "0987654321",
     address: "TP.HCM",
-    avatar: "https://i.pravatar.cc/50?img=2",
+    avatar: "https://i.pravatar.cc/300",
     role: "User",
     isActive: false,
     createdAt: "2024-04-20T08:30:00Z",
@@ -27,22 +27,14 @@ const users = [
   },
 ];
 
-const formatDate = (dateStr: string | number | Date) => {
-  return new Date(dateStr).toLocaleDateString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-};
-
 const UserManager = () => {
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Quản lý người dùng</h1>
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow text-sm">
+      <h1 className="text-2xl font-semibold mb-6">Danh sách khách hàng</h1>
+        <table className="min-w-full bg-white border text-sm">
           <thead>
-            <tr className="bg-gray-100 text-left">
+            <tr className="bg-black text-white text-left">
+              <th className="px-3 py-2 border-b">ID</th>
               <th className="px-3 py-2 border-b">Avatar</th>
               <th className="px-3 py-2 border-b">Họ tên</th>
               <th className="px-3 py-2 border-b">Email</th>
@@ -51,14 +43,13 @@ const UserManager = () => {
               <th className="px-3 py-2 border-b">Địa chỉ</th>
               <th className="px-3 py-2 border-b">Vai trò</th>
               <th className="px-3 py-2 border-b">Trạng thái</th>
-              <th className="px-3 py-2 border-b">Tạo lúc</th>
-              <th className="px-3 py-2 border-b">Cập nhật</th>
               <th className="px-3 py-2 border-b">Hành động</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => (
               <tr key={user._id} className="hover:bg-gray-50">
+                <td className="px-3 py-2 border-b">{user._id}</td>
                 <td className="px-3 py-2 border-b">
                   <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full" />
                 </td>
@@ -75,12 +66,10 @@ const UserManager = () => {
                 >
                   {user.isActive ? "Hoạt động" : "Tạm khóa"}
                 </td>
-                <td className="px-3 py-2 border-b">{formatDate(user.createdAt)}</td>
-                <td className="px-3 py-2 border-b">{formatDate(user.updatedAt)}</td>
                 <td className="px-3 py-2 border-b space-x-1">
                   <button
                     className={`px-2 py-1 text-white rounded text-xs ${
-                      user.isActive ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-500 hover:bg-green-600"
+                      user.isActive ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
                     }`}
                   >
                     {user.isActive ? "Khóa" : "Mở"}
@@ -91,7 +80,6 @@ const UserManager = () => {
           </tbody>
         </table>
       </div>
-    </div>
   );
 };
 

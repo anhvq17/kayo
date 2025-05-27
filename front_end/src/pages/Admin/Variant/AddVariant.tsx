@@ -26,8 +26,8 @@ const AddVariant = () => {
   };
 
   return (
-    <div className="max-w-screen-md p-8 m-auto bg-white shadow-lg rounded-lg">
-      <h1 className="text-3xl font-bold mb-6">Thêm mới biến thể</h1>
+    <div className="p-4">
+      <h1 className="text-2xl font-semibold mb-6">Thêm mới biến thể</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
         <div>
@@ -71,8 +71,8 @@ const AddVariant = () => {
         </div>
 
         <div>
-          <button type="submit" className="w-full bg-blue-500 text-white py-3 rounded-md hover:bg-blue-600">
-            Thêm biến thể
+          <button type="submit" className="w-full bg-gray-600 text-white py-3 rounded-md hover:bg-gray-700">
+            Xác nhận
           </button>
         </div>
       </form>

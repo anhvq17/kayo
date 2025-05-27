@@ -33,6 +33,11 @@ const AdminSidebar = () => {
                         </Link>
                     </li>
                     <li>
+                        <Link to={"/dashboard/brands"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
+                            <i className="fas fa-gem w-5 mr-2 hover:text-gray-500" /> Thương hiệu
+                        </Link>
+                    </li>
+                    <li>
                         <Link to={"/dashboard/orders"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
                             <i className="fas fa-receipt w-5 mr-2 hover:text-gray-500" /> Đơn hàng
                         </Link>

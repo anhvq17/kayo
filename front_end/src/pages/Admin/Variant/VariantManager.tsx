@@ -42,46 +42,46 @@ const VariantManager = () => {
 
   return (
     <div className="p-4">
-      <h1 className="text-3xl font-bold mb-6">Danh sách biến thể</h1>
-      <Link to="/dashboard/variants/add">
-        <button className="bg-blue-600 hover:bg-blue-700 transition text-white py-2 px-5 rounded mb-6">
-          Thêm mới biến thể
-        </button>
-      </Link>
+      <div className="flex justify-between items-center mb-2">
+        <h1 className="text-2xl font-semibold mb-4">Danh sách biến thể</h1>
+        <Link to={`/dashboard/variants/add`}>
+          <button className="border bg-blue-600 hover:bg-blue-700 text-white hover:text-white px-3 py-1 rounded-md text-xs transition duration-200">Thêm</button>
+        </Link>
+      </div>
       <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="py-3 px-5 border-b border-gray-300 text-center text-sm font-semibold text-gray-700">STT</th>
-              <th className="py-3 px-5 border-b border-gray-300 text-center text-sm font-semibold text-gray-700">Ảnh</th>
-              <th className="py-3 px-5 border-b border-gray-300 text-center text-sm font-semibold text-gray-700">Dung tích (ml)</th>
-              <th className="py-3 px-5 border-b border-gray-300 text-center text-sm font-semibold text-gray-700">Giá</th>
-              <th className="py-3 px-5 border-b border-gray-300 text-center text-sm font-semibold text-gray-700">Tồn kho</th>
-              <th className="py-3 px-5 border-b border-gray-300 text-center text-sm font-semibold text-gray-700">Hành động</th>
+        <table className="min-w-full bg-white border border-gray-200 text-sm">
+          <thead>
+            <tr className="bg-black text-white text-left">
+              <th className="py-2 px-3 border-b">ID</th>
+              <th className="py-2 px-3 border-b">Hình ảnh</th>
+              <th className="py-2 px-3 border-b">Dung tích</th>
+              <th className="py-2 px-3 border-b">Giá tiền</th>
+              <th className="py-2 px-3 border-b">Tồn kho</th>
+              <th className="py-2 px-3 border-b">Hành động</th>
             </tr>
           </thead>
           <tbody>
             {variants.map((variant, index) => (
               <tr key={variant.id || index} className="hover:bg-gray-100 even:bg-white odd:bg-gray-50">
-                <td className="py-3 px-5 border-b border-gray-300 text-center text-sm">{index + 1}</td>
-                <td className="py-3 px-5 border-b border-gray-300 text-center">
-                  <img src={variant.image} alt="variant" className="mx-auto max-h-16 object-contain" />
+                <td className="py-2 px-3 border-b border-gray-300 text-sm">{index + 1}</td>
+                <td className="py-2 px-3 border-b border-gray-300">
+                  <img src={variant.image} className="h-8" />
                 </td>
-                <td className="py-3 px-5 border-b border-gray-300 text-center text-sm font-medium">{variant.volume} ml</td>
-                <td className="py-3 px-5 border-b border-gray-300 text-center text-sm text-green-600 font-semibold">
-                  {variant.price.toLocaleString()}₫
+                <td className="py-2 px-3 border-b border-gray-300 text-sm font-medium">{variant.volume} ml</td>
+                <td className="py-2 px-3 border-b border-gray-300 text-sm text-red-600 font-semibold">
+                  {variant.price.toLocaleString()}
                 </td>
-                <td className="py-3 px-5 border-b border-gray-300 text-center text-sm">{variant.stock_quantity}</td>
-                <td className="py-3 px-5 border-b border-gray-300 text-center space-x-2">
-                  <Link to={`/dashboard/variants/${variant.id}`}>
-                    <button className="bg-yellow-400 hover:bg-yellow-500 text-white py-1 px-4 rounded transition">Sửa</button>
-                  </Link>
+                <td className="py-2 px-3 border-b border-gray-300 text-sm">{variant.stock_quantity}</td>
+                <td className="py-2 px-3 border-b border-gray-300 space-x-1">
                   <button
                     onClick={() => deleteVariant(variant.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white py-1 px-4 rounded transition"
+                    className="border bg-red-600 hover:bg-red-700 text-white hover:text-white px-3 py-1 rounded-md text-xs transition duration-200"
                   >
                     Xóa
                   </button>
+                  <Link to={`/dashboard/variants/edit/${variant.id}`}>
+                    <button className="border bg-green-600 hover:bg-green-700 text-white hover:text-white px-3 py-1 rounded-md text-xs transition duration-200">Sửa</button>
+                  </Link>
                 </td>
               </tr>
             ))}
