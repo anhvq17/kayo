@@ -1,17 +1,12 @@
 const ProductManager = () => {
   return (
     <div className="p-4">
-    <div className="flex justify-between items-center mb-2">
+      <div className="flex justify-between items-center mb-2">
         <h1 className="text-2xl font-semibold mb-4">Quản lý sản phẩm</h1>
-       
-          <button className="border bg-white hover:bg-blue-600 hover:text-white px-3 py-1 rounded-md text-xs transition duration-200">Thêm</button>
-       
+
+        <button className="border bg-white hover:bg-blue-600 hover:text-white px-3 py-1 rounded-md text-xs transition duration-200">Thêm</button>
+
       </div>
-
-
-
-     
-
       {/* Bảng danh sách sản phẩm */}
       <table className="table-auto w-full border">
         <thead>
@@ -38,7 +33,7 @@ const ProductManager = () => {
               <button className="bg-red-500 text-white px-2 py-1 rounded">Xoá</button>
             </td>
           </tr>
-         
+
         </tbody>
       </table>
     </div>
