@@ -6,7 +6,7 @@ interface Category {
   _id: string;
   name: string;
   description: string;
-  status: string; // "active" | "inactive"
+  status: string; 
   createdAt: string;
   updatedAt: string;
 }
@@ -27,7 +27,7 @@ const CategoryManager = () => {
   // Hàm đổi trạng thái category
   async function toggleStatus(category: Category) {
     try {
-      const newStatus = category.status === "active" ? "inactive" : "active";
+      const newStatus = category.status === "activated" ? "inactivated" : "activated";
       await axios.patch(`http://localhost:3000/categories/${category._id}`, {
         status: newStatus,
       });
@@ -79,7 +79,7 @@ const CategoryManager = () => {
                 <td className="px-4 py-2">
                   <button
                     onClick={() => toggleStatus(category)}
-                    className={`px-3 py-1 rounded-md text-xs font-semibold ${category.status === "active"
+                    className={`px-3 py-1 rounded-md text-xs font-semibold ${category.status === "activated"
                         ? "bg-green-600 text-white hover:bg-green-700"
                         : "bg-gray-400 text-gray-800 hover:bg-gray-500"
                       }`}
