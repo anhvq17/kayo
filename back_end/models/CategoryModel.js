@@ -11,7 +11,13 @@ const CategorySchema = new mongoose.Schema({
         required: true
     },
 
-    
+    status: {
+        type: String,
+        enum: ["activated", "inactivated"],
+        default: "activated",
+        required: true,
+    },
+
     createdAt: {
         type: Date,
         default: Date.now,
