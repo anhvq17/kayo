@@ -1,0 +1,18 @@
+{
+  "variants": [
+    {
+      "id": "90e1",
+      "volume": "500",
+      "price": "150.000",
+      "stock_quantity": "10",
+      "image": "https://picsum.photos/200"
+    },
+    {
+      "volume": "50",
+      "price": "100.000",
+      "stock_quantity": "10",
+      "image": "https://picsum.photos/300",
+      "id": "ecda"
+    }
+  ]
+}
