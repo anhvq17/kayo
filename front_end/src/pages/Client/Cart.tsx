@@ -6,24 +6,24 @@ const Cart = () => {
   const [cartItems, setCartItems] = useState([
     {
       id: 1,
-      name: "Dior Sauvage Eau de Parfum",
-      price: 75.0,
+      name: "Jean Paul Gaultier",
+      price: 35.0,
       quantity: 2,
       size: "100ml",
       image: {
-        src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcREBFL-BQb-rJbGjC6akalUoqe8u3zsvmK1jA&s", // Đảm bảo bạn có ảnh này trong public
+        src: "https://byvn.net/CD9y",
         width: 100,
         height: 100
       }
     },
     {
       id: 2,
-      name: "Chanel Bleu de Chanel",
-      price: 22.0,
+      name: "Jean Paul Gaultier",
+      price: 35.0,
       quantity: 5,
-      size: "50ml",
+      size: "100ml",
       image: {
-        src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcREBFL-BQb-rJbGjC6akalUoqe8u3zsvmK1jA&s"
+        src: "https://byvn.net/QbEB"
       }
     }
   ])
@@ -38,8 +38,7 @@ const Cart = () => {
   }
 
   const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
-  const tax = 3.0
-  const total = subtotal + tax
+  const total = subtotal
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -57,10 +56,10 @@ const Cart = () => {
             <div className="text-center py-12 border rounded-lg">
               <p className="text-gray-500 mb-4">Giỏ hàng của bạn trống.</p>
               <Link
-                to="/products"
+                to="/"
                 className="inline-block px-6 py-3 bg-gray-900 text-white font-medium rounded hover:bg-gray-800"
               >
-                Continue Shopping
+                Tiếp tục mua sắm
               </Link>
             </div>
           ) : (
@@ -125,10 +124,6 @@ const Cart = () => {
                 <span className="text-gray-600">Phí vận chuyển</span>
                 <span className="text-black">Miễn phí</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">VAT</span>
-                <span className="text-black">{tax.toFixed(3)}</span>
-              </div>
               <div className="border-t pt-4 flex justify-between font-semibold text-lg">
                 <span className="text-black">Thành tiền</span>
                 <span className="text-black">{total.toFixed(3)}</span>
@@ -143,7 +138,7 @@ const Cart = () => {
             </Link>
 
             <Link
-              to="/products"
+              to="/"
               className="w-full block text-center px-6 py-3 text-gray-600 font-medium mt-2 hover:text-gray-900"
             >
               Tiếp tục mua sắm
