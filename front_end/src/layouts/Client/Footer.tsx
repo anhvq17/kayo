@@ -46,7 +46,7 @@ const ClientFooter = () => {
           <div className="ml-28">
             <h3 className="font-bold text-base mb-3">VỀ SEVEND</h3>
             <ul className="space-y-2">
-              <li><Link to="#">Câu chuyện thương hiệu</Link></li>
+              <li><Link to="#">Góc thương hiệu</Link></li>
               <li><Link to="#">Cam kết chất lượng</Link></li>
               <li><Link to="#">Đối tác & phân phối</Link></li>
               <li><Link to="#">Tuyển dụng</Link></li>
