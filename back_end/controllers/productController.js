@@ -11,7 +11,7 @@ export const getAllProducts = async (req,res) => {
             data:products
         })
     } catch (error) {
-        return res.status(400).json({
+        return res.status(500).json({
             message:error.message,
         })
     }
@@ -70,7 +70,7 @@ export const createProduct = async (req,res) => {
             data:product
         })
     } catch (error) {
-        return res.status(400).json({
+        return res.status(500).json({
             message:error.message,
         })
     }
