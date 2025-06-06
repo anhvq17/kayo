@@ -1,5 +1,5 @@
 import ClientLayout from "../layouts/ClientLayout"
-import Homepage from "../pages/Client/Homepage"
+import Homepage from "../pages/Client/home/Homepage"
 import Login from "../pages/Auth/Login"
 import Register from "../pages/Auth/Register"
 import Cart from "../pages/Client/Cart"

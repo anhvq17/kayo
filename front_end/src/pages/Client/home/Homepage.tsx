@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom"
 import { ArrowRight, Package, Shield, CreditCard } from "lucide-react"
+import ProductBoy from "../../../components/home/ProductBoy";
+import ProductFemal from "../../../components/home/ProductFemal";
 
 const products = [
   {
@@ -37,73 +39,10 @@ const Homepage = () => {
     <div className="relative w-full">
       <img src="/img/banner.jpg" className="w-full h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px] xl:h-[600px] object-cover object-center" />
 
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-6 md:px-10 xl:px-16">
-          <div className="flex justify-between items-center mb-5">
-            <h2 className="text-2xl font-bold mb-5 text-black">NƯỚC HOA NAM</h2>
-            <Link to="/products" className="text-base transition-colors duration-200">
-              Xem thêm →
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-            {products.map((product) => (
-              <div key={product.id} className="group relative p-3 border rounded-lg hover:shadow-md transition">
-                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
+    {/* Product Boy */}
+    <ProductBoy />
 
-                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{product.name}</h3>
-
-                <p className="text-red-500 font-semibold text-sm mt-1">${product.price.toFixed(2)}</p>
-
-                <div className="mt-2">
-                  <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                    {product.brand || 'Không có Brand'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-6 md:px-10 xl:px-16">
-          <div className="flex justify-between items-center mb-5">
-            <h2 className="text-2xl font-bold mb-5 text-black">NƯỚC HOA NỮ</h2>
-            <Link to="/products" className="text-base transition-colors duration-200">
-              Xem thêm →
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-            {products.map((product) => (
-              <div key={product.id} className="group relative p-3 border rounded-lg hover:shadow-md transition">
-                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-
-                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{product.name}</h3>
-
-                <p className="text-red-500 font-semibold text-sm mt-1">${product.price.toFixed(2)}</p>
-
-                <div className="mt-2">
-                  <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                    {product.brand || 'Không có Brand'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+     <ProductFemal/> 
 
       <section className="py-16 bg-[#1a1a1a]">
         <div className="container mx-auto px-4">
