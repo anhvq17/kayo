@@ -42,10 +42,6 @@ const AddBrand = () => {
           <input
             {...register("image", { 
               required: "URL hình ảnh không được để trống",
-              pattern: {
-                value: /^(https?:\/\/.*\.(?:png|jpg|jpeg|gif|svg|webp))/i,
-                message: "URL không hợp lệ hoặc không phải là ảnh"
-              }
             })}
             className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
             placeholder="https://example.com/image.png"
