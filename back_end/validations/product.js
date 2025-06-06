@@ -8,6 +8,22 @@ export const productSchema = Joi.object({
       'any.required': 'Tên sản phẩm là bắt buộc',
     }),
 
+  image: Joi.string()
+    .required()
+    .messages({
+      'string.empty': 'Ảnh sản phẩm không được để trống',
+      'any.required': 'Ảnh sản phẩm là bắt buộc',
+    }),
+
+  price: Joi.number()
+    .min(0)
+    .required()
+    .messages({
+      'number.base': 'Giá phải là số',
+      'number.min': 'Giá phải lớn hơn hoặc bằng 0',
+      'any.required': 'Giá sản phẩm là bắt buộc',
+    }),
+
   description: Joi.string()
     .required()
     .messages({

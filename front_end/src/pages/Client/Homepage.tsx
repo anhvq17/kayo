@@ -6,28 +6,28 @@ const products = [
     id: 1,
     name: "GUCCI",
     price: 30.0,
-    status: "IN STOCK",
+    brand: "GUCCI",
     image: "https://byvn.net/990K",
   },
   {
     id: 2,
     name: "Jean Paul Gaultier",
     price: 35.0,
-    status: "IN STOCK",
+    brand: "Jean Paul Gaultier",
     image: "https://byvn.net/QbEB",
   },
   {
     id: 3,
     name: "Jean Paul Gaultier",
     price: 35.0,
-    status: "IN STOCK",
+    brand: "Jean Paul Gaultier",
     image: "https://byvn.net/CD9y",
   },
   {
     id: 4,
     name: "ULTRANET Black",
     price: 30.0,
-    status: "IN STOCK",
+    brand: "ULTRANET",
     image: "https://byvn.net/w4FI",
   },
 ];
@@ -45,20 +45,25 @@ const Homepage = () => {
               Xem thêm →
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
             {products.map((product) => (
-              <div key={product.id} className="group">
-                <div className="mb-3 aspect-square bg-gray-100 rounded-lg overflow-hidden">
+              <div key={product.id} className="group relative p-3 border rounded-lg hover:shadow-md transition">
+                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
                   <img
                     src={product.image}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                <h3 className="font-medium text-black text-sm">{product.name}</h3>
-                <div className="flex items-center justify-between mt-2">
-                  <div className="text-xs font-medium text-green-600">{product.status}</div>
-                  <div className="text-sm font-medium text-red-500">{product.price.toFixed(3)}</div>
+
+                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{product.name}</h3>
+
+                <p className="text-red-500 font-semibold text-sm mt-1">${product.price.toFixed(2)}</p>
+
+                <div className="mt-2">
+                  <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+                    {product.brand || 'Không có Brand'}
+                  </span>
                 </div>
               </div>
             ))}
@@ -74,20 +79,25 @@ const Homepage = () => {
               Xem thêm →
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
             {products.map((product) => (
-              <div key={product.id} className="group">
-                <div className="mb-3 aspect-square bg-gray-100 rounded-lg overflow-hidden">
+              <div key={product.id} className="group relative p-3 border rounded-lg hover:shadow-md transition">
+                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
                   <img
                     src={product.image}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                <h3 className="font-medium text-black text-sm">{product.name}</h3>
-                <div className="flex items-center justify-between mt-2">
-                  <div className="text-xs font-medium text-green-600">{product.status}</div>
-                  <div className="text-sm font-medium text-red-500">{product.price.toFixed(3)}</div>
+
+                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{product.name}</h3>
+
+                <p className="text-red-500 font-semibold text-sm mt-1">${product.price.toFixed(2)}</p>
+
+                <div className="mt-2">
+                  <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+                    {product.brand || 'Không có Brand'}
+                  </span>
                 </div>
               </div>
             ))}
@@ -130,20 +140,25 @@ const Homepage = () => {
               <button className="px-4 py-2 text-base font-medium text-gray-500">Mới nhất</button>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
             {products.map((product) => (
-              <div key={product.id} className="group">
-                <div className="mb-3 aspect-square bg-gray-100 rounded-lg overflow-hidden">
+              <div key={product.id} className="group relative p-3 border rounded-lg hover:shadow-md transition">
+                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
                   <img
                     src={product.image}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                <h3 className="font-medium text-black text-sm">{product.name}</h3>
-                <div className="flex items-center justify-between mt-2">
-                  <div className="text-xs font-medium text-green-600">{product.status}</div>
-                  <div className="text-sm font-medium text-red-500">{product.price.toFixed(3)}</div>
+
+                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{product.name}</h3>
+
+                <p className="text-red-500 font-semibold text-sm mt-1">${product.price.toFixed(2)}</p>
+
+                <div className="mt-2">
+                  <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+                    {product.brand || 'Không có Brand'}
+                  </span>
                 </div>
               </div>
             ))}

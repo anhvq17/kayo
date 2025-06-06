@@ -16,6 +16,8 @@ interface Brand {
 interface Product {
   _id: string;
   name: string;
+  image: string;       
+  price: number;       
   description: string;
   categoryId: Category;  
   brandId: Brand;        
@@ -70,10 +72,12 @@ const ProductManager = () => {
         <thead>
           <tr className="bg-black text-white text-left">
             <th className="px-4 py-2">STT</th>
+            <th className="px-4 py-2">Ảnh</th>
             <th className="px-4 py-2">Tên</th>
             <th className="px-4 py-2">Danh mục</th>
             <th className="px-4 py-2">Thương hiệu</th>
             <th className="px-4 py-2">Mô tả</th>
+            <th className="px-4 py-2">Giá</th>
             <th className="px-4 py-2">Trạng thái</th>
             <th className="px-4 py-2">Số lượng</th>
             <th className="px-4 py-2">Mùi hương</th>
@@ -84,13 +88,25 @@ const ProductManager = () => {
           {products.map((p, index) => (
             <tr key={p._id} className="hover:bg-gray-50">
               <td className="px-4 py-2">{index + 1}</td>
+
               <td className="px-4 py-2">{p.name}</td>
+
+              <td className="px-4 py-2">
+                <img src={p.image} alt={p.name} className="w-16 h-16 object-cover rounded" />
+              </td>
+
               <td className="px-4 py-2">{p.categoryId?.name || 'Chưa cập nhật'}</td>
               <td className="px-4 py-2">{p.brandId?.name || 'Chưa cập nhật'}</td>
               <td className="px-4 py-2">{p.description}</td>
+
+              <td className="px-4 py-2">
+                {p.price}
+              </td>
+
               <td className="px-4 py-2">{p.status}</td>
               <td className="px-4 py-2">{p.quantity}</td>
               <td className="px-4 py-2">{p.flavors.join(', ')}</td>
+
               <td className="px-4 py-2 space-x-1">
                 <button
                   onClick={() => handleDelete(p._id)}
@@ -98,7 +114,6 @@ const ProductManager = () => {
                 >
                   Xoá
                 </button>
-                {/* Nút sửa có thể thêm như sau */}
                 <Link to={`/dashboard/products/edit/${p._id}`}>
                   <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs">
                     Sửa

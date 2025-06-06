@@ -21,6 +21,8 @@ interface FormData {
   quantity: number;
   status: string;
   description: string;
+  image: string;
+  price: number;
 }
 
 const EditProduct = () => {
@@ -52,7 +54,7 @@ const EditProduct = () => {
         const productRes = await axios.get(`http://localhost:3000/products/${id}`);
         const product = productRes.data.data;
 
-        // Chỉ reset sau khi danh mục và thương hiệu đã có
+        // Reset form với dữ liệu đầy đủ, bao gồm image và price
         reset({
           name: product.name,
           categoryId: product.categoryId?._id || product.categoryId || "",
@@ -61,6 +63,8 @@ const EditProduct = () => {
           quantity: product.quantity,
           status: product.status,
           description: product.description,
+          image: product.image || "",
+          price: product.price || 0,
         });
 
         setLoading(false);
@@ -101,20 +105,50 @@ const EditProduct = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Tên sản phẩm */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Tên sản phẩm</label>
+          <label className="block mb-1 font-medium">Tên sản phẩm</label>
           <input
             {...register("name", { required: "Tên sản phẩm là bắt buộc" })}
-            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
+            className="w-full px-4 py-2 border rounded-md"
           />
-          {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name.message}</p>}
+          {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+        </div>
+
+        {/* Giá */}
+        <div>
+          <label className="block mb-1 font-medium">Giá</label>
+          <input
+            type="number"
+            {...register("price", {
+              required: "Giá sản phẩm là bắt buộc",
+              min: { value: 0, message: "Giá phải lớn hơn hoặc bằng 0" },
+              valueAsNumber: true,
+            })}
+            className="w-full px-4 py-2 border rounded-md"
+          />
+          {errors.price && <p className="text-red-500 text-sm">{errors.price.message}</p>}
+        </div>
+
+        {/* Số lượng */}
+        <div>
+          <label className="block mb-1 font-medium">Số lượng</label>
+          <input
+            type="number"
+            {...register("quantity", {
+              required: "Số lượng là bắt buộc",
+              min: { value: 0, message: "Số lượng không được âm" },
+              valueAsNumber: true,
+            })}
+            className="w-full px-4 py-2 border rounded-md"
+          />
+          {errors.quantity && <p className="text-red-500 text-sm">{errors.quantity.message}</p>}
         </div>
 
         {/* Danh mục */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
+          <label className="block mb-1 font-medium">Danh mục</label>
           <select
-            {...register("categoryId", { required: "Chọn danh mục" })}
-            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
+            {...register("categoryId", { required: "Vui lòng chọn danh mục" })}
+            className="w-full px-4 py-2 border rounded-md"
           >
             <option value="">-- Chọn danh mục --</option>
             {categories.map((cat) => (
@@ -123,15 +157,15 @@ const EditProduct = () => {
               </option>
             ))}
           </select>
-          {errors.categoryId && <p className="text-red-600 text-sm mt-1">{errors.categoryId.message}</p>}
+          {errors.categoryId && <p className="text-red-500 text-sm">{errors.categoryId.message}</p>}
         </div>
 
         {/* Thương hiệu */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Thương hiệu</label>
+          <label className="block mb-1 font-medium">Thương hiệu</label>
           <select
-            {...register("brandId", { required: "Chọn thương hiệu" })}
-            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
+            {...register("brandId", { required: "Vui lòng chọn thương hiệu" })}
+            className="w-full px-4 py-2 border rounded-md"
           >
             <option value="">-- Chọn thương hiệu --</option>
             {brands.map((brand) => (
@@ -140,76 +174,69 @@ const EditProduct = () => {
               </option>
             ))}
           </select>
-          {errors.brandId && <p className="text-red-600 text-sm mt-1">{errors.brandId.message}</p>}
+          {errors.brandId && <p className="text-red-500 text-sm">{errors.brandId.message}</p>}
         </div>
 
         {/* Mùi hương */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Mùi hương (phân cách bởi dấu phẩy)
-          </label>
+          <label className="block mb-1 font-medium">Mùi hương (phân cách bằng dấu phẩy)</label>
           <input
-            {...register("flavors")}
-            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
-            placeholder="Ví dụ: Hoa hồng, Bạc hà, Vanilla"
+            {...register("flavors", { required: "Vui lòng nhập mùi hương" })}
+            className="w-full px-4 py-2 border rounded-md"
+            placeholder="ví dụ: Hoa hồng, Oải hương, Vanilla"
           />
-        </div>
-
-        {/* Số lượng */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
-          <input
-            type="number"
-            {...register("quantity", {
-              required: "Nhập số lượng",
-              min: { value: 0, message: "Số lượng không được âm" },
-              valueAsNumber: true,
-            })}
-            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
-          />
-          {errors.quantity && <p className="text-red-600 text-sm mt-1">{errors.quantity.message}</p>}
+          {errors.flavors && <p className="text-red-500 text-sm">{errors.flavors.message}</p>}
         </div>
 
         {/* Trạng thái */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-          <select
-            {...register("status")}
-            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
-          >
+          <label className="block mb-1 font-medium">Trạng thái</label>
+          <select {...register("status")} className="w-full px-4 py-2 border rounded-md">
             <option value="Còn hàng">Còn hàng</option>
             <option value="Hết hàng">Hết hàng</option>
           </select>
         </div>
 
-        {/* Mô tả */}
+        {/* URL ảnh sản phẩm */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
-          <textarea
-            {...register("description", { required: "Mô tả là bắt buộc" })}
-            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
-            rows={4}
+          <label className="block mb-1 font-medium">URL ảnh sản phẩm</label>
+          <input
+            {...register("image", { required: "URL ảnh là bắt buộc" })}
+            className="w-full px-4 py-2 border rounded-md"
+            placeholder="https://example.com/image.jpg"
           />
-          {errors.description && <p className="text-red-600 text-sm mt-1">{errors.description.message}</p>}
+          {errors.image && <p className="text-red-500 text-sm">{errors.image.message}</p>}
         </div>
 
-        {/* Buttons */}
+        {/* Mô tả */}
+        <div>
+          <label className="block mb-1 font-medium">Mô tả</label>
+          <textarea
+            {...register("description", { required: "Mô tả không được bỏ trống" })}
+            className="w-full px-4 py-2 border rounded-md"
+            rows={4}
+          />
+          {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
+        </div>
+
+        {/* Nút */}
         <div className="flex justify-between">
           <button
             type="button"
             onClick={() => navigate("/dashboard/products")}
-            className="bg-gray-300 text-gray-800 font-medium px-5 py-2 rounded-lg hover:bg-gray-400 transition"
+            className="px-5 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
           >
             🔙 Quay lại
           </button>
           <button
             type="submit"
-            className="bg-green-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-green-700 transition"
+            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            💾 Lưu thay đổi
+            💾 Cập nhật sản phẩm
           </button>
         </div>
       </form>
+
     </div>
   );
 };
