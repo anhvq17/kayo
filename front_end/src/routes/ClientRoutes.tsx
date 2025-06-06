@@ -8,6 +8,8 @@ import ProductDetails from "../pages/Client/ProductDetails"
 import ProductList from "../pages/Client/ProductList"
 import Order from "../pages/Client/Order"
 import OrderNews from "../pages/Client/OrderNews"
+import Checkout from "../pages/Client/Checkout"
+import OrderSuccessfully from "../pages/Client/OrderSuccessfully"
 
 const ClientRoutes = {
   path: '/',
@@ -21,6 +23,9 @@ const ClientRoutes = {
     { path: 'products', element: <ProductList /> },
     { path: 'orders', element: <Order/>},
     { path: 'ordernews', element: <OrderNews/>},
+
+    { path: 'checkout', element: <Checkout/>},
+    { path: 'ordersuccessfully', element: <OrderSuccessfully/>},
 
     // Khi đường dẫn sai hoặc không tồn tại, dẫn đến trang NotFound
     { path: '*', element: <NotFound homePath="/"/> },
