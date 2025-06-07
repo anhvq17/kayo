@@ -88,7 +88,7 @@ const Login = () => {
           </div>
 
           <button type="submit" className="w-full bg-[#696faa] hover:bg-[#5f518e] text-white font-semibold py-2 rounded transition">
-            XÁC NHẬN
+            ĐĂNG NHẬP
           </button>
         </form>
 
