@@ -49,7 +49,7 @@ const VoucherManager = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-2">
         <h1 className="text-2xl font-semibold mb-4">Danh sách mã giảm giá</h1>
-        <Link to={`/dashboard/vouchers/add`}>
+        <Link to={`/admin/vouchers/add`}>
           <button className="border bg-blue-600 hover:bg-blue-700 text-white hover:text-white px-3 py-1 rounded-md text-xs transition duration-200">Thêm</button>
         </Link>
       </div>
@@ -83,7 +83,7 @@ const VoucherManager = () => {
                 </td>
                 <td className="px-3 py-2 border-b space-x-1">
                   <button className="border bg-red-600 hover:bg-red-700 text-white hover:text-white px-3 py-1 rounded-md text-xs transition duration-200">Xoá</button>
-                  <Link to={`/dashboard/vouchers/edit/${voucher._id}`}>
+                  <Link to={`/admin/vouchers/edit/${voucher._id}`}>
                     <button className="border bg-green-600 hover:bg-green-700 text-white hover:text-white px-3 py-1 rounded-md text-xs transition duration-200">Sửa</button>
                   </Link>
                 </td>

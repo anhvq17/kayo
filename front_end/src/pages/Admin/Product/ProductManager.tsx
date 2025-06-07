@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { Edit, Plus, Trash } from 'lucide-react';
 
 interface Category {
   _id: string;
@@ -61,9 +62,9 @@ const ProductManager = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-2">
         <h1 className="text-2xl font-semibold mb-4">Danh sách sản phẩm</h1>
-        <Link to="/dashboard/products/add">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs">
-            Thêm
+        <Link to="/admin/products/add">
+          <button className="w-8 h-8 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center">
+            <Plus size={14} />
           </button>
         </Link>
       </div>
@@ -72,12 +73,12 @@ const ProductManager = () => {
         <thead>
           <tr className="bg-black text-white text-left">
             <th className="px-4 py-2">STT</th>
-            <th className="px-4 py-2">Ảnh</th>
             <th className="px-4 py-2">Tên</th>
+            <th className="px-4 py-2">Hình ảnh</th>
             <th className="px-4 py-2">Danh mục</th>
             <th className="px-4 py-2">Thương hiệu</th>
             <th className="px-4 py-2">Mô tả</th>
-            <th className="px-4 py-2">Giá</th>
+            <th className="px-4 py-2">Giá tiền</th>
             <th className="px-4 py-2">Trạng thái</th>
             <th className="px-4 py-2">Số lượng</th>
             <th className="px-4 py-2">Mùi hương</th>
@@ -107,18 +108,20 @@ const ProductManager = () => {
               <td className="px-4 py-2">{p.quantity}</td>
               <td className="px-4 py-2">{p.flavors.join(', ')}</td>
 
-              <td className="px-4 py-2 space-x-1">
-                <button
-                  onClick={() => handleDelete(p._id)}
-                  className="bg-red-600 mb-1 text-white px-3 py-1 rounded hover:bg-red-700 text-xs"
-                >
-                  Xoá
-                </button>
-                <Link to={`/dashboard/products/edit/${p._id}`}>
-                  <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs">
-                    Sửa
+              <td className="px-4 py-2">
+                <div className="flex flex-col space-y-1">
+                  <button
+                    onClick={() => handleDelete(p._id)}
+                    className="w-8 h-8 bg-red-600 text-white rounded hover:bg-red-700 flex items-center justify-center"
+                  >
+                    <Trash size={14} />
                   </button>
-                </Link>
+                  <Link to={`/admin/products/edit/${p._id}`}>
+                    <button className="w-8 h-8 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center">
+                      <Edit size={14} />
+                    </button>
+                  </Link>
+                </div>
               </td>
             </tr>
           ))}

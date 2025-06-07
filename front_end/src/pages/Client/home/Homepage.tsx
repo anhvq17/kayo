@@ -1,48 +1,16 @@
 import { Link } from "react-router-dom"
 import { ArrowRight, Package, Shield, CreditCard } from "lucide-react"
-import ProductBoy from "../../../components/home/ProductBoy";
-import ProductFemal from "../../../components/home/ProductFemal";
-
-const products = [
-  {
-    id: 1,
-    name: "GUCCI",
-    price: 30.0,
-    brand: "GUCCI",
-    image: "https://byvn.net/990K",
-  },
-  {
-    id: 2,
-    name: "Jean Paul Gaultier",
-    price: 35.0,
-    brand: "Jean Paul Gaultier",
-    image: "https://byvn.net/QbEB",
-  },
-  {
-    id: 3,
-    name: "Jean Paul Gaultier",
-    price: 35.0,
-    brand: "Jean Paul Gaultier",
-    image: "https://byvn.net/CD9y",
-  },
-  {
-    id: 4,
-    name: "ULTRANET Black",
-    price: 30.0,
-    brand: "ULTRANET",
-    image: "https://byvn.net/w4FI",
-  },
-];
+import ProductBoy from "../../../components/home/productMale";
+import ProductFemal from "../../../components/home/productFemale";
 
 const Homepage = () => {
   return (
     <div className="relative w-full">
       <img src="/img/banner.jpg" className="w-full h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px] xl:h-[600px] object-cover object-center" />
 
-    {/* Product Boy */}
-    <ProductBoy />
+      <ProductBoy />
 
-     <ProductFemal/> 
+      <ProductFemal />
 
       <section className="py-16 bg-[#1a1a1a]">
         <div className="container mx-auto px-4">
@@ -67,40 +35,6 @@ const Homepage = () => {
                 className="max-w-full h-auto rounded-full"
               />
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-6 md:px-10 xl:px-16">
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex border-b">
-              <button className="px-4 py-2 text-base font-medium border-b-2 text-black border-gray-900">Nổi bật</button>
-              <button className="px-4 py-2 text-base font-medium text-gray-500">Mới nhất</button>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-            {products.map((product) => (
-              <div key={product.id} className="group relative p-3 border rounded-lg hover:shadow-md transition">
-                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-
-                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{product.name}</h3>
-
-                <p className="text-red-500 font-semibold text-sm mt-1">${product.price.toFixed(2)}</p>
-
-                <div className="mt-2">
-                  <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                    {product.brand || 'Không có Brand'}
-                  </span>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -142,4 +76,4 @@ const Homepage = () => {
   )
 }
 
-export default Homepage
+export default Homepage;

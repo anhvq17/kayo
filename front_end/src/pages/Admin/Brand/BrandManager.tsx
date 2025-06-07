@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { Edit, Plus, Trash } from "lucide-react";
 
 interface Brand {
   _id: string;
@@ -43,9 +44,9 @@ const BrandManager = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-2">
         <h1 className="text-2xl font-semibold mb-4">Danh sách thương hiệu</h1>
-        <Link to="/dashboard/brands/add">
+        <Link to="/admin/brands/add">
           <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs">
-            Thêm
+            <Plus size={14}/>
           </button>
         </Link>
       </div>
@@ -54,7 +55,7 @@ const BrandManager = () => {
         <thead>
           <tr className="bg-black text-white text-left">
             <th className="px-4 py-2">STT</th>
-            <th className="px-4 py-2">Tên thương hiệu</th>
+            <th className="px-4 py-2">Tên</th>
             <th className="px-4 py-2">Hình ảnh</th>
             <th className="px-4 py-2">Hành động</th>
           </tr>
@@ -72,11 +73,11 @@ const BrandManager = () => {
                   onClick={() => handleDelete(brand._id)}
                   className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs"
                 >
-                  Xoá
+                  <Trash size={14}/>
                 </button>
-                <Link to={`/dashboard/brands/edit/${brand._id}`}>
+                <Link to={`/admin/brands/edit/${brand._id}`}>
                   <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-xs">
-                    Sửa
+                    <Edit size={14}/>
                   </button>
                 </Link>
               </td>

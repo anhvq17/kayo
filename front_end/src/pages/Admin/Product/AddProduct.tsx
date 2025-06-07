@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -75,7 +75,7 @@ const AddProduct = () => {
 
       await axios.post("http://localhost:3000/products", processedData);
       alert("Thêm sản phẩm thành công!");
-      navigate("/dashboard/products");
+      navigate("/admin/products");
     } catch (err: any) {
       alert(err?.response?.data?.message || "Thêm thất bại");
     }
@@ -83,7 +83,7 @@ const AddProduct = () => {
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10 bg-white shadow-xl rounded-xl mt-10">
-      <h1 className="text-3xl font-bold text-center mb-8">➕ Thêm Sản Phẩm</h1>
+      <h3 className="text-3xl font-bold text-center mb-8">➕ Thêm mới sản phẩm</h3>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Tên */}
@@ -92,15 +92,17 @@ const AddProduct = () => {
           <input
             {...register("name", { required: "Tên sản phẩm là bắt buộc" })}
             className="w-full px-4 py-2 border rounded-md"
+            placeholder="VD: Gucci Bloom EDP"
           />
           {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
         </div>
 
         {/* Giá */}
         <div>
-          <label className="block mb-1 font-medium">Giá</label>
+          <label className="block mb-1 font-medium">Giá tiền</label>
           <input
             type="number"
+            placeholder="VD: 300"
             {...register("price", {
               required: "Giá sản phẩm là bắt buộc",
               min: {
@@ -139,7 +141,7 @@ const AddProduct = () => {
             {...register("categoryId", { required: "Vui lòng chọn danh mục" })}
             className="w-full px-4 py-2 border rounded-md"
           >
-            <option value="">-- Chọn danh mục --</option>
+            <option value="">-- Chọn --</option>
             {categories.map((cat) => (
               <option key={cat._id} value={cat._id}>
                 {cat.name}
@@ -156,7 +158,7 @@ const AddProduct = () => {
             {...register("brandId", { required: "Vui lòng chọn thương hiệu" })}
             className="w-full px-4 py-2 border rounded-md"
           >
-            <option value="">-- Chọn thương hiệu --</option>
+            <option value="">-- Chọn --</option>
             {brands.map((brand) => (
               <option key={brand._id} value={brand._id}>
                 {brand.name}
@@ -168,11 +170,11 @@ const AddProduct = () => {
 
         {/* Mùi hương */}
         <div>
-          <label className="block mb-1 font-medium">Mùi hương (phân cách bằng dấu phẩy)</label>
+          <label className="block mb-1 font-medium">Mùi hương</label>
           <input
             {...register("flavors", { required: "Vui lòng nhập mùi hương" })}
             className="w-full px-4 py-2 border rounded-md"
-            placeholder="ví dụ: Hoa hồng, Oải hương, Vanilla"
+            placeholder="VD: Hoa hồng, Oải hương, Vanilla... (Phân cách nhiều mùi hương bằng dấu phẩy)"
           />
           {errors.flavors && <p className="text-red-500 text-sm">{errors.flavors.message}</p>}
         </div>
@@ -197,7 +199,7 @@ const AddProduct = () => {
               required: "URL ảnh là bắt buộc"
             })}
             className="w-full px-4 py-2 border rounded-md"
-            placeholder="https://example.com/image.jpg"
+            placeholder="VD: https://example.com/image.jpg"
           />
           {errors.image && <p className="text-red-500 text-sm">{errors.image.message}</p>}
         </div>
@@ -206,6 +208,7 @@ const AddProduct = () => {
         <div>
           <label className="block mb-1 font-medium">Mô tả</label>
           <textarea
+            placeholder="Mô tả hiển thị"
             {...register("description", { required: "Mô tả không được bỏ trống" })}
             className="w-full px-4 py-2 border rounded-md"
             rows={4}
@@ -217,7 +220,7 @@ const AddProduct = () => {
         <div className="flex justify-between">
           <button
             type="button"
-            onClick={() => navigate("/dashboard/products")}
+            onClick={() => navigate("/admin/products")}
             className="px-5 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
           >
             🔙 Quay lại

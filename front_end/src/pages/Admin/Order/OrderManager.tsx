@@ -25,7 +25,7 @@ const OrderManager = () => {
             <td className="px-4 py-22 text-red-600 font-semibold">160.000</td>
             <td className="px-4 py-22">Không có</td>
             <td className="px-4 py-2">
-              <Link to={"/dashboard/orderDetails"} className="border bg-blue-600 hover:bg-blue-700 text-white hover:text-white px-3 py-1 rounded-md text-xs transition duration-200">
+              <Link to={"/admin/orderDetails"} className="border bg-blue-600 hover:bg-blue-700 text-white hover:text-white px-3 py-1 rounded-md text-xs transition duration-200">
                 Xem chi tiết
               </Link>
             </td>

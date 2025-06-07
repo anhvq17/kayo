@@ -38,7 +38,7 @@ const EditCategory = () => {
     try {
       await axios.patch(`http://localhost:3000/categories/${id}`, data);
       alert("Cập nhật danh mục thành công");
-      navigate("/dashboard/categories");
+      navigate("/admin/categories");
     } catch (error) {
       alert("Lỗi khi cập nhật danh mục");
       console.error(error);
@@ -92,7 +92,7 @@ const EditCategory = () => {
         <div className="flex justify-between">
           <button
             type="button"
-            onClick={() => navigate("/dashboard/categories")}
+            onClick={() => navigate("/admin/categories")}
             className="bg-gray-300 text-gray-800 font-medium px-5 py-2 rounded-lg hover:bg-gray-400 transition"
           >
             🔙 Quay lại

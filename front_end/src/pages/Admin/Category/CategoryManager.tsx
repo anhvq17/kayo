@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { Edit, Plus } from "lucide-react";
 
 interface Category {
   _id: string;
@@ -46,9 +47,9 @@ const CategoryManager = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-2">
         <h1 className="text-2xl font-semibold mb-4">Danh sách danh mục</h1>
-        <Link to="/dashboard/categories/add">
+        <Link to="/admin/categories/add">
           <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs">
-            Thêm
+            <Plus size={14}/>
           </button>
         </Link>
       </div>
@@ -57,7 +58,7 @@ const CategoryManager = () => {
         <thead>
           <tr className="bg-black text-white text-left">
             <th className="px-4 py-2">STT</th>
-            <th className="px-4 py-2">Tên danh mục</th>
+            <th className="px-4 py-2">Tên</th>
             <th className="px-4 py-2">Mô tả</th>
             <th className="px-4 py-2">Trạng thái</th>
             <th className="px-4 py-2">Hành động</th>
@@ -89,9 +90,9 @@ const CategoryManager = () => {
                   </button>
                 </td>
                 <td className="px-4 py-2">
-                  <Link to={`/dashboard/categories/edit/${category._id}`}>
+                  <Link to={`/admin/categories/edit/${category._id}`}>
                     <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-xs">
-                      Sửa
+                      <Edit size={14} />
                     </button>
                   </Link>
                 </td>

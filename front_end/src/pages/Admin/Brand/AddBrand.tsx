@@ -1,11 +1,10 @@
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-// import { toast } from "react-toastify";
 
 interface FormData {
   name: string;
-  image: string; // URL ảnh dưới dạng text input
+  image: string;
 }
 
 const AddBrand = () => {
@@ -16,7 +15,7 @@ const AddBrand = () => {
     try {
       await axios.post("http://localhost:3000/brands", data);
       alert("Thêm thương hiệu thành công");
-      navigate("/dashboard/brands");
+      navigate("/admin/brands");
     } catch (error) {
       console.error(error);
       alert("Lỗi khi thêm thương hiệu");
@@ -32,7 +31,7 @@ const AddBrand = () => {
           <input
             {...register("name", { required: "Tên thương hiệu không được để trống" })}
             className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
-            placeholder="Nhập tên thương hiệu"
+            placeholder="VD: Gucci"
           />
           {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
         </div>
@@ -44,7 +43,7 @@ const AddBrand = () => {
               required: "URL hình ảnh không được để trống",
             })}
             className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
-            placeholder="https://example.com/image.png"
+            placeholder="VD: https://example.com/image.png"
           />
           {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image.message}</p>}
         </div>
@@ -52,7 +51,7 @@ const AddBrand = () => {
         <div className="flex justify-between">
           <button
             type="button"
-            onClick={() => navigate("/dashboard/brands")}
+            onClick={() => navigate("/admin/brands")}
             className="bg-gray-300 text-gray-800 font-medium px-5 py-2 rounded-lg hover:bg-gray-400 transition"
           >
             🔙 Quay lại

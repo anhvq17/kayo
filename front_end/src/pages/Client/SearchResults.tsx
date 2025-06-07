@@ -15,12 +15,11 @@ const SearchResults = () => {
         const data = await res.json();
         console.log("Fetched products:", data);
 
-        // Đảm bảo chỉ set mảng sản phẩm
         if (Array.isArray(data.data)) {
           setProducts(data.data);
         } else {
           console.error("Data format is incorrect:", data);
-          setProducts([]); // fallback nếu sai định dạng
+          setProducts([]);
         }
       } catch (err) {
         console.error("Failed to fetch products:", err);

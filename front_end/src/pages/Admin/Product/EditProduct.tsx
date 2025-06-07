@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
@@ -87,7 +87,7 @@ const EditProduct = () => {
 
       await axios.put(`http://localhost:3000/products/${id}`, processedData);
       alert("Cập nhật thành công");
-      navigate("/dashboard/products");
+      navigate("/admin/products");
     } catch (err) {
       alert("Lỗi khi cập nhật sản phẩm");
     }
@@ -223,7 +223,7 @@ const EditProduct = () => {
         <div className="flex justify-between">
           <button
             type="button"
-            onClick={() => navigate("/dashboard/products")}
+            onClick={() => navigate("/admin/products")}
             className="px-5 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
           >
             🔙 Quay lại

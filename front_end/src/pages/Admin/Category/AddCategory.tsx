@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +25,7 @@ const AddCategory = () => {
     try {
       await axios.post("http://localhost:3000/categories", data);
       alert("Thêm danh mục thành công");
-      navigate("/dashboard/categories");
+      navigate("/admin/categories");
     } catch (error) {
       alert("Lỗi khi thêm danh mục");
       console.error(error);
@@ -46,7 +45,7 @@ const AddCategory = () => {
           <input
             {...register("name", { required: "Tên danh mục là bắt buộc" })}
             className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
-            placeholder="Nhập tên danh mục"
+            placeholder="VD: Nam"
           />
           {errors.name && (
             <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
@@ -60,7 +59,7 @@ const AddCategory = () => {
           <textarea
             {...register("description")}
             className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
-            placeholder="Mô tả danh mục (tuỳ chọn)"
+            placeholder="Mô tả hiển thị"
           />
         </div>
 
@@ -80,7 +79,7 @@ const AddCategory = () => {
         <div className="flex justify-between">
           <button
             type="button"
-            onClick={() => navigate("/dashboard/categories")}
+            onClick={() => navigate("/admin/categories")}
             className="bg-gray-300 text-gray-800 font-medium px-5 py-2 rounded-lg hover:bg-gray-400 transition"
           >
             🔙 Quay lại

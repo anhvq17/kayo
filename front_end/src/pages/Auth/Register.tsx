@@ -29,9 +29,9 @@ const Register = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        setMessage(data.message || 'Đăng ký thất bại');
+        setMessage(data.message || 'Đăng ký thất bại!');
       } else {
-        setMessage('Đăng ký thành công');
+        setMessage('Đăng ký thành công!');
         setUsername('');
         setEmail('');
         setPhone('');
@@ -43,97 +43,95 @@ const Register = () => {
         }, 1000);
       }
     } catch (error) {
-      setMessage('Lỗi server khi đăng ký');
+      setMessage('Lỗi server khi đăng ký!');
       console.error(error);
     }
   };
 
   return (
-    <div className="h-screen w-screen flex justify-center items-center bg-[#736DA9]">
-      <div className="w-full max-w-4xl p-8">
-        <h1 className="text-white text-2xl md:text-3xl font-bold text-center mb-8 uppercase">
-          Đăng ký ngay để trở thành SEVEND-ER
-        </h1>
+    <div className="flex justify-center items-center">
+      <div className="mt-14 mb-14 rounded-md shadow-lg w-full max-w-3xl p-8">
+
+        <h2 className="text-[#5f518e] text-3xl font-bold text-center mb-6">ĐĂNG KÝ NGAY ĐỂ TRỞ THÀNH SEVENDER</h2>
 
         {message && <p className="text-center text-red-500 mb-4">{message}</p>}
 
         <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="text-white block mb-1">Nhập họ và tên của bạn</label>
             <input
               type="text"
-              className="w-full px-4 py-2 rounded-md focus:outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e]"
               value={username}
+              placeholder="Họ và tên"
               onChange={(e) => setUsername(e.target.value)}
-              required
             />
           </div>
 
           <div>
-            <label className="text-white block mb-1">Nhập email</label>
             <input
               type="email"
-              className="w-full px-4 py-2 rounded-md focus:outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e]"
               value={email}
+              placeholder="Email"
               onChange={(e) => setEmail(e.target.value)}
-              required
             />
           </div>
 
           <div>
-            <label className="text-white block mb-1">Nhập số điện thoại</label>
             <input
               type="tel"
-              className="w-full px-4 py-2 rounded-md focus:outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e]"
               value={phone}
+              placeholder="Số điện thoại"
               onChange={(e) => setPhone(e.target.value)}
-              required
             />
           </div>
 
           <div className="relative">
-            <label className="text-white block mb-1">Nhập mật khẩu</label>
             <input
               type="password"
-              className="w-full px-4 py-2 rounded-md focus:outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e]"
               value={password}
+              placeholder="Mật khẩu"
               onChange={(e) => setPassword(e.target.value)}
-              required
             />
-            <span className="absolute right-3 top-9 text-gray-500 cursor-pointer">👁️</span>
           </div>
 
           <div className="relative">
-            <label className="text-white block mb-1">Nhập lại mật khẩu</label>
             <input
               type="password"
-              className="w-full px-4 py-2 rounded-md focus:outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e]"
               value={confirmPassword}
+              placeholder="Nhập lại mật khẩu"
               onChange={(e) => setConfirmPassword(e.target.value)}
-              required
             />
-            <span className="absolute right-3 top-9 text-gray-500 cursor-pointer">👁️</span>
           </div>
 
           <div className="col-span-1 md:col-span-1 flex items-end justify-end">
-            <button
-              type="submit"
-              className="bg-[#9079C4] text-white px-6 py-2 rounded-md w-full hover:scale-105 transition"
-            >
-              Xác nhận
+            <button type="submit" className="w-full bg-[#696faa] hover:bg-[#5f518e] text-white font-semibold py-2 rounded transition">
+              XÁC NHẬN
             </button>
           </div>
         </form>
 
-        <div className="mt-8 flex items-center justify-between text-white text-sm">
-          <hr className="w-1/3 border-white opacity-50" />
-          <span className="mx-2">hoặc</span>
-          <hr className="w-1/3 border-white opacity-50" />
+        <div className="flex items-center my-6">
+          <hr className="flex-grow border-gray-300" />
+          <span className="px-3 text-gray-400 text-sm">hoặc</span>
+          <hr className="flex-grow border-gray-300" />
         </div>
 
-        <div className="text-center mt-4 text-white">
-          Bạn đã có tài khoản?
-          <a href="/login" className="text-[#BCA3FF] underline ml-1">Đăng nhập</a>
+        <div className="flex flex-col space-y-3">
+          <button
+            onClick={() => alert('Google login chưa tích hợp!')}
+            className="flex items-center justify-center border border-gray-300 rounded py-2 hover:bg-gray-50"
+          >
+            <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" className="w-5 h-5 mr-2" />
+            Đăng ký bằng Google
+          </button>
+        </div>
+
+        <div className="text-center mt-4">Bạn đã có tài khoản?
+          <a href="/login" className="text-[#5f518e] hover:underline ml-1">Đăng nhập</a> ngay
         </div>
       </div>
     </div>

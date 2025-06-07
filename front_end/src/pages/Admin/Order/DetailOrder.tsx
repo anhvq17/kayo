@@ -60,7 +60,7 @@ const DetailOrder = () => {
           </tbody>
         </table>
         <div className="flex justify-end mt-3">
-          <Link to={'/dashboard/orders'}>
+          <Link to={'/admin/orders'}>
             <button type="submit" className="border bg-gray-600 hover:bg-gray-700 text-white hover:text-white px-3 py-1 rounded-md text-xs transition duration-200">Quay lại</button>
           </Link>
         </div>

@@ -44,7 +44,7 @@ const VariantManager = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-2">
         <h1 className="text-2xl font-semibold mb-4">Danh sách biến thể</h1>
-        <Link to={`/dashboard/variants/add`}>
+        <Link to={`/admin/variants/add`}>
           <button className="border bg-blue-600 hover:bg-blue-700 text-white hover:text-white px-3 py-1 rounded-md text-xs transition duration-200">Thêm</button>
         </Link>
       </div>
@@ -79,7 +79,7 @@ const VariantManager = () => {
                   >
                     Xóa
                   </button>
-                  <Link to={`/dashboard/variants/edit/${variant.id}`}>
+                  <Link to={`/admin/variants/edit/${variant.id}`}>
                     <button className="border bg-green-600 hover:bg-green-700 text-white hover:text-white px-3 py-1 rounded-md text-xs transition duration-200">Sửa</button>
                   </Link>
                 </td>

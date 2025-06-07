@@ -33,7 +33,7 @@ import EditVoucher from "../pages/Admin/Voucher/EditVoucher"
 import NotFound from "../pages/NotFound"
 
 const AdminRoutes = {
-  path: '/dashboard',
+  path: '/admin',
   element: <AdminLayout />,
   children: [
     { path: '', element: <Dashboard /> },
@@ -67,7 +67,7 @@ const AdminRoutes = {
     { path: 'vouchers/edit/:id', element: <EditVoucher /> },
 
     // Khi đường dẫn sai hoặc không tồn tại, dẫn đến trang NotFound
-    { path: '*', element: <NotFound homePath="/dashboard"/> },
+    { path: '*', element: <NotFound homePath="/admin"/> },
   ]
 }
 

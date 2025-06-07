@@ -47,7 +47,7 @@ const EditBrand = () => {
     try {
       await axios.put(`http://localhost:3000/brands/${id}`, data);
       alert("Cập nhật thương hiệu thành công");
-      nav("/dashboard/brands");
+      nav("/admin/brands");
     } catch (error) {
       alert("Lỗi khi cập nhật thương hiệu");
     }
@@ -91,7 +91,7 @@ const EditBrand = () => {
         <div className="flex justify-between">
           <button
             type="button"
-            onClick={() => nav("/dashboard/brands")}
+            onClick={() => nav("/admin/brands")}
             className="bg-gray-300 text-gray-800 font-medium px-5 py-2 rounded-lg hover:bg-gray-400 transition"
           >
             🔙 Quay lại
