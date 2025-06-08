@@ -8,6 +8,8 @@ import categoryRouter from "./routes/categoryRoutes.js";
 import brandRouter from "./routes/brandRoutes.js";
 import authRouter from "./routes/authRoutes.js";
 import User from './models/userModel.js';
+import commentsRoute from "./routes/comment.js";
+
 
 
 dotenv.config();
@@ -44,6 +46,8 @@ app.use('/products', productRouter);
 app.use('/brands', brandRouter);
 app.use('/categories', categoryRouter);
 app.use('/', authRouter);
+app.use('/api/comments', commentsRoute);
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

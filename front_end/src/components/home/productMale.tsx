@@ -21,7 +21,7 @@ interface Product {
   brandId: Brand;
 }
 
-const productMale = () => {
+const ProductMale = () => {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
@@ -51,18 +51,20 @@ const productMale = () => {
             Xem thêm →
           </Link>
         </div>
-        
+
         <div className="flex justify-center mb-8">
           <div className="inline-flex border-b">
             <button className="px-4 py-2 text-base font-medium border-b-2 text-black border-gray-900">Nổi bật</button>
             <button className="px-4 py-2 text-base font-medium text-gray-500">Mới nhất</button>
           </div>
         </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
           {products.slice(0, 8).map((product) => (
-            <div
+            <Link
+              to={`productdetails/${product._id}`}
               key={product._id}
-              className="group relative p-3 border rounded-lg hover:shadow-md transition"
+              className="group relative p-3 border rounded-lg hover:shadow-md transition block"
             >
               <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
                 <img
@@ -80,14 +82,13 @@ const productMale = () => {
                 <p className="text-red-500 font-semibold text-sm mt-1">
                   {product.price.toFixed(3)}
                 </p>
-
                 <div className="mt-2">
                   <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
                     {product.brandId?.name || 'Không có thương hiệu'}
                   </span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
@@ -95,4 +96,4 @@ const productMale = () => {
   );
 };
 
-export default productMale;
+export default ProductMale;

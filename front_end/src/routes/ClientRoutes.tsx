@@ -20,7 +20,7 @@ const ClientRoutes = {
     { path: 'login', element: <Login /> },
     { path: 'register', element: <Register /> },
     { path: 'cart', element: <Cart /> },
-    { path: 'productdetails', element: <ProductDetails /> },
+    { path: 'productdetails/:id', element: <ProductDetails /> },
     { path: 'products', element: <ProductList /> },
     { path: 'orders', element: <Order/>},
     { path: 'ordernews', element: <OrderNews/>},
