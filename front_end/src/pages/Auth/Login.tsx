@@ -12,6 +12,18 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // Validate
+    if (!phone || !password) {
+      setMessage('Vui lòng nhập đầy đủ số điện thoại và mật khẩu.');
+      return;
+    }
+
+    const phoneRegex = /^(0[0-9]{9})$/;
+    if (!phoneRegex.test(phone)) {
+      setMessage('Số điện thoại không hợp lệ. Vui lòng nhập đúng định dạng 10 số bắt đầu bằng 0.');
+      return;
+    }
+
     try {
       const res = await fetch('http://localhost:3000/login', {
         method: 'POST',
@@ -76,7 +88,7 @@ const Login = () => {
           </div>
 
           <button type="submit" className="w-full bg-[#696faa] hover:bg-[#5f518e] text-white font-semibold py-2 rounded transition">
-            XÁC NHẬN
+            ĐĂNG NHẬP
           </button>
         </form>
 
@@ -96,7 +108,7 @@ const Login = () => {
           </button>
         </div>
 
-        <div className="text-center mt-4 ">Bạn chưa có tài khoản?
+        <div className="text-center mt-4">Bạn chưa có tài khoản?
           <a href="/register" className="text-[#5f518e] hover:underline ml-1">Đăng ký</a> ngay
         </div>
       </div>
