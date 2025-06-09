@@ -1,3 +1,4 @@
+import { EyeOff, Eye } from 'lucide-react';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,14 +12,12 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
 
-  // State ẩn/hiện mật khẩu
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Validate
     if (!username.trim()) {
       setMessage('Vui lòng nhập họ và tên');
       return;
@@ -129,7 +128,7 @@ const Register = () => {
               className="absolute right-3 top-2.5 text-sm text-gray-500 cursor-pointer hover:text-[#5f518e]"
               onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? 'Ẩn' : 'Hiện'}
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </span>
           </div>
 
@@ -145,7 +144,7 @@ const Register = () => {
               className="absolute right-3 top-2.5 text-sm text-gray-500 cursor-pointer hover:text-[#5f518e]"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             >
-              {showConfirmPassword ? 'Ẩn' : 'Hiện'}
+              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </span>
           </div>
 
@@ -154,7 +153,7 @@ const Register = () => {
               type="submit"
               className="w-full bg-[#696faa] hover:bg-[#5f518e] text-white font-semibold py-2 rounded transition"
             >
-              ĐĂNG KÝ
+              XÁC NHẬN
             </button>
           </div>
         </form>
@@ -167,11 +166,11 @@ const Register = () => {
 
         <div className="flex flex-col space-y-3">
           <button
-            onClick={() => alert('Google login chưa tích hợp!')}
+            onClick={() => alert('Chưa tích hợp Google!')}
             className="flex items-center justify-center border border-gray-300 rounded py-2 hover:bg-gray-50"
           >
             <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" className="w-5 h-5 mr-2" />
-            Đăng ký bằng Google
+            Tiếp tục với Google
           </button>
         </div>
 
