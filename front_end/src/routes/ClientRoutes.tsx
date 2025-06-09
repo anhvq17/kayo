@@ -24,7 +24,6 @@ const ClientRoutes = {
     { path: 'products', element: <ProductList /> },
     { path: 'orders', element: <Order/>},
     { path: 'ordernews', element: <OrderNews/>},
-
     { path: 'checkout', element: <Checkout/>},
     { path: 'ordersuccessfully', element: <OrderSuccessfully/>},
     { path: 'search', element: <SearchResults /> },
