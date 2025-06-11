@@ -1,3 +1,4 @@
+import { EyeOff, Eye } from 'lucide-react';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,7 +13,6 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Validate
     if (!phone || !password) {
       setMessage('Vui lòng nhập đầy đủ số điện thoại và mật khẩu.');
       return;
@@ -83,12 +83,12 @@ const Login = () => {
               className="absolute right-3 top-2.5 text-sm text-gray-500 cursor-pointer hover:text-[#5f518e]"
               onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? 'Ẩn' : 'Hiện'}
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </span>
           </div>
 
           <button type="submit" className="w-full bg-[#696faa] hover:bg-[#5f518e] text-white font-semibold py-2 rounded transition">
-            ĐĂNG NHẬP
+            XÁC NHẬN
           </button>
         </form>
 
@@ -100,11 +100,11 @@ const Login = () => {
 
         <div className="flex flex-col space-y-3">
           <button
-            onClick={() => alert('Google login chưa tích hợp!')}
+            onClick={() => alert('Chưa tích hợp Google!')}
             className="flex items-center justify-center border border-gray-300 rounded py-2 hover:bg-gray-50"
           >
             <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" className="w-5 h-5 mr-2" />
-            Đăng nhập bằng Google
+            Tiếp tục với Google
           </button>
         </div>
 

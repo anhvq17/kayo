@@ -1,8 +1,7 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-// Định nghĩa interface cho đơn hàng
 interface OrderItem {
   id: string;
   price: number;
@@ -21,7 +20,6 @@ const Order = () => {
     (async () => {
       try {
         const { data } = await axios.get('http://localhost:3000/');
-        // console.log(data);
         if (Array.isArray(data)) {
           setOrderList(data);
         }
@@ -34,23 +32,23 @@ const Order = () => {
   }, []);
   
   return (
-    <div>
-      <div className="pt-8 px-8">
-        <Link to="/" className="text-gray-400">
-          <span className="text-xl">&lt;</span> Quay về trang chủ
-        </Link>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center text-sm">
+        <Link to="/" className="text-gray-500 hover:text-gray-900">Trang chủ</Link>
+        <span className="mx-2 text-gray-400">/</span>
+        <span className="font-medium text-black">Danh sách đơn hàng</span>
       </div>
 
-      <div className="mx-auto text-center">
+      <div className="mx-auto mt-10 text-center">
         <h1 className="text-3xl font-bold">DANH SÁCH ĐƠN HÀNG</h1>
       </div>
 
-      <div className="mx-8 my-8">
+      <div className="mx-8 my-10">
         <table className="min-w-full table-auto border-2 border-gray-400 text-sm text-left">
           <thead className="bg-gray-100 text-gray-700 uppercase">
             <tr>
-              <th className="px-4 py-2 border">Mã số</th>
-              <th className="px-4 py-2 border">Số tiền</th>
+              <th className="px-4 py-2 border">Mã đơn hàng</th>
+              <th className="px-4 py-2 border">Tổng tiền</th>
               <th className="px-4 py-2 border">Nội dung</th>
               <th className="px-4 py-2 border">Ngày tạo</th>
               <th className="px-4 py-2 border">Tình trạng</th>
@@ -83,7 +81,7 @@ const Order = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="text-center py-4 text-gray-500">
+                <td colSpan={6} className="text-center py-4 text-gray-500 min-h-[200px] h-[200px] align-middle">
                   Danh sách trống
                 </td>
               </tr>
