@@ -5,11 +5,12 @@ const commentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "products",
     required: true,
+    index: true,
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "users",
-    required: true,
+  ref: "User", // ✅ trùng với model đã khai báo
+  required: true,
   },
   content: {
     type: String,
@@ -20,10 +21,6 @@ const commentSchema = new mongoose.Schema({
     min: 1,
     max: 5,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+}, { timestamps: true }); // createdAt, updatedAt
 
-export default mongoose.model("comments", commentSchema);
+export default mongoose.model("Comment", commentSchema);

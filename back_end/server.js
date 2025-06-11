@@ -46,7 +46,7 @@ app.use('/products', productRouter);
 app.use('/brands', brandRouter);
 app.use('/categories', categoryRouter);
 app.use('/', authRouter);
-app.use('/api/comments', commentsRoute);
+app.use('/comments', commentsRoute);
 
 
 const PORT = process.env.PORT || 3000;
