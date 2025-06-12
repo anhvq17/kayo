@@ -8,6 +8,7 @@ import categoryRouter from "./routes/categoryRoutes.js";
 import brandRouter from "./routes/brandRoutes.js";
 import authRouter from "./routes/authRoutes.js";
 import User from './models/userModel.js';
+import productVariantRouter from "./routes/productVariantRoutes.js";
 
 
 dotenv.config();
@@ -44,7 +45,7 @@ app.use('/products', productRouter);
 app.use('/brands', brandRouter);
 app.use('/categories', categoryRouter);
 app.use('/', authRouter);
-
+app.use('/variant',productVariantRouter)
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
