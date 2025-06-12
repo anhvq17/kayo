@@ -57,7 +57,7 @@ const Cart = () => {
               <p className="text-gray-500 mb-4">Giỏ hàng của bạn trống.</p>
               <Link
                 to="/"
-                className="inline-block px-6 py-3 bg-gray-900 text-white font-medium rounded hover:bg-gray-800"
+                className="inline-block px-6 py-3 bg-[#5f518e] text-white font-medium rounded hover:bg-[#696faa]"
               >
                 Tiếp tục mua sắm
               </Link>
@@ -102,7 +102,7 @@ const Cart = () => {
                           <Plus className="w-4 h-4" />
                         </button>
                       </div>
-                      <div className="font-medium text-black">{(item.price * item.quantity).toFixed(3)}</div>
+                      <div className="font-bold text-red-600">{(item.price * item.quantity).toFixed(3)}</div>
                     </div>
                   </div>
                 </div>
@@ -125,21 +125,21 @@ const Cart = () => {
                 <span className="text-black">Miễn phí</span>
               </div>
               <div className="border-t pt-4 flex justify-between font-semibold text-lg">
-                <span className="text-black">Thành tiền</span>
-                <span className="text-black">{total.toFixed(3)}</span>
+                <span className="font-bold text-red-600">Thành tiền</span>
+                <span className="font-bold text-red-600">{total.toFixed(3)}</span>
               </div>
             </div>
 
             <Link
               to="/checkout"
-              className="w-full block text-center px-6 py-3 bg-gray-900 text-white font-medium rounded hover:bg-gray-800"
+              className="w-full block text-center px-6 py-3 bg-[#5f518e] text-white font-medium rounded hover:bg-[#696faa]"
             >
               Tiến hành Thanh toán
             </Link>
 
             <Link
               to="/"
-              className="w-full block text-center px-6 py-3 text-gray-600 font-medium mt-2 hover:text-gray-900"
+              className="w-full block text-center px-6 py-3 text-gray-900 font-medium mt-2"
             >
               Tiếp tục mua sắm
             </Link>

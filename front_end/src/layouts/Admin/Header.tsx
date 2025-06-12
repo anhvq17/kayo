@@ -9,19 +9,24 @@ const AdminHeader = () => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
 
-    // Nếu không có token hoặc không phải admin => điều hướng về login
+    // Nếu không có token hoặc không phải admin => tự động đăng xuất
     if (!token || role !== 'admin') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('user'); // nếu có
       navigate('/login');
     }
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('user'); // nếu có
-
-    navigate('/login');
-  };
+   const handleLogout = () => {
+  const confirmed = window.confirm("Bạn có chắc chắn muốn đăng xuất?");
+  if (confirmed) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("user");
+    navigate("/login");
+  }
+};
 
   return (
     <header className="h-[64px] bg-white border-b flex items-center justify-between px-6 fixed top-0 left-[240px] z-40 w-[calc(100%-240px)]">
