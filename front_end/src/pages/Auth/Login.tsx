@@ -1,5 +1,5 @@
 import { EyeOff, Eye } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
@@ -10,10 +10,23 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState('');
 
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+
+    if (token && role) {
+      if (role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    }
+  }, []);
+
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Validate
     if (!phone || !password) {
       setMessage('Vui lòng nhập đầy đủ số điện thoại và mật khẩu.');
       return;
@@ -40,9 +53,8 @@ const Login = () => {
         setMessage('Đăng nhập thành công!');
         localStorage.setItem('token', data.token);
         localStorage.setItem('role', data.user.role);
-        localStorage.setItem('user', JSON.stringify(data.user)); // nếu cần
+        localStorage.setItem('user', JSON.stringify(data.user));
 
-        // Phát sự kiện để cập nhật UI ngay (không cần F5)
         window.dispatchEvent(new Event("loginChanged"));
 
         setTimeout(() => {
