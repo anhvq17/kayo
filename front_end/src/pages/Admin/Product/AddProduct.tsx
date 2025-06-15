@@ -1,239 +1,348 @@
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import React, { useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useForm, useFieldArray } from "react-hook-form";
 
-interface Category {
-  _id: string;
-  name: string;
-}
+type VariantType = {
+  flavors: string;
+  volume: string;
+  price: string;
+  stock_quantity: string;
+  image: string;
+};
 
-interface Brand {
-  _id: string;
+type FormData = {
   name: string;
-}
-
-interface FormData {
-  name: string;
+  description: string;
   categoryId: string;
   brandId: string;
-  flavors: string;
-  quantity: number;
-  status: string;
-  description: string;
-  price: number;
-  image: string;
-}
+  variants: VariantType[];
+};
 
 const AddProduct = () => {
-  const navigate = useNavigate();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [brands, setBrands] = useState<Brand[]>([]);
-
   const {
     register,
     handleSubmit,
+    control,
+    reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
-      status: "Còn hàng",
-      quantity: 0,
+      name: "",
+      description: "",
+      categoryId: "",
+      brandId: "",
+      variants: [
+        {
+          flavors: "",
+          volume: "",
+          price: "",
+          stock_quantity: "",
+          image: "",
+        },
+      ],
     },
   });
 
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "variants",
+  });
+
+  const [categories, setCategories] = React.useState<any[]>([]);
+  const [brands, setBrands] = React.useState<any[]>([]);
+
   useEffect(() => {
-    async function fetchCategories() {
+    const fetchData = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/categories");
-        setCategories(res.data.data);
-      } catch {
-        alert("Lỗi khi lấy danh mục");
+        const [cateRes, brandRes] = await Promise.all([
+          axios.get("http://localhost:3000/categories"),
+          axios.get("http://localhost:3000/brands"),
+        ]);
+        setCategories(cateRes.data.data);
+        setBrands(brandRes.data.data);
+      } catch (err) {
+        console.error("Lỗi khi lấy danh mục hoặc thương hiệu:", err);
       }
-    }
-
-    async function fetchBrands() {
-      try {
-        const res = await axios.get("http://localhost:3000/brands");
-        setBrands(res.data.data);
-      } catch {
-        alert("Lỗi khi lấy thương hiệu");
-      }
-    }
-
-    fetchCategories();
-    fetchBrands();
+    };
+    fetchData();
   }, []);
 
   const onSubmit = async (data: FormData) => {
     try {
-      const processedData = {
-        ...data,
-        flavors: data.flavors
-          ? data.flavors.split(",").map((f) => f.trim()).filter((f) => f)
-          : [],
-      };
+      const productRes = await axios.post("http://localhost:3000/products", {
+        name: data.name,
+        description: data.description,
+        categoryId: data.categoryId,
+        brandId: data.brandId,
+      });
+      const productId = productRes.data.data._id;
 
-      await axios.post("http://localhost:3000/products", processedData);
-      alert("Thêm sản phẩm thành công!");
-      navigate("/admin/products");
-    } catch (err: any) {
-      alert(err?.response?.data?.message || "Thêm thất bại");
+      for (const variant of data.variants) {
+        await axios.post("http://localhost:3000/variant", {
+          productId,
+          ...variant,
+          volume: Number(variant.volume),
+          price: Number(variant.price),
+          stock_quantity: Number(variant.stock_quantity),
+        });
+      }
+
+      alert(" Thêm sản phẩm và biến thể thành công!");
+      reset();
+    } catch (error: any) {
+      console.error(" Lỗi khi thêm sản phẩm hoặc biến thể:", error);
+      alert(" Thêm sản phẩm thất bại");
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10 bg-white shadow-xl rounded-xl mt-10">
-      <h3 className="text-3xl font-bold text-center mb-8">➕ Thêm mới sản phẩm</h3>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="max-w-4xl mx-auto p-6 bg-white space-y-6"
+    >
+      <h2 className="text-xl font-semibold">THÊM MỚI SẢN PHẨM</h2>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Tên */}
-        <div>
-          <label className="block mb-1 font-medium">Tên sản phẩm</label>
-          <input
-            {...register("name", { required: "Tên sản phẩm là bắt buộc" })}
-            className="w-full px-4 py-2 border rounded-md"
-            placeholder="VD: Gucci Bloom EDP"
-          />
-          {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
-        </div>
+      {/* Tên sản phẩm */}
+      <div>
+        <label className="block font-medium mb-1">
+          <span className="text-red-500">*</span> Tên sản phẩm
+        </label>
+        <input
+          {...register("name", { required: "Vui lòng nhập tên sản phẩm" })}
+          className="w-full border rounded px-3 py-2"
+        />
+        {errors.name && (
+          <p className="text-red-500 text-sm">{errors.name.message}</p>
+        )}
+      </div>
 
-        {/* Giá */}
+      {/* Danh mục và thương hiệu */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block mb-1 font-medium">Giá tiền</label>
-          <input
-            type="number"
-            placeholder="VD: 300"
-            {...register("price", {
-              required: "Giá sản phẩm là bắt buộc",
-              min: {
-                value: 0,
-                message: "Giá phải lớn hơn hoặc bằng 0",
-              },
-              valueAsNumber: true,
-            })}
-            className="w-full px-4 py-2 border rounded-md"
-          />
-          {errors.price && <p className="text-red-500 text-sm">{errors.price.message}</p>}
-        </div>
-
-        {/* Số lượng */}
-        <div>
-          <label className="block mb-1 font-medium">Số lượng</label>
-          <input
-            type="number"
-            {...register("quantity", {
-              required: "Số lượng là bắt buộc",
-              min: {
-                value: 0,
-                message: "Số lượng không được âm",
-              },
-              valueAsNumber: true,
-            })}
-            className="w-full px-4 py-2 border rounded-md"
-          />
-          {errors.quantity && <p className="text-red-500 text-sm">{errors.quantity.message}</p>}
-        </div>
-
-        {/* Danh mục */}
-        <div>
-          <label className="block mb-1 font-medium">Danh mục</label>
+          <label className="block font-medium mb-1">
+            <span className="text-red-500">*</span> Danh mục
+          </label>
           <select
-            {...register("categoryId", { required: "Vui lòng chọn danh mục" })}
-            className="w-full px-4 py-2 border rounded-md"
+            {...register("categoryId", { required: "Chọn danh mục" })}
+            className="w-full border rounded px-3 py-2"
           >
-            <option value="">-- Chọn --</option>
-            {categories.map((cat) => (
-              <option key={cat._id} value={cat._id}>
-                {cat.name}
+            <option value="">-- Chọn danh mục --</option>
+            {categories.map((cate) => (
+              <option key={cate._id} value={cate._id}>
+                {cate.name}
               </option>
             ))}
           </select>
-          {errors.categoryId && <p className="text-red-500 text-sm">{errors.categoryId.message}</p>}
+          {errors.categoryId && (
+            <p className="text-red-500 text-sm">
+              {errors.categoryId.message}
+            </p>
+          )}
         </div>
 
-        {/* Thương hiệu */}
         <div>
-          <label className="block mb-1 font-medium">Thương hiệu</label>
+          <label className="block font-medium mb-1">
+            <span className="text-red-500">*</span> Thương hiệu
+          </label>
           <select
-            {...register("brandId", { required: "Vui lòng chọn thương hiệu" })}
-            className="w-full px-4 py-2 border rounded-md"
+            {...register("brandId", { required: "Chọn thương hiệu" })}
+            className="w-full border rounded px-3 py-2"
           >
-            <option value="">-- Chọn --</option>
+            <option value="">-- Chọn thương hiệu --</option>
             {brands.map((brand) => (
               <option key={brand._id} value={brand._id}>
                 {brand.name}
               </option>
             ))}
           </select>
-          {errors.brandId && <p className="text-red-500 text-sm">{errors.brandId.message}</p>}
+          {errors.brandId && (
+            <p className="text-red-500 text-sm">{errors.brandId.message}</p>
+          )}
         </div>
+      </div>
 
-        {/* Mùi hương */}
-        <div>
-          <label className="block mb-1 font-medium">Mùi hương</label>
-          <input
-            {...register("flavors", { required: "Vui lòng nhập mùi hương" })}
-            className="w-full px-4 py-2 border rounded-md"
-            placeholder="VD: Hoa hồng, Oải hương, Vanilla... (Phân cách nhiều mùi hương bằng dấu phẩy)"
-          />
-          {errors.flavors && <p className="text-red-500 text-sm">{errors.flavors.message}</p>}
-        </div>
+      {/* Mô tả */}
+      <div>
+        <label className="block font-medium mb-1">
+          <span className="text-red-500">*</span> Mô tả
+        </label>
+        <textarea
+          {...register("description", { required: "Nhập mô tả" })}
+          className="w-full border rounded px-3 py-2 h-24"
+        />
+        {errors.description && (
+          <p className="text-red-500 text-sm">{errors.description.message}</p>
+        )}
+      </div>
 
-        {/* Trạng thái */}
-        <div>
-          <label className="block mb-1 font-medium">Trạng thái</label>
-          <select
-            {...register("status")}
-            className="w-full px-4 py-2 border rounded-md"
-          >
-            <option value="Còn hàng">Còn hàng</option>
-            <option value="Hết hàng">Hết hàng</option>
-          </select>
-        </div>
+      {/* Biến thể sản phẩm */}
+      <div>
+        <h3 className="text-lg font-medium mb-2">Biến thể sản phẩm</h3>
+        {fields.map((field, index) => {
+          const image = watch(`variants.${index}.image`);
 
-        {/* Ảnh */}
-        <div>
-          <label className="block mb-1 font-medium">URL ảnh sản phẩm</label>
-          <input
-            {...register("image", {
-              required: "URL ảnh là bắt buộc"
-            })}
-            className="w-full px-4 py-2 border rounded-md"
-            placeholder="VD: https://example.com/image.jpg"
-          />
-          {errors.image && <p className="text-red-500 text-sm">{errors.image.message}</p>}
-        </div>
+          const onImageUpload = async (
+            e: React.ChangeEvent<HTMLInputElement>
+          ) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
 
-        {/* Mô tả */}
-        <div>
-          <label className="block mb-1 font-medium">Mô tả</label>
-          <textarea
-            placeholder="Mô tả hiển thị"
-            {...register("description", { required: "Mô tả không được bỏ trống" })}
-            className="w-full px-4 py-2 border rounded-md"
-            rows={4}
-          />
-          {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
-        </div>
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("upload_preset", "DATN_upload"); //  preset bạn tạo trên Cloudinary
 
-        {/* Nút */}
-        <div className="flex justify-between">
-          <button
-            type="button"
-            onClick={() => navigate("/admin/products")}
-            className="px-5 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
-          >
-            🔙 Quay lại
-          </button>
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            ➕ Thêm sản phẩm
-          </button>
-        </div>
-      </form>
-    </div>
+            try {
+              const res = await axios.post(
+                "https://api.cloudinary.com/v1_1/dvourchjx/image/upload", 
+                formData
+              );
+              const imageUrl = res.data.secure_url;
+              setValue(`variants.${index}.image`, imageUrl);
+            } catch (error) {
+              console.error(" Upload ảnh thất bại:", error);
+              alert(" Upload ảnh thất bại");
+            }
+          };
+
+          return (
+            <div
+              key={field.id}
+              className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4"
+            >
+              <div>
+                <label className="block font-medium mb-1">Hương vị</label>
+                <input
+                  {...register(`variants.${index}.flavors`, {
+                    required: "Nhập hương vị",
+                  })}
+                  placeholder="Hương vị"
+                  className="border px-2 py-1 rounded w-full"
+                />
+                {errors.variants?.[index]?.flavors && (
+                  <p className="text-red-500 text-sm">
+                    {errors.variants[index].flavors?.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-medium mb-1">Thể tích (ml)</label>
+                <input
+                  {...register(`variants.${index}.volume`, {
+                    required: "Nhập thể tích",
+                    pattern: { value: /^[0-9]+$/, message: "Chỉ nhập số" },
+                    min: { value: 1, message: "Thể tích phải > 0" },
+                  })}
+                  placeholder="Thể tích"
+                  className="border px-2 py-1 rounded w-full"
+                />
+                {errors.variants?.[index]?.volume && (
+                  <p className="text-red-500 text-sm">
+                    {errors.variants[index].volume?.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-medium mb-1">Giá (vnđ)</label>
+                <input
+                  {...register(`variants.${index}.price`, {
+                    required: "Nhập giá",
+                    pattern: { value: /^[0-9]+$/, message: "Chỉ nhập số" },
+                    min: { value: 1, message: "Giá phải > 0" },
+                  })}
+                  placeholder="Giá"
+                  className="border px-2 py-1 rounded w-full"
+                />
+                {errors.variants?.[index]?.price && (
+                  <p className="text-red-500 text-sm">
+                    {errors.variants[index].price?.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-medium mb-1">Số lượng</label>
+                <input
+                  {...register(`variants.${index}.stock_quantity`, {
+                    required: "Nhập số lượng",
+                    pattern: { value: /^[0-9]+$/, message: "Chỉ nhập số" },
+                    min: { value: 1, message: "Số lượng phải > 0" },
+                  })}
+                  placeholder="Số lượng"
+                  className="border px-2 py-1 rounded w-full"
+                />
+                {errors.variants?.[index]?.stock_quantity && (
+                  <p className="text-red-500 text-sm">
+                    {errors.variants[index].stock_quantity?.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-medium mb-1">Ảnh</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={onImageUpload}
+                  className="border px-2 py-1 rounded w-full"
+                />
+                {image && (
+                  <img
+                    src={image}
+                    alt="Preview"
+                    className="mt-2 w-20 h-20 object-cover border rounded"
+                  />
+                )}
+                {errors.variants?.[index]?.image && (
+                  <p className="text-red-500 text-sm">
+                    {errors.variants[index].image?.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={() => remove(index)}
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 h-fit"
+                >
+                  Xóa
+                </button>
+              </div>
+            </div>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={() =>
+            append({
+              flavors: "",
+              volume: "",
+              price: "",
+              stock_quantity: "",
+              image: "",
+            })
+          }
+          className="px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          + Thêm biến thể
+        </button>
+      </div>
+
+      {/* Nút submit */}
+      <div>
+        <button
+          type="submit"
+          className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Thêm sản phẩm
+        </button>
+      </div>
+    </form>
   );
 };
 

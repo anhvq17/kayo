@@ -1,67 +1,39 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
-import { Edit, Plus, Trash } from 'lucide-react';
-
-interface Category {
-  _id: string;
-  name: string;
-}
-
-interface Brand {
-  _id: string;
-  name: string;
-  image?: string;
-}
-
-interface Product {
-  _id: string;
-  name: string;
-  image: string;       
-  price: number;       
-  description: string;
-  categoryId: Category;  
-  brandId: Brand;        
-  status: string;
-  quantity: number;
-  flavors: string[];
-  createdAt: string;
-  updatedAt: string;
-}
+import { Link } from "react-router-dom";
+import { Edit, Plus, Trash } from "lucide-react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 const ProductManager = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
 
   useEffect(() => {
-    async function fetchProducts() {
+    const fetch = async () => {
       try {
-        const res = await axios.get('http://localhost:3000/products');
+        const res = await axios.get("http://localhost:3000/products");
         setProducts(res.data.data);
-        console.log(res.data.data);
       } catch (error) {
-        console.error('Lỗi khi lấy sản phẩm', error);
+        console.error("❌ Lỗi khi lấy sản phẩm:", error);
       }
-    }
-
-    fetchProducts();
+    };
+    fetch();
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Bạn có chắc muốn xoá sản phẩm này không?')) return;
-    try {
-      await axios.delete(`http://localhost:3000/products/${id}`);
-      alert('Xoá thành công');
-      setProducts((prev) => prev.filter((p) => p._id !== id));
-    } catch (error) {
-      alert('Lỗi khi xoá sản phẩm');
-      console.error(error);
+    if (confirm("Bạn chắc chắn muốn xóa sản phẩm này?")) {
+      try {
+        await axios.delete(`http://localhost:3000/products/${id}`);
+        setProducts(products.filter((p) => p._id !== id));
+        alert("✅ Xóa thành công");
+      } catch (err) {
+        alert("❌ Xóa thất bại");
+      }
     }
   };
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-2">
-        <h1 className="text-2xl font-semibold mb-4">Danh sách sản phẩm</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-semibold">Danh sách sản phẩm</h1>
         <Link to="/admin/products/add">
           <button className="w-8 h-8 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center">
             <Plus size={14} />
@@ -74,57 +46,50 @@ const ProductManager = () => {
           <tr className="bg-black text-white text-left">
             <th className="px-4 py-2">STT</th>
             <th className="px-4 py-2">Tên</th>
-            <th className="px-4 py-2">Hình ảnh</th>
             <th className="px-4 py-2">Danh mục</th>
             <th className="px-4 py-2">Thương hiệu</th>
-            <th className="px-4 py-2">Mô tả</th>
-            <th className="px-4 py-2">Giá tiền</th>
-            <th className="px-4 py-2">Trạng thái</th>
-            <th className="px-4 py-2">Số lượng</th>
-            <th className="px-4 py-2">Mùi hương</th>
+            <th className="px-4 py-2">Thể tích (ml)</th>
+            <th className="px-4 py-2">Hương vị</th>
+            <th className="px-4 py-2">Tổng tồn kho</th>
             <th className="px-4 py-2">Hành động</th>
           </tr>
         </thead>
         <tbody>
-          {products.map((p, index) => (
-            <tr key={p._id} className="hover:bg-gray-50">
-              <td className="px-4 py-2">{index + 1}</td>
+          {products.map((p, index) => {
+            const volumes = p.variants?.map((v: any) => `${v.volume}ml`).join(", ") || "--";
+            const flavors = p.variants?.map((v: any) => v.flavors).join(", ") || "--";
+            const totalStock = p.variants?.reduce(
+              (sum: number, v: any) => sum + Number(v.stock_quantity || 0),
+              0
+            ) || 0;
 
-              <td className="px-4 py-2">{p.name}</td>
-
-              <td className="px-4 py-2">
-                <img src={p.image} alt={p.name} className="w-16 h-16 object-cover rounded" />
-              </td>
-
-              <td className="px-4 py-2">{p.categoryId?.name || 'Chưa cập nhật'}</td>
-              <td className="px-4 py-2">{p.brandId?.name || 'Chưa cập nhật'}</td>
-              <td className="px-4 py-2">{p.description}</td>
-
-              <td className="px-4 py-2">
-                {p.price}
-              </td>
-
-              <td className="px-4 py-2">{p.status}</td>
-              <td className="px-4 py-2">{p.quantity}</td>
-              <td className="px-4 py-2">{p.flavors.join(', ')}</td>
-
-              <td className="px-4 py-2">
-                <div className="flex flex-col space-y-1">
-                  <button
-                    onClick={() => handleDelete(p._id)}
-                    className="w-8 h-8 bg-red-600 text-white rounded hover:bg-red-700 flex items-center justify-center"
-                  >
-                    <Trash size={14} />
-                  </button>
-                  <Link to={`/admin/products/edit/${p._id}`}>
-                    <button className="w-8 h-8 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center">
-                      <Edit size={14} />
+            return (
+              <tr key={p._id} className="hover:bg-gray-50">
+                <td className="px-4 py-2">{index + 1}</td>
+                <td className="px-4 py-2">{p.name}</td>
+                <td className="px-4 py-2">{p.categoryId?.name || "Chưa có"}</td>
+                <td className="px-4 py-2">{p.brandId?.name || "Chưa có"}</td>
+                <td className="px-4 py-2">{volumes}</td>
+                <td className="px-4 py-2">{flavors}</td>
+                <td className="px-4 py-2">{totalStock}</td>
+                <td className="px-4 py-2">
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => handleDelete(p._id)}
+                      className="w-8 h-8 bg-red-600 text-white rounded hover:bg-red-700 flex items-center justify-center"
+                    >
+                      <Trash size={14} />
                     </button>
-                  </Link>
-                </div>
-              </td>
-            </tr>
-          ))}
+                    <Link to={`/admin/products/edit/${p._id}`}>
+                      <button className="w-8 h-8 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center">
+                        <Edit size={14} />
+                      </button>
+                    </Link>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
