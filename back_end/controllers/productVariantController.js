@@ -78,12 +78,37 @@ export const createVariant = async (req, res) => {
       return res.status(400).json({ message: 'Validation failed', errors });
     }
 
+    // 2. Kiểm tra xem biến thể đã tồn tại chưa (theo productId + volume)
+    const isExist = await ProductVariantModel.findOne({
+      productId: req.body.productId,
+      volume: req.body.volume
+    });
+
+    if (isExist) {
+      return res.status(400).json({
+        message: `Biến thể với dung tích ${req.body.volume}ml cho sản phẩm này đã tồn tại.`
+      });
+    }
+
     const variant = await ProductVariantModel.create(req.body);
     const populated = await ProductVariantModel.findById(variant._id).populate('productId', 'name');
 
     return res.status(200).json({
       message: 'Create Variant',
       data: populated
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
+// lấy toàn bộ biến thể lên updateAdd commentMore actions
+export const getVariantsByProductId = async (req, res) => {
+  try {
+    const variants = await ProductVariantModel.find({ productId: req.params.productId });
+    return res.status(200).json({
+      message: 'Variants by Product ID',
+      data: variants
     });
   } catch (error) {
     return res.status(400).json({ message: error.message });

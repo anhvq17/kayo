@@ -21,21 +21,20 @@ export const productVariantSchema = Joi.object({
     }),
 
   price: Joi.number()
-    .min(0)
+    .min(1)
     .required()
     .messages({
       'number.base': 'Giá phải là số',
-      'number.min': 'Giá không được âm',
+      'number.min': 'Giá phải lớn hơn 0',
       'any.required': 'Giá là bắt buộc',
     }),
 
   stock_quantity: Joi.number()
     .integer()
-    .min(0)
-    .default(0)
+    .min(1)
     .messages({
       'number.base': 'Số lượng phải là số',
-      'number.min': 'Số lượng phải >= 0',
+      'number.min': 'Số lượng phải lớn hơn 0',
     }),
 
   image: Joi.string()
