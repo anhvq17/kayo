@@ -87,6 +87,8 @@ const AddProduct = () => {
 
 
   const onSubmit = async (data: FormData) => {
+    let productId = "";
+
     try {
       const productRes = await axios.post("http://localhost:3000/products", {
         name: data.name,
@@ -95,7 +97,7 @@ const AddProduct = () => {
         brandId: data.brandId,
       });
 
-      const productId = productRes.data.data._id;
+      productId = productRes.data.data._id;
       let hasError = false;
 
       for (let index = 0; index < data.variants.length; index++) {
@@ -110,11 +112,11 @@ const AddProduct = () => {
           });
         } catch (err: any) {
           hasError = true;
+
           const msg =
             err.response?.data?.message ||
             "Có lỗi xảy ra khi thêm biến thể.";
 
-          // Đặt lỗi vào volume
           setError(`variants.${index}.volume`, {
             type: "server",
             message: msg,
@@ -122,14 +124,20 @@ const AddProduct = () => {
         }
       }
 
-      if (!hasError) {
-        alert("✅ Thêm sản phẩm và biến thể thành công!");
+      if (hasError) {
+        //  Xóa sản phẩm nếu biến thể lỗi
+        await axios.delete(`http://localhost:3000/products/${productId}`);
+        alert(" Có lỗi khi thêm biến thể");
+      } else {
+        alert(" Thêm sản phẩm và biến thể thành công!");
         reset();
       }
     } catch (error: any) {
+      console.error("Lỗi khi thêm sản phẩm:", error);
       alert(" Thêm sản phẩm thất bại.");
     }
   };
+
 
   return (
     <form
