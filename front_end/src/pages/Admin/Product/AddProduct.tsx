@@ -312,15 +312,24 @@ const AddProduct = () => {
 
               <div>
                 <label className="block font-medium mb-1">Ảnh</label>
+
+                {/* input ẩn để lưu URL ảnh */}
                 <input
+                  type="hidden"
                   {...register(`variants.${index}.image`, {
                     required: "Nhập ảnh"
                   })}
+                />
+
+                {/* input file dùng để upload ảnh - KHÔNG dùng register */}
+                <input
                   type="file"
                   accept="image/*"
                   onChange={onImageUpload}
                   className="border px-2 py-1 rounded w-full"
                 />
+
+                {/* Hiển thị ảnh preview nếu đã có */}
                 {image && (
                   <img
                     src={image}
@@ -328,12 +337,15 @@ const AddProduct = () => {
                     className="mt-2 w-20 h-20 object-cover border rounded"
                   />
                 )}
+
+                {/* Thông báo lỗi nếu thiếu ảnh */}
                 {errors.variants?.[index]?.image && (
                   <p className="text-red-500 text-sm">
                     {errors.variants[index].image?.message}
                   </p>
                 )}
               </div>
+
 
               <div className="flex items-end">
                 <button

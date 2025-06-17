@@ -308,9 +308,6 @@ const EditProduct = () => {
               <div>
                 <label className="block font-medium mb-1">Ảnh</label>
                 <input
-                  {...register(`variants.${index}.image`, {
-                    required: "Nhập ảnh"
-                  })}
                   type="file"
                   accept="image/*"
                   onChange={onImageUpload}
@@ -322,11 +319,6 @@ const EditProduct = () => {
                     alt="Preview"
                     className="mt-2 w-20 h-20 object-cover border rounded"
                   />
-                )}
-                {errors.variants?.[index]?.image && (
-                  <p className="text-red-500 text-sm">
-                    {errors.variants[index].image?.message}
-                  </p>
                 )}
               </div>
 
