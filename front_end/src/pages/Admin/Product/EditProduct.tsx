@@ -31,6 +31,7 @@ const EditProduct = () => {
     setValue,
     reset,
     watch,
+    setError,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
@@ -102,30 +103,48 @@ const EditProduct = () => {
         brandId: data.brandId,
       });
 
-    for (const variant of data.variants) {
-  const { _id, ...rest } = variant;   //bỏ id ra khỏi payload trước khi put
+      let hasError = false;
 
-  const payload = {
-    productId: id,
-    ...rest,
-    volume: Number(variant.volume),
-    price: Number(variant.price),
-    stock_quantity: Number(variant.stock_quantity),
-  };
+      for (let index = 0; index < data.variants.length; index++) {
+        const variant = data.variants[index];
+        const { _id, ...rest } = variant;
 
-  console.log("Variant payload:", payload);
+        const payload = {
+          productId: id,
+          ...rest,
+          volume: Number(rest.volume),
+          price: Number(rest.price),
+          stock_quantity: Number(rest.stock_quantity),
+        };
 
-  if (_id) {
-    await axios.put(`http://localhost:3000/variant/${_id}`, payload);
-  } else {
-    await axios.post(`http://localhost:3000/variant`, payload);
-  }
-}
+        try {
+          if (_id) {
+            await axios.put(`http://localhost:3000/variant/${_id}`, payload);
+          } else {
+            await axios.post("http://localhost:3000/variant", payload);
+          }
+        } catch (err: any) {
+          hasError = true;
+          const msg =
+            err.response?.data?.message ||
+            "Có lỗi xảy ra khi cập nhật biến thể.";
+
+          setError(`variants.${index}.volume`, {
+            type: "server",
+            message: msg,
+          });
+        }
+      }
+
+      if (hasError) {
+        alert("Cập nhật sản phẩm thất bại với một số biến thể!");
+        return;
+      }
 
       alert("Cập nhật thành công!");
       navigate("/admin/products");
     } catch (error) {
-      console.error("Lỗi khi cập nhật:", error);
+      console.error("Lỗi khi cập nhật sản phẩm:", error);
       alert("Cập nhật thất bại!");
     }
   };
@@ -137,7 +156,6 @@ const EditProduct = () => {
     >
       <h2 className="text-xl font-semibold">CẬP NHẬT SẢN PHẨM</h2>
 
-      {/* Thông tin sản phẩm */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium">Tên sản phẩm</label>
@@ -194,7 +212,9 @@ const EditProduct = () => {
         {fields.map((field, index) => {
           const image = watch(`variants.${index}.image`);
 
-          const onImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+          const onImageUpload = async (
+            e: React.ChangeEvent<HTMLInputElement>
+          ) => {
             const file = e.target.files?.[0];
             if (!file) return;
             const formData = new FormData();
@@ -225,7 +245,6 @@ const EditProduct = () => {
                   {...register(`variants.${index}.flavors`, {
                     required: "Nhập hương vị",
                   })}
-                  placeholder="Hương vị"
                   className="border px-2 py-1 rounded w-full"
                 />
                 {errors.variants?.[index]?.flavors && (
@@ -243,7 +262,6 @@ const EditProduct = () => {
                     pattern: { value: /^[0-9]+$/, message: "Chỉ nhập số" },
                     min: { value: 1, message: "Thể tích phải > 0" },
                   })}
-                  placeholder="Thể tích"
                   className="border px-2 py-1 rounded w-full"
                 />
                 {errors.variants?.[index]?.volume && (
@@ -261,7 +279,6 @@ const EditProduct = () => {
                     pattern: { value: /^[0-9]+$/, message: "Chỉ nhập số" },
                     min: { value: 1, message: "Giá phải > 0" },
                   })}
-                  placeholder="Giá"
                   className="border px-2 py-1 rounded w-full"
                 />
                 {errors.variants?.[index]?.price && (
@@ -279,7 +296,6 @@ const EditProduct = () => {
                     pattern: { value: /^[0-9]+$/, message: "Chỉ nhập số" },
                     min: { value: 1, message: "Số lượng phải > 0" },
                   })}
-                  placeholder="Số lượng"
                   className="border px-2 py-1 rounded w-full"
                 />
                 {errors.variants?.[index]?.stock_quantity && (
@@ -303,11 +319,6 @@ const EditProduct = () => {
                     alt="Preview"
                     className="mt-2 w-20 h-20 object-cover border rounded"
                   />
-                )}
-                {errors.variants?.[index]?.image && (
-                  <p className="text-red-500 text-sm">
-                    {errors.variants[index].image?.message}
-                  </p>
                 )}
               </div>
 

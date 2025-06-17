@@ -15,12 +15,15 @@ const EditBrand = () => {
   const nav = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [oldImage, setOldImage] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm<Brand>();
 
   // Lấy chi tiết brand và reset form
@@ -28,7 +31,9 @@ const EditBrand = () => {
     try {
       setLoading(true);
       const res = await axios.get(`http://localhost:3000/brands/${id}`);
-      reset(res.data.data); // nhớ lấy đúng data từ API
+      const brand = res.data.data;
+      reset(brand);
+      setOldImage(brand.image);
     } catch (error) {
       alert("Lỗi khi tải chi tiết thương hiệu");
     } finally {
@@ -37,21 +42,48 @@ const EditBrand = () => {
   }
 
   useEffect(() => {
-    if (id) {
-      getBrandDetail(id);
-    }
+    if (id) getBrandDetail(id);
   }, [id]);
 
-  // Xử lý submit form cập nhật
-  async function onSubmit(data: Brand) {
+  const onSubmit = async (data: Brand) => {
     try {
-      await axios.put(`http://localhost:3000/brands/${id}`, data);
+      let imageUrl = oldImage;
+
+      // Nếu user chọn file ảnh mới thì upload lên Cloudinary
+      const fileInput = watch("image") as unknown as FileList;
+      const file = fileInput?.[0];
+
+      if (file instanceof File) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", "DATN_upload"); // ✅ Preset thật của bạn
+
+        const cloudRes = await axios.post(
+          "https://api.cloudinary.com/v1_1/dvourchjx/image/upload", // ✅ Cloud name thật
+          formData
+        );
+
+        imageUrl = cloudRes.data.secure_url;
+      }
+
+      // Gửi dữ liệu cập nhật
+      await axios.put(`http://localhost:3000/brands/${id}`, {
+        name: data.name,
+        image: imageUrl,
+      });
+
       alert("Cập nhật thương hiệu thành công");
       nav("/admin/brands");
     } catch (error) {
       alert("Lỗi khi cập nhật thương hiệu");
+      console.error(error);
     }
-  }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setPreview(URL.createObjectURL(file));
+  };
 
   if (loading) return <div>Đang tải dữ liệu...</div>;
 
@@ -77,15 +109,29 @@ const EditBrand = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            URL hình ảnh
+            Ảnh thương hiệu
           </label>
           <input
-            {...register("image", { required: "URL hình ảnh là bắt buộc" })}
-            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
+            type="file"
+            accept="image/*"
+            {...register("image")}
+            onChange={handleImageChange}
           />
-          {errors.image && (
-            <p className="text-red-500 text-xs mt-1">{errors.image.message}</p>
-          )}
+          <div className="mt-2 flex gap-4 items-center">
+            {preview ? (
+              <img
+                src={preview}
+                alt="Ảnh mới"
+                className="w-24 h-24 object-cover rounded-md border"
+              />
+            ) : oldImage ? (
+              <img
+                src={oldImage}
+                alt="Ảnh hiện tại"
+                className="w-24 h-24 object-cover rounded-md border"
+              />
+            ) : null}
+          </div>
         </div>
 
         <div className="flex justify-between">

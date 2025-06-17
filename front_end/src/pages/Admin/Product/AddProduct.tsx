@@ -26,6 +26,7 @@ const AddProduct = () => {
     reset,
     setValue,
     watch,
+    setError,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
@@ -60,14 +61,30 @@ const AddProduct = () => {
           axios.get("http://localhost:3000/categories"),
           axios.get("http://localhost:3000/brands"),
         ]);
-        setCategories(cateRes.data.data);
+
+        // Lọc chỉ những danh mục đang "activated"
+        const activeCategories = cateRes.data.data.filter((c: any) => c.status === "activated");
+
+        setCategories(activeCategories);
         setBrands(brandRes.data.data);
       } catch (err) {
         console.error("Lỗi khi lấy danh mục hoặc thương hiệu:", err);
       }
     };
+
+    // Gọi 1 lần khi vào trang
     fetchData();
+
+    // tự cập nhật lại danh mục 
+    const handleFocus = () => fetchData();
+    window.addEventListener("focus", handleFocus);
+
+    // Dọn sự kiện khi rời component
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
+
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -77,23 +94,40 @@ const AddProduct = () => {
         categoryId: data.categoryId,
         brandId: data.brandId,
       });
-      const productId = productRes.data.data._id;
 
-      for (const variant of data.variants) {
-        await axios.post("http://localhost:3000/variant", {
-          productId,
-          ...variant,
-          volume: Number(variant.volume),
-          price: Number(variant.price),
-          stock_quantity: Number(variant.stock_quantity),
-        });
+      const productId = productRes.data.data._id;
+      let hasError = false;
+
+      for (let index = 0; index < data.variants.length; index++) {
+        const variant = data.variants[index];
+        try {
+          await axios.post("http://localhost:3000/variant", {
+            productId,
+            ...variant,
+            volume: Number(variant.volume),
+            price: Number(variant.price),
+            stock_quantity: Number(variant.stock_quantity),
+          });
+        } catch (err: any) {
+          hasError = true;
+          const msg =
+            err.response?.data?.message ||
+            "Có lỗi xảy ra khi thêm biến thể.";
+
+          // Đặt lỗi vào volume
+          setError(`variants.${index}.volume`, {
+            type: "server",
+            message: msg,
+          });
+        }
       }
 
-      alert(" Thêm sản phẩm và biến thể thành công!");
-      reset();
+      if (!hasError) {
+        alert("✅ Thêm sản phẩm và biến thể thành công!");
+        reset();
+      }
     } catch (error: any) {
-      console.error(" Lỗi khi thêm sản phẩm hoặc biến thể:", error);
-      alert(" Thêm sản phẩm thất bại");
+      alert(" Thêm sản phẩm thất bại.");
     }
   };
 
@@ -126,8 +160,7 @@ const AddProduct = () => {
           </label>
           <select
             {...register("categoryId", { required: "Chọn danh mục" })}
-            className="w-full border rounded px-3 py-2"
-          >
+            className="w-full border rounded px-3 py-2">
             <option value="">-- Chọn danh mục --</option>
             {categories.map((cate) => (
               <option key={cate._id} value={cate._id}>
@@ -135,10 +168,7 @@ const AddProduct = () => {
               </option>
             ))}
           </select>
-          {errors.categoryId && (
-            <p className="text-red-500 text-sm">
-              {errors.categoryId.message}
-            </p>
+          {errors.categoryId && (<p className="text-red-500 text-sm">{errors.categoryId.message}</p>
           )}
         </div>
 
@@ -191,17 +221,16 @@ const AddProduct = () => {
 
             const formData = new FormData();
             formData.append("file", file);
-            formData.append("upload_preset", "DATN_upload"); //  preset bạn tạo trên Cloudinary
+            formData.append("upload_preset", "DATN_upload");
 
             try {
               const res = await axios.post(
-                "https://api.cloudinary.com/v1_1/dvourchjx/image/upload", 
+                "https://api.cloudinary.com/v1_1/dvourchjx/image/upload",
                 formData
               );
               const imageUrl = res.data.secure_url;
               setValue(`variants.${index}.image`, imageUrl);
             } catch (error) {
-              console.error(" Upload ảnh thất bại:", error);
               alert(" Upload ảnh thất bại");
             }
           };
@@ -295,11 +324,6 @@ const AddProduct = () => {
                     alt="Preview"
                     className="mt-2 w-20 h-20 object-cover border rounded"
                   />
-                )}
-                {errors.variants?.[index]?.image && (
-                  <p className="text-red-500 text-sm">
-                    {errors.variants[index].image?.message}
-                  </p>
                 )}
               </div>
 
