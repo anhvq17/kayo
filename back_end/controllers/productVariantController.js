@@ -49,23 +49,46 @@ export const deleteVariant = async (req, res) => {
 
 export const updateVariant = async (req, res) => {
   try {
+    // 1. Validate đầu vào
     const { error } = productVariantSchema.validate(req.body, { abortEarly: false });
     if (error) {
       const errors = error.details.map(err => err.message);
       return res.status(400).json({ message: 'Validation failed', errors });
     }
 
-    const variant = await ProductVariantModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    // 2. Kiểm tra trùng lặp (loại trừ chính nó ra khỏi check)
+    const isExist = await ProductVariantModel.findOne({
+      _id: { $ne: req.params.id }, // Loại trừ biến thể đang chỉnh sửa
+      productId: req.body.productId,
+      volume: req.body.volume,
+      flavors: req.body.flavors
+    });
+
+    if (isExist) {
+      return res.status(409).json({
+        message: `Mùi hương ${req.body.flavors} và dung tích ${req.body.volume}ml cho sản phẩm này đã tồn tại.`
+      });
+    }
+
+    // 3. Cập nhật
+    const variant = await ProductVariantModel.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
     if (!variant) {
-      return res.status(404).json({ message: 'Not Found' });
+      return res.status(404).json({ message: 'Không tìm thấy biến thể để cập nhật.' });
     }
 
     return res.status(200).json({
-      message: 'Update Variant',
+      message: 'Cập nhật biến thể thành công.',
       data: variant
     });
+
   } catch (error) {
-    return res.status(400).json({ message: error.message });
+    console.error(error);
+    return res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
 
@@ -81,12 +104,13 @@ export const createVariant = async (req, res) => {
     // 2. Kiểm tra xem biến thể đã tồn tại chưa (theo productId + volume)
     const isExist = await ProductVariantModel.findOne({
       productId: req.body.productId,
-      volume: req.body.volume
+      volume: req.body.volume,
+      flavors: req.body.flavors
     });
 
     if (isExist) {
       return res.status(400).json({
-        message: `Biến thể với dung tích ${req.body.volume}ml cho sản phẩm này đã tồn tại.`
+        message: `Mùi hương ${req.body.flavors} và dung tích ${req.body.volume}ml cho sản phẩm này đã tồn tại.`
       });
     }
 
