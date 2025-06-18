@@ -1,16 +1,16 @@
 import { Link } from "react-router-dom"
 import { ArrowRight, Package, Shield, CreditCard } from "lucide-react"
-import ProductBoy from "../../../components/home/productMale";
-import ProductFemal from "../../../components/home/productFemale";
+import ProductMale from "../../../components/home/productMale";
+import ProductFemale from "../../../components/home/productFemale";
 
 const Homepage = () => {
   return (
     <div className="relative w-full">
       <img src="/img/banner.jpg" className="w-full h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px] xl:h-[600px] object-cover object-center" />
 
-      <ProductBoy />
+      <ProductMale />
 
-      <ProductFemal />
+      <ProductFemale />
 
       <section className="py-16 bg-[#1a1a1a]">
         <div className="container mx-auto px-4">

@@ -1,14 +1,24 @@
+import React, { useEffect, useState } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { EyeOff, Eye } from 'lucide-react';
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
+  
   const navigate = useNavigate();
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState('');
+
+  // ✅ Kiểm tra đăng nhập
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+
+  if (token) {
+    // ⛔ Đã đăng nhập thì chuyển hướng (không render form)
+    return <Navigate to={role === 'admin' ? '/admin' : '/'} replace />;
+  }
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -39,13 +49,11 @@ const Login = () => {
         setMessage('Đăng nhập thành công!');
         localStorage.setItem('token', data.token);
         localStorage.setItem('role', data.user.role);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        window.dispatchEvent(new Event('loginChanged'));
 
         setTimeout(() => {
-          if (data.user.role === 'admin') {
-            navigate('/admin');
-          } else {
-            navigate('/');
-          }
+          navigate(data.user.role === 'admin' ? '/admin' : '/');
         }, 1000);
       }
     } catch (err) {
@@ -57,7 +65,6 @@ const Login = () => {
   return (
     <div className="flex justify-center items-center">
       <div className="mt-14 mb-14 bg-white rounded-md shadow-lg w-full max-w-md p-8">
-
         <h2 className="text-[#5f518e] text-3xl font-bold text-center mb-6">ĐĂNG NHẬP TÀI KHOẢN</h2>
 
         {message && <p className="text-center text-red-500 mb-4">{message}</p>}
@@ -88,7 +95,7 @@ const Login = () => {
           </div>
 
           <button type="submit" className="w-full bg-[#696faa] hover:bg-[#5f518e] text-white font-semibold py-2 rounded transition">
-            XÁC NHẬN
+            ĐĂNG NHẬP
           </button>
         </form>
 
@@ -108,7 +115,8 @@ const Login = () => {
           </button>
         </div>
 
-        <div className="text-center mt-4">Bạn chưa có tài khoản?
+        <div className="text-center mt-4">
+          Bạn chưa có tài khoản?
           <a href="/register" className="text-[#5f518e] hover:underline ml-1">Đăng ký</a> ngay
         </div>
       </div>

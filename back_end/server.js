@@ -7,10 +7,16 @@ import productRouter from "./routes/productRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
 import brandRouter from "./routes/brandRoutes.js";
 import authRouter from "./routes/authRoutes.js";
+<<<<<<< HEAD
 import commentsRoute from "./routes/comment.js";
 import orderRouter from "./routes/orderRoutes.js";
 
 import User from './models/userModel.js';
+=======
+import User from './models/userModel.js';
+import productVariantRouter from "./routes/productVariantRoutes.js";
+
+>>>>>>> origin/master
 
 dotenv.config();
 connectMongoDB(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/DATN");
@@ -44,9 +50,13 @@ app.use('/products', productRouter);
 app.use('/brands', brandRouter);
 app.use('/categories', categoryRouter);
 app.use('/', authRouter);
+<<<<<<< HEAD
 app.use('/comments', commentsRoute);
 app.use('/api/orders', orderRouter);
 
+=======
+app.use('/variant',productVariantRouter)
+>>>>>>> origin/master
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
