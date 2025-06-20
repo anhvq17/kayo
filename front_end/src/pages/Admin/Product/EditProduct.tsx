@@ -1,171 +1,191 @@
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import React, { useEffect, useState } from "react";
+import { useForm, useFieldArray } from "react-hook-form";
 import axios from "axios";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
-interface Category {
-  _id: string;
-  name: string;
-}
+type VariantType = {
+  _id?: string;
+  flavors: string;
+  volume: string;
+  price: string;
+  stock_quantity: string;
+  image: string;
+};
 
-interface Brand {
-  _id: string;
+type FormData = {
   name: string;
-}
-
-interface FormData {
-  name: string;
+  description: string;
   categoryId: string;
   brandId: string;
-  flavors: string;
-  quantity: number;
-  status: string;
-  description: string;
-  image: string;
-  price: number;
-}
+  variants: VariantType[];
+};
 
 const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [loading, setLoading] = useState(true);
-
   const {
     register,
     handleSubmit,
+    control,
+    setValue,
     reset,
+    watch,
+    setError,
     formState: { errors },
-  } = useForm<FormData>();
+  } = useForm<FormData>({
+    defaultValues: {
+      name: "",
+      description: "",
+      categoryId: "",
+      brandId: "",
+      variants: [],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "variants",
+  });
+
+  const [categories, setCategories] = useState<any[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
 
   useEffect(() => {
-    async function fetchData() {
+    const fetchData = async () => {
       try {
-        const [catRes, brandRes] = await Promise.all([
+        const [cateRes, brandRes, productRes, variantRes] = await Promise.all([
           axios.get("http://localhost:3000/categories"),
           axios.get("http://localhost:3000/brands"),
+          axios.get(`http://localhost:3000/products/${id}`),
+          axios.get(`http://localhost:3000/variant/product/${id}`),
         ]);
 
-        setCategories(catRes.data.data);
+        setCategories(cateRes.data.data);
         setBrands(brandRes.data.data);
 
-        const productRes = await axios.get(`http://localhost:3000/products/${id}`);
         const product = productRes.data.data;
+        const variants = variantRes.data.data;
 
-        // Reset form với dữ liệu đầy đủ, bao gồm image và price
         reset({
           name: product.name,
-          categoryId: product.categoryId?._id || product.categoryId || "",
-          brandId: product.brandId?._id || product.brandId || "",
-          flavors: product.flavors?.join(", ") || "",
-          quantity: product.quantity,
-          status: product.status,
           description: product.description,
-          image: product.image || "",
-          price: product.price || 0,
+          categoryId:
+            typeof product.categoryId === "object"
+              ? product.categoryId._id
+              : product.categoryId,
+          brandId:
+            typeof product.brandId === "object"
+              ? product.brandId._id
+              : product.brandId,
+          variants: variants.map((v: any) => ({
+            _id: v._id,
+            flavors: v.flavors,
+            volume: String(v.volume),
+            price: String(v.price),
+            stock_quantity: String(v.stock_quantity),
+            image: v.image,
+          })),
         });
-
-        setLoading(false);
       } catch (err) {
-        alert("Lỗi khi tải dữ liệu sản phẩm");
+        console.error("Lỗi khi load dữ liệu:", err);
       }
-    }
-
+    };
     fetchData();
   }, [id, reset]);
 
-  async function onSubmit(data: FormData) {
+  const onSubmit = async (data: FormData) => {
     try {
-      const processedData = {
-        ...data,
-        flavors: data.flavors
-          ? data.flavors.split(",").map((f) => f.trim()).filter((f) => f.length > 0)
-          : [],
-      };
+      await axios.put(`http://localhost:3000/products/${id}`, {
+        name: data.name,
+        description: data.description,
+        categoryId: data.categoryId,
+        brandId: data.brandId,
+      });
 
-      await axios.put(`http://localhost:3000/products/${id}`, processedData);
-      alert("Cập nhật thành công");
+      let hasError = false;
+
+      for (let index = 0; index < data.variants.length; index++) {
+        const variant = data.variants[index];
+        const { _id, ...rest } = variant;
+
+        const payload = {
+          productId: id,
+          ...rest,
+          volume: Number(rest.volume),
+          price: Number(rest.price),
+          stock_quantity: Number(rest.stock_quantity),
+        };
+
+        try {
+          if (_id) {
+            await axios.put(`http://localhost:3000/variant/${_id}`, payload);
+          } else {
+            await axios.post("http://localhost:3000/variant", payload);
+          }
+        } catch (err: any) {
+          hasError = true;
+          const msg =
+            err.response?.data?.message ||
+            "Có lỗi xảy ra khi cập nhật biến thể.";
+
+          setError(`variants.${index}.volume`, {
+            type: "server",
+            message: msg,
+          });
+        }
+      }
+
+      if (hasError) {
+        alert("Cập nhật sản phẩm thất bại với một số biến thể!");
+        return;
+      }
+
+      alert("Cập nhật thành công!");
       navigate("/admin/products");
-    } catch (err) {
-      alert("Lỗi khi cập nhật sản phẩm");
+    } catch (error) {
+      console.error("Lỗi khi cập nhật sản phẩm:", error);
+      alert("Cập nhật thất bại!");
     }
-  }
-
-  if (loading) {
-    return <p className="text-center py-10">⏳ Đang tải dữ liệu...</p>;
-  }
+  };
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10 bg-white shadow-xl rounded-xl mt-8">
-      <h1 className="text-3xl font-semibold text-gray-800 mb-8 text-center">
-        🛠️ Chỉnh sửa sản phẩm
-      </h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Tên sản phẩm */}
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="max-w-4xl mx-auto p-6 bg-white space-y-6"
+    >
+      <h2 className="text-xl font-semibold">CẬP NHẬT SẢN PHẨM</h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block mb-1 font-medium">Tên sản phẩm</label>
+          <label className="block text-sm font-medium">Tên sản phẩm</label>
           <input
-            {...register("name", { required: "Tên sản phẩm là bắt buộc" })}
-            className="w-full px-4 py-2 border rounded-md"
+            {...register("name", { required: "Không được để trống" })}
+            className="border rounded px-3 py-2 w-full"
           />
-          {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+          {errors.name && <p className="text-red-500">{errors.name.message}</p>}
         </div>
 
-        {/* Giá */}
         <div>
-          <label className="block mb-1 font-medium">Giá</label>
-          <input
-            type="number"
-            {...register("price", {
-              required: "Giá sản phẩm là bắt buộc",
-              min: { value: 0, message: "Giá phải lớn hơn hoặc bằng 0" },
-              valueAsNumber: true,
-            })}
-            className="w-full px-4 py-2 border rounded-md"
-          />
-          {errors.price && <p className="text-red-500 text-sm">{errors.price.message}</p>}
-        </div>
-
-        {/* Số lượng */}
-        <div>
-          <label className="block mb-1 font-medium">Số lượng</label>
-          <input
-            type="number"
-            {...register("quantity", {
-              required: "Số lượng là bắt buộc",
-              min: { value: 0, message: "Số lượng không được âm" },
-              valueAsNumber: true,
-            })}
-            className="w-full px-4 py-2 border rounded-md"
-          />
-          {errors.quantity && <p className="text-red-500 text-sm">{errors.quantity.message}</p>}
-        </div>
-
-        {/* Danh mục */}
-        <div>
-          <label className="block mb-1 font-medium">Danh mục</label>
+          <label className="block text-sm font-medium">Danh mục</label>
           <select
-            {...register("categoryId", { required: "Vui lòng chọn danh mục" })}
-            className="w-full px-4 py-2 border rounded-md"
+            {...register("categoryId", { required: "Bắt buộc" })}
+            className="border rounded px-3 py-2 w-full"
           >
             <option value="">-- Chọn danh mục --</option>
-            {categories.map((cat) => (
-              <option key={cat._id} value={cat._id}>
-                {cat.name}
+            {categories.map((cate) => (
+              <option key={cate._id} value={cate._id}>
+                {cate.name}
               </option>
             ))}
           </select>
-          {errors.categoryId && <p className="text-red-500 text-sm">{errors.categoryId.message}</p>}
         </div>
 
-        {/* Thương hiệu */}
         <div>
-          <label className="block mb-1 font-medium">Thương hiệu</label>
+          <label className="block text-sm font-medium">Thương hiệu</label>
           <select
-            {...register("brandId", { required: "Vui lòng chọn thương hiệu" })}
-            className="w-full px-4 py-2 border rounded-md"
+            {...register("brandId", { required: "Bắt buộc" })}
+            className="border rounded px-3 py-2 w-full"
           >
             <option value="">-- Chọn thương hiệu --</option>
             {brands.map((brand) => (
@@ -174,70 +194,173 @@ const EditProduct = () => {
               </option>
             ))}
           </select>
-          {errors.brandId && <p className="text-red-500 text-sm">{errors.brandId.message}</p>}
         </div>
 
-        {/* Mùi hương */}
-        <div>
-          <label className="block mb-1 font-medium">Mùi hương (phân cách bằng dấu phẩy)</label>
-          <input
-            {...register("flavors", { required: "Vui lòng nhập mùi hương" })}
-            className="w-full px-4 py-2 border rounded-md"
-            placeholder="ví dụ: Hoa hồng, Oải hương, Vanilla"
-          />
-          {errors.flavors && <p className="text-red-500 text-sm">{errors.flavors.message}</p>}
-        </div>
-
-        {/* Trạng thái */}
-        <div>
-          <label className="block mb-1 font-medium">Trạng thái</label>
-          <select {...register("status")} className="w-full px-4 py-2 border rounded-md">
-            <option value="Còn hàng">Còn hàng</option>
-            <option value="Hết hàng">Hết hàng</option>
-          </select>
-        </div>
-
-        {/* URL ảnh sản phẩm */}
-        <div>
-          <label className="block mb-1 font-medium">URL ảnh sản phẩm</label>
-          <input
-            {...register("image", { required: "URL ảnh là bắt buộc" })}
-            className="w-full px-4 py-2 border rounded-md"
-            placeholder="https://example.com/image.jpg"
-          />
-          {errors.image && <p className="text-red-500 text-sm">{errors.image.message}</p>}
-        </div>
-
-        {/* Mô tả */}
-        <div>
-          <label className="block mb-1 font-medium">Mô tả</label>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium">Mô tả</label>
           <textarea
-            {...register("description", { required: "Mô tả không được bỏ trống" })}
-            className="w-full px-4 py-2 border rounded-md"
+            {...register("description")}
+            className="border rounded px-3 py-2 w-full"
             rows={4}
           />
-          {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
         </div>
+      </div>
 
-        {/* Nút */}
-        <div className="flex justify-between">
-          <button
-            type="button"
-            onClick={() => navigate("/admin/products")}
-            className="px-5 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
-          >
-            🔙 Quay lại
-          </button>
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            💾 Cập nhật sản phẩm
-          </button>
-        </div>
-      </form>
+      {/* Biến thể */}
+      <div>
+        <h3 className="text-lg font-medium mb-2">Biến thể sản phẩm</h3>
+        {fields.map((field, index) => {
+          const image = watch(`variants.${index}.image`);
 
-    </div>
+          const onImageUpload = async (
+            e: React.ChangeEvent<HTMLInputElement>
+          ) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("upload_preset", "DATN_upload");
+
+            try {
+              const res = await axios.post(
+                "https://api.cloudinary.com/v1_1/dvourchjx/image/upload",
+                formData
+              );
+              setValue(`variants.${index}.image`, res.data.secure_url);
+            } catch (err) {
+              console.error("Upload thất bại:", err);
+            }
+          };
+
+          return (
+            <div
+              key={field.id}
+              className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6 border p-4 rounded-md shadow-sm"
+            >
+              <input type="hidden" {...register(`variants.${index}._id`)} />
+
+              <div>
+                <label className="block font-medium mb-1">Hương vị</label>
+                <input
+                  {...register(`variants.${index}.flavors`, {
+                    required: "Nhập hương vị",
+                  })}
+                  className="border px-2 py-1 rounded w-full"
+                />
+                {errors.variants?.[index]?.flavors && (
+                  <p className="text-red-500 text-sm">
+                    {errors.variants[index].flavors?.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-medium mb-1">Thể tích (ml)</label>
+                <input
+                  {...register(`variants.${index}.volume`, {
+                    required: "Nhập thể tích",
+                    pattern: { value: /^[0-9]+$/, message: "Chỉ nhập số" },
+                    min: { value: 1, message: "Thể tích phải > 0" },
+                  })}
+                  className="border px-2 py-1 rounded w-full"
+                />
+                {errors.variants?.[index]?.volume && (
+                  <p className="text-red-500 text-sm">
+                    {errors.variants[index].volume?.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-medium mb-1">Giá (vnđ)</label>
+                <input
+                  {...register(`variants.${index}.price`, {
+                    required: "Nhập giá",
+                    pattern: { value: /^[0-9]+$/, message: "Chỉ nhập số" },
+                    min: { value: 1, message: "Giá phải > 0" },
+                  })}
+                  className="border px-2 py-1 rounded w-full"
+                />
+                {errors.variants?.[index]?.price && (
+                  <p className="text-red-500 text-sm">
+                    {errors.variants[index].price?.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-medium mb-1">Số lượng</label>
+                <input
+                  {...register(`variants.${index}.stock_quantity`, {
+                    required: "Nhập số lượng",
+                    pattern: { value: /^[0-9]+$/, message: "Chỉ nhập số" },
+                    min: { value: 1, message: "Số lượng phải > 0" },
+                  })}
+                  className="border px-2 py-1 rounded w-full"
+                />
+                {errors.variants?.[index]?.stock_quantity && (
+                  <p className="text-red-500 text-sm">
+                    {errors.variants[index].stock_quantity?.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-medium mb-1">Ảnh</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={onImageUpload}
+                  className="border px-2 py-1 rounded w-full"
+                />
+                {image && (
+                  <img
+                    src={image}
+                    alt="Preview"
+                    className="mt-2 w-20 h-20 object-cover border rounded"
+                  />
+                )}
+              </div>
+
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={() => remove(index)}
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 h-fit"
+                >
+                  Xóa
+                </button>
+              </div>
+            </div>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={() =>
+            append({
+              flavors: "",
+              volume: "",
+              price: "",
+              stock_quantity: "",
+              image: "",
+            })
+          }
+          className="px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          + Thêm biến thể
+        </button>
+      </div>
+
+      <div>
+        <button
+          type="submit"
+          className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Cập nhật sản phẩm
+        </button>
+      </div>
+    </form>
   );
 };
 

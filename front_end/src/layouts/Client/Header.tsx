@@ -13,7 +13,8 @@ const ClientHeader = () => {
     setIsLoggedIn(!!token);
   };
 
-  updateLoginStatus(); // kiểm tra khi load lần đầu
+  updateLoginStatus(); 
+  // kiểm tra khi load lần đầu
 
   window.addEventListener("loginChanged", updateLoginStatus);
   return () => window.removeEventListener("loginChanged", updateLoginStatus);
