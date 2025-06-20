@@ -11,14 +11,12 @@ import OrderNews from "../pages/Client/OrderNews"
 import Checkout from "../pages/Client/Checkout"
 import OrderSuccessfully from "../pages/Client/OrderSuccessfully"
 import SearchResults from "../pages/Client/SearchResults"
-import Test from "../pages/Admin/Product/test"
 
 const ClientRoutes = {
   path: '/',
   element: <ClientLayout />,
   children: [
     { path: '', element: <Homepage /> },
-    { path: 'test', element: <Test /> },
     { path: 'login', element: <Login /> },
     { path: 'register', element: <Register /> },
     { path: 'cart', element: <Cart /> },
