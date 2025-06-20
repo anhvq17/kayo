@@ -1,5 +1,7 @@
+// giữ tạm code cũ ở đây
+
 import { Link } from "react-router-dom";
-import { Edit, Eye, Plus, Trash } from "lucide-react";
+import { Edit, Plus, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
@@ -48,12 +50,16 @@ const ProductManager = () => {
             <th className="px-4 py-2">Tên</th>
             <th className="px-4 py-2">Danh mục</th>
             <th className="px-4 py-2">Thương hiệu</th>
+            <th className="px-4 py-2">Thể tích (ml)</th>
+            <th className="px-4 py-2">Hương vị</th>
             <th className="px-4 py-2">Tổng tồn kho</th>
             <th className="px-4 py-2">Hành động</th>
           </tr>
         </thead>
         <tbody>
           {products.map((p, index) => {
+            const volumes = p.variants?.map((v: any) => `${v.volume}ml`).join(", ") || "--";
+            const flavors = p.variants?.map((v: any) => v.flavors).join(", ") || "--";
             const totalStock = p.variants?.reduce(
               (sum: number, v: any) => sum + Number(v.stock_quantity || 0),
               0
@@ -65,25 +71,22 @@ const ProductManager = () => {
                 <td className="px-4 py-2">{p.name}</td>
                 <td className="px-4 py-2">{p.categoryId?.name || "Chưa có"}</td>
                 <td className="px-4 py-2">{p.brandId?.name || "Chưa có"}</td>
+                <td className="px-4 py-2">{volumes}</td>
+                <td className="px-4 py-2">{flavors}</td>
                 <td className="px-4 py-2">{totalStock}</td>
                 <td className="px-4 py-2">
                   <div className="flex gap-1">
-                    <Link to={`/admin/products/detail/${p._id}`}>
-                      <button className="w-8 h-8 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center justify-center">
-                        <Eye size={14} />
-                      </button>
-                    </Link>
-                    <Link to={`/admin/products/edit/${p._id}`}>
-                      <button className="w-8 h-8 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center">
-                        <Edit size={14} />
-                      </button>
-                    </Link>
                     <button
                       onClick={() => handleDelete(p._id)}
                       className="w-8 h-8 bg-red-600 text-white rounded hover:bg-red-700 flex items-center justify-center"
                     >
                       <Trash size={14} />
                     </button>
+                    <Link to={`/admin/products/edit/${p._id}`}>
+                      <button className="w-8 h-8 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center">
+                        <Edit size={14} />
+                      </button>
+                    </Link>
                   </div>
                 </td>
               </tr>

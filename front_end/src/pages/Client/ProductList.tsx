@@ -12,13 +12,18 @@ interface Brand {
   name: string;
 }
 
+interface Variant {
+  image: string;
+  price: number;
+  volume: number;
+}
+
 interface Product {
   _id: string;
   name: string;
-  image: string;
-  price: number;
   categoryId: Category;
   brandId: Brand;
+  variants: Variant[];
 }
 
 const categories = [
@@ -29,7 +34,6 @@ const categories = [
 
 const ProductList = () => {
   const [products, setProducts] = useState<Product[]>([]);
-
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 9;
 
@@ -81,43 +85,71 @@ const ProductList = () => {
 
         <main className="lg:w-3/4">
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {currentProducts.map((product) => (
-              <Link
-                key={product._id}
+            {currentProducts.map((product) => {
+              const firstVariant = product.variants[0];
+
+              return (
+                <Link
                 to={`/productdetails/${product._id}`}
-                className="border p-4 rounded hover:shadow transition relative block"
+                key={product._id}
+                className="group p-4 border rounded-lg hover:shadow transition block"
               >
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-56 object-contain mb-3"
-                />
-                <h3 className="text-sm font-medium leading-5">{product.name}</h3>
-                <p className="text-red-600 font-bold">
-                  {product.price.toFixed(3)}
-                </p>
+                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
+                  <img
+                    src={firstVariant.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {product.variants.map((v, i) => (
+                    <span
+                      key={i}
+                      className="bg-gray-200 text-gray-800 text-xs px-2 py-0.5 rounded-full"
+                    >
+                      {v.volume}ml
+                    </span>
+                  ))}
+                </div>
+
+                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2 text-left">
+                  {product.name}
+                </h3>
+
+                <div className="flex gap-2 mb-2">
+                  <span className="inline-block px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
+                    {product.categoryId?.name || 'Danh mục?'}
+                  </span>
+                  <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+                    {product.brandId?.name || 'Thương hiệu?'}
+                  </span>
+                </div>
+
+                <div className="text-red-500 font-semibold text-sm text-left">
+                  {firstVariant.price.toLocaleString()}
+                </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
 
           <div className="flex justify-center mt-8">
             <ul className="flex space-x-2 text-sm">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => (
-                  <li key={page}>
-                    <button
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-1 border rounded ${
-                        page === currentPage
-                          ? "bg-[#5f518e] text-white"
-                          : "hover:bg-gray-100"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  </li>
-                )
-              )}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <li key={page}>
+                  <button
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 border rounded ${
+                      page === currentPage
+                        ? "bg-[#5f518e] text-white"
+                        : "hover:bg-gray-100"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
         </main>

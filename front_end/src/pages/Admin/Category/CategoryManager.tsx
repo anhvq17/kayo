@@ -47,11 +47,11 @@ const CategoryManager = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-2">
         <h1 className="text-2xl font-semibold mb-4">Danh sách danh mục</h1>
-        <Link to="/admin/categories/add">
+        {/* <Link to="/admin/categories/add">
           <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs">
             <Plus size={14}/>
           </button>
-        </Link>
+        </Link> */}
       </div>
 
       <table className="min-w-full bg-white border text-sm">

@@ -6,16 +6,6 @@ const ProductSchema = new mongoose.Schema({
         required: true
     },
 
-    image: {
-        type: String,
-        required: true
-    },
-
-    price: {
-        type: Number,
-        required: true
-    },
-
     description: {
         type: String,
         required: true
@@ -32,23 +22,6 @@ const ProductSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "brands",
         required: true,
-    },
-
-    status: {
-        type: String,
-        enum: ['Còn hàng', 'Hết hàng'],
-        default: 'Còn hàng',
-    },
-
-    quantity: {
-        type: Number,
-        required: true,
-        default: 0,
-    },
-
-    flavors: {
-        type: [String],
-        default: [],
     },
 
     createdAt: {
