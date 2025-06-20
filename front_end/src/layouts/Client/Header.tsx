@@ -14,7 +14,6 @@ const ClientHeader = () => {
   };
 
   updateLoginStatus(); 
-  // kiểm tra khi load lần đầu
 
   window.addEventListener("loginChanged", updateLoginStatus);
   return () => window.removeEventListener("loginChanged", updateLoginStatus);
@@ -38,7 +37,6 @@ const ClientHeader = () => {
     setIsLoggedIn(false);
     setIsMenuOpen(false);
 
-    // Gửi sự kiện để đồng bộ UI
     window.dispatchEvent(new Event('loginChanged'));
 
     navigate("/login");
@@ -50,29 +48,25 @@ const ClientHeader = () => {
   return (
     <header className="w-full h-[60px] bg-[#fdfdfd] shadow-md">
       <div className="max-w-[1280px] mx-auto px-6 h-full flex items-center justify-between">
-        {/* Logo */}
         <div className="h-full flex items-center">
           <Link to={"/"}>
             <img src="/img/logo.png" alt="Logo" className="h-6 object-contain" />
           </Link>
         </div>
 
-        {/* Nav */}
-        <nav className="flex items-center space-x-8 text-sm font-bold uppercase">
-          <div className="relative group cursor-pointer">
-            <span className="hover:text-gray-700">Nước hoa nam <i className="fas fa-angle-down ml-1"></i></span>
-          </div>
-          <div className="relative group cursor-pointer">
-            <span className="hover:text-gray-700">Nước hoa nữ <i className="fas fa-angle-down ml-1"></i></span>
-          </div>
-          <div className="relative group cursor-pointer">
-            <span className="hover:text-gray-700">Thương hiệu <i className="fas fa-angle-down ml-1"></i></span>
-          </div>
+        <nav className="flex items-center space-x-10 text-sm font-bold uppercase">
+          <Link to={"/products"} className="relative group cursor-pointer">
+            <span className="hover:text-gray-700">Nước hoa nam</span>
+          </Link>
+          <Link to={"/products"} className="relative group cursor-pointer">
+            <span className="hover:text-gray-700">Nước hoa nữ</span>
+          </Link>
+          <Link to={"/"} className="relative group cursor-pointer">
+            <span className="hover:text-gray-700">Thương hiệu</span>
+          </Link>
         </nav>
 
-        {/* Search & Actions */}
         <div className="flex items-center space-x-6 text-xl text-black relative">
-          {/* Search */}
           <form onSubmit={handleSearch} className="relative">
             <input
               type="text"
@@ -88,7 +82,6 @@ const ClientHeader = () => {
 
           <div className="h-5 border-l border-gray-300"></div>
 
-          {/* Tài khoản */}
           {isLoggedIn ? (
             <div className="relative">
               <img
@@ -119,7 +112,6 @@ const ClientHeader = () => {
 
           <div className="h-5 border-l border-gray-300"></div>
 
-          {/* Giỏ hàng */}
           <Link to={"/cart"} className="hover:text-gray-600">
             <i className="fas fa-cart-shopping text-base"></i>
           </Link>

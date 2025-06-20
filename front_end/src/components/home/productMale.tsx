@@ -105,7 +105,7 @@ const ProductMale = () => {
 
                 {/* Giá */}
                 <div className="text-red-500 font-semibold text-sm text-left">
-                  {firstVariant.price.toLocaleString()}đ
+                  {firstVariant.price.toLocaleString()}
                 </div>
               </Link>
             );
