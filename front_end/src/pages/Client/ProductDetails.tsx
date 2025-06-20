@@ -13,6 +13,7 @@
     status?: string;
     code?: string;
     categoryId?: { _id: string; name: string };
+    variants?: VariantType[];
   }
 
   interface VariantType {
@@ -102,7 +103,16 @@
     const fetchVariants = async (productId: string) => {
     try {
       const res = await axios.get(`http://localhost:3000/variant/product/${productId}`);
+      const variantList = res.data.data;
       setVariants(res.data.data);
+
+      if (variantList.length > 0) {
+      const first = variantList[0];
+      setSelectedScent(first.flavors);
+      setSelectedVolume(first.volume.toString());
+      setSelectedVariant(first);
+      setMainImg(first.image);
+    }
     } catch (err) {
       console.error('Lỗi khi lấy danh sách biến thể:', err);
     }
@@ -110,10 +120,31 @@
 
     const fetchRelatedProducts = async (categoryId: string, currentId: string) => {
       try {
-        const res = await axios.get('http://localhost:3000/products', { params: { categoryId } });
-        const related = res.data.data.filter((p: ProductDetailType) => p._id !== currentId).slice(0, 4);
-        setRelatedProducts(related);
-      } catch {
+        const res = await axios.get('http://localhost:3000/products', {
+          params: { categoryId },
+        });
+
+        const related = res.data.data
+          .filter((p: ProductDetailType) => p._id !== currentId)
+          .slice(0, 4);
+
+        const enriched = await Promise.all(
+          related.map(async (prod:any) => {
+            try {
+              const variantRes = await axios.get(`http://localhost:3000/variant/product/${prod._id}`);
+              return {
+                ...prod,
+                variants: variantRes.data.data || [],
+              };
+            } catch {
+              return { ...prod, variants: [] };
+            }
+          })
+        );
+
+        setRelatedProducts(enriched);
+      } catch (err) {
+        console.error('Lỗi khi lấy sản phẩm liên quan:', err);
         setRelatedProducts([]);
       }
     };
@@ -262,7 +293,7 @@
               <h2 className="text-xl font-semibold">{product.name}</h2>
               <div className="text-yellow-400 mb-3">★★★★★</div>
               <p className="text-red-600 text-2xl font-bold mb-3">
-                {(selectedVariant?.price || product.price || 0).toFixed(3)} VND
+                {(selectedVariant?.price || product.price || 0).toLocaleString()}
               </p>
               <div className="text-sm text-gray-600 space-y-1">
                 <p>Tình trạng: <span className="text-green-600">{product.status || 'Còn hàng'}</span></p>
@@ -296,7 +327,7 @@
                         selectedVolume === vol ? 'bg-[#5f518e] text-white' : ''
                       }`}
                     >
-                      {vol}
+                      {vol}ml
                     </button>
                   ))}
                 </div>
@@ -424,26 +455,53 @@
               {relatedProducts.length === 0 ? (
                 <p className="col-span-full text-center text-gray-500">Không có sản phẩm liên quan.</p>
               ) : (
-                relatedProducts.map(({ _id, name, image, brandId }) => (
-                  <Link
-                    to={`/productdetails/${_id}`}
-                    key={_id}
-                    className="border rounded shadow hover:shadow-lg transition p-4 block"
-                  >
-                    <img src={image} alt={name} className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3" />
-                    <p className="mt-3 font-semibold">{name}</p>
-                    <div className="flex items-center justify-between mt-1">
-                      <p className="text-red-500 font-semibold text-sm mt-1">
-                        {(+product.price || 0).toFixed(3)}
-                      </p>
-                      <div className="mt-2">
+                relatedProducts.map((product) => {
+                  const firstVariant = product.variants?.[0];
+
+                  return (
+                    <Link
+                      to={`/productdetails/${product._id}`}
+                      key={product._id}
+                      className="group p-4 border rounded-lg hover:shadow transition block"
+                    >
+                      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
+                        <img
+                          src={firstVariant?.image || product.image}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {product.variants?.map((v, i) => (
+                          <span
+                            key={i}
+                            className="bg-gray-200 text-gray-800 text-xs px-2 py-0.5 rounded-full"
+                          >
+                            {v.volume}ml
+                          </span>
+                        ))}
+                      </div>
+
+                      <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2 text-left">
+                        {product.name}
+                      </h3>
+
+                      <div className="flex gap-2 mb-2">
+                        <span className="inline-block px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
+                          {product.categoryId?.name || 'Danh mục?'}
+                        </span>
                         <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                          {brandId?.name || 'Không có thương hiệu'}
+                          {product.brandId?.name || 'Thương hiệu?'}
                         </span>
                       </div>
-                    </div>
-                  </Link>
-                ))
+
+                      <div className="text-red-500 font-semibold text-sm text-left">
+                        {firstVariant?.price?.toLocaleString() || 'Liên hệ'}
+                      </div>
+                    </Link>
+                  );
+                })
               )}
             </div>
           </div>
