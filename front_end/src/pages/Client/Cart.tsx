@@ -1,44 +1,79 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { Plus, Minus, X } from "lucide-react"
 
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  volume: string;
+  fragrance: string;
+  image: {
+    src: string;
+    width?: number;
+    height?: number;
+  };
+}
+
 const Cart = () => {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Jean Paul Gaultier",
-      price: 35.0,
-      quantity: 2,
-      size: "100ml",
-      image: {
-        src: "https://byvn.net/CD9y",
-        width: 100,
-        height: 100
-      }
-    },
-    {
-      id: 2,
-      name: "Jean Paul Gaultier",
-      price: 35.0,
-      quantity: 5,
-      size: "100ml",
-      image: {
-        src: "https://byvn.net/QbEB"
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+
+  useEffect(() => {
+    const raw = localStorage.getItem("cart");
+    if (raw) {
+      try {
+        const data = JSON.parse(raw);
+
+        const items: CartItem[] = data.map((item: any) => ({
+          id: `${item._id}-${item.selectedScent}-${item.selectedVolume}`,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          volume: item.selectedVolume,
+          fragrance: item.selectedScent,
+          image: typeof item.image === "string"
+            ? { src: item.image, width: 100, height: 100 }
+            : item.image,
+        }));
+
+        setCartItems(items);
+      } catch (error) {
+        console.error("Lỗi khi parse localStorage:", error);
       }
     }
-  ])
+  }, []);
 
-  const updateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity < 1) return
-    setCartItems(cartItems.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)))
+  const updateQuantity = (id: string, newQuantity: number) => {
+    if (newQuantity < 1) return;
+    const updated = cartItems.map((item) =>
+      item.id === id ? { ...item, quantity: newQuantity } : item
+    );
+    setCartItems(updated);
+    saveToLocalStorage(updated);
   }
 
-  const removeItem = (id: number) => {
-    setCartItems(cartItems.filter((item) => item.id !== id))
+  const removeItem = (id: string) => {
+    const updated = cartItems.filter((item) => item.id !== id);
+    setCartItems(updated);
+    saveToLocalStorage(updated);
+  };
+
+  const saveToLocalStorage = (items: CartItem[]) => {
+    const formatted = items.map((item) => ({
+      _id: item.id.split("-")[0],
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      selectedVolume: item.volume,
+      selectedScent: item.fragrance,
+      image: item.image.src,
+    }));
+    localStorage.setItem("cart", JSON.stringify(formatted));
   }
 
-  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
-  const total = subtotal
+  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+  const total = subtotal;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -77,7 +112,8 @@ const Cart = () => {
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="font-semibold text-lg text-black">{item.name}</h3>
-                        <p className="text-sm text-gray-500 mt-1">Size: {item.size}</p>
+                        <p className="text-sm text-gray-500 mt-1">Volume: {item.volume}</p>
+                        <p className="text-sm text-gray-500 mt-1">Fragrance: {item.fragrance}</p>
                       </div>
                       <button onClick={() => removeItem(item.id)} className="text-gray-400 hover:text-red-500">
                         <X className="w-5 h-5" />

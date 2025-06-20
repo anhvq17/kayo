@@ -122,22 +122,6 @@ const Checkout = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-5">
-              <img
-                src="https://byvn.net/QbEB"
-                className="w-24 h-24 object-cover rounded-md shadow-sm"
-              />
-              <div className="flex-1">
-                <p className="font-semibold text-base text-gray-800">JEAN PAUL GAULTIERH</p>
-                <p className="text-sm text-gray-500">Dung tích: 100ml</p>
-                <p className="text-sm text-gray-500">Hương vị: Nhẹ nhàng</p>
-              </div>
-              <div className="text-right">
-                <p className="text-red-600 font-bold text-lg">175.000</p>
-                <p className="text-sm text-gray-400">x5</p>
-              </div>
-            </div>
-
             <div className="border-t border-gray-300 pt-6 text-gray-700 space-y-3 text-sm">
               <div className="flex justify-between">
                 <span>Tổng tiền hàng</span>
@@ -170,3 +154,4 @@ const Checkout = () => {
 };
 
 export default Checkout;
+
