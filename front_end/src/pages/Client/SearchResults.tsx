@@ -65,8 +65,8 @@ const SearchResults = () => {
                   </h3>
 
                   <div className="flex items-center justify-between mt-1">
-                    <p className="text-red-500 font-semibold text-sm mt-1">
-                      {product.price.toFixed(3)}
+                   <p className="text-red-600 text-2xl font-bold mb-3">
+                      {(+product.price || 0).toFixed(3)}
                     </p>
 
                     <div className="mt-2">

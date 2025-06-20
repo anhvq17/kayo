@@ -1,21 +1,42 @@
 import ProductModel from "../models/ProductModel"
 import { productSchema } from "../validations/product";
+import ProductVariantModel from "../models/ProductVariantModel";
 
-export const getAllProducts = async (req,res) => {
-    try {
-        const products = await ProductModel.find()
-        .populate('categoryId', 'name')  // chỉ lấy tên category
-        .populate('brandId', 'name image'); // chỉ lấy tên và ảnh brand
-        return res.status(200).json({
-            message:'All Products',
-            data:products
-        })
-    } catch (error) {
-        return res.status(500).json({
-            message:error.message,
-        })
-    }
-}
+export const getAllProducts = async (req, res) => {
+  try {
+    // Lấy danh sách sản phẩm kèm category và brand
+    const products = await ProductModel.find()
+      .populate("categoryId", "name")
+      .populate("brandId", "name image")
+      .lean(); // lean để kết quả là object thường, dễ xử lý hơn
+
+    //  Lấy tất cả biến thể theo productId
+    const productIds = products.map((p) => p._id);
+    const allVariants = await ProductVariantModel.find({
+      productId: { $in: productIds },
+    });
+
+    //  Gắn variants vào từng sản phẩm
+    const productsWithVariants = products.map((product) => {
+      const variants = allVariants.filter(
+        (v) => v.productId.toString() === product._id.toString()
+      );
+      return {
+        ...product,
+        variants,
+      };
+    });
+
+    return res.status(200).json({
+      message: "All Products",
+      data: productsWithVariants,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
 
 export const getProductDetail = async (req,res) => {
     try {

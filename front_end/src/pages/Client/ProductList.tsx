@@ -92,17 +92,10 @@ const ProductList = () => {
                   alt={product.name}
                   className="w-full h-56 object-contain mb-3"
                 />
-                <h3 className="text-sm font-semibold leading-5">{product.name}</h3>
-                <div className="flex items-center justify-between mt-1">
-                  <p className="text-red-500 font-semibold text-sm mt-1">
-                    {product.price.toFixed(3)}
-                  </p>
-                  <div className="mt-2">
-                    <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                      {product.brandId?.name || 'Không có thương hiệu'}
-                    </span>
-                  </div>
-                </div>
+                <h3 className="text-sm font-medium leading-5">{product.name}</h3>
+                <p className="text-red-600 text-2xl font-bold mb-3">
+                  {(+product.price || 0).toFixed(3)}
+                </p>
               </Link>
             ))}
           </div>

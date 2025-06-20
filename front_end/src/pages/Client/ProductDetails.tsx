@@ -15,6 +15,16 @@
     categoryId?: { _id: string; name: string };
   }
 
+  interface VariantType {
+  _id: string;
+  productId: { _id: string; name: string };
+  volume: number;
+  flavors: string;
+  price: number;
+  stock_quantity: number;
+  image: string;
+}
+
   interface CommentType {
     _id: string;
     userId: { _id: string; username: string };
@@ -33,28 +43,27 @@
     const [product, setProduct] = useState<ProductDetailType | null>(null);
     const [mainImg, setMainImg] = useState('');
     const [relatedProducts, setRelatedProducts] = useState<ProductDetailType[]>([]);
+    const [variants, setVariants] = useState<VariantType[]>([]);
     const [selectedScent, setSelectedScent] = useState('');
     const [selectedVolume, setSelectedVolume] = useState('');
+    const [selectedVariant, setSelectedVariant] = useState<VariantType | null>(null);
     const [activeTab, setActiveTab] = useState<'description' | 'review'>('description');
     const [comments, setComments] = useState<CommentType[]>([]);
     const [newComment, setNewComment] = useState('');
     const [loading, setLoading] = useState(true);
+    const [user, setUserInfo] = useState<UserInfoType | null>(null);
     const [error] = useState<string | null>(null);
     const [addedMessage, setAddedMessage] = useState('');
-    const [user, setUserInfo] = useState<UserInfoType | null>(null);
 
    useEffect(() => {
-  const storedUser = localStorage.getItem('user');
-
-  if (!storedUser) {
-    setUserInfo(null); // đảm bảo reset nếu không có user
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+      setUserInfo(null);
     return;
   }
 
   try {
     const parsed = JSON.parse(storedUser);
-
-    // Kiểm tra có đủ thông tin không
     if (parsed && parsed._id && parsed.username) {
       setUserInfo(parsed);
     } else {
@@ -66,7 +75,6 @@
     setUserInfo(null);
   }
 }, []);
-
 
     useEffect(() => {
       if (id) {
@@ -80,6 +88,7 @@
         const res = await axios.get(`http://localhost:3000/products/${id}`);
         setProduct(res.data.data);
         setMainImg(res.data.data.image);
+        fetchVariants(res.data.data._id);
         if (res.data.data.categoryId?._id) {
           fetchRelatedProducts(res.data.data.categoryId._id, res.data.data._id);
         }
@@ -89,6 +98,15 @@
         setLoading(false);
       }
     };
+
+    const fetchVariants = async (productId: string) => {
+    try {
+      const res = await axios.get(`http://localhost:3000/variant/product/${productId}`);
+      setVariants(res.data.data);
+    } catch (err) {
+      console.error('Lỗi khi lấy danh sách biến thể:', err);
+    }
+  };
 
     const fetchRelatedProducts = async (categoryId: string, currentId: string) => {
       try {
@@ -109,26 +127,45 @@
       }
     };
 
+    useEffect(() => {
+    if (!selectedVolume || !selectedScent || variants.length === 0) {
+      setSelectedVariant(null);
+      return;
+    }
+
+    const matched = variants.find(
+      (v) => v.volume.toString() === selectedVolume && v.flavors === selectedScent
+    );
+
+    if (matched) {
+      setSelectedVariant(matched);
+      setMainImg(matched.image);
+    } else {
+      setSelectedVariant(null);
+    }
+  }, [selectedVolume, selectedScent, variants]);
+
     const addToCart = (product: ProductDetailType) => {
       const cart = JSON.parse(localStorage.getItem('cart') || '[]');
       const existing = cart.find(
         (item: any) =>
-          item._id === product._id &&
-          item.selectedScent === selectedScent &&
-          item.selectedVolume === selectedVolume
+          item.variantId === selectedVariant!._id
       );
 
       if (existing) {
         existing.quantity += 1;
       } else {
         cart.push({
-          ...product,
+          variantId: selectedVariant!._id,
+          productId: product._id,
+          name: product.name,
+          image: selectedVariant!.image,
+          price: selectedVariant!.price,
           selectedScent,
           selectedVolume,
           quantity: 1,
         });
       }
-
       localStorage.setItem('cart', JSON.stringify(cart));
     };
 
@@ -157,8 +194,6 @@
 
   const handleCommentSubmit = async () => {
   if (!user) {
-    
-    
     alert('Vui lòng đăng nhập để bình luận!');
     return;
   }
@@ -176,15 +211,12 @@
     });
 
     setNewComment('');
-    fetchComments(); // reload comments
+    fetchComments();
   } catch (error) {
     console.error('Lỗi gửi bình luận:', error);
     alert('Không thể gửi bình luận. Vui lòng thử lại sau.');
   }
 };
-
-
-
 
     useEffect(() => {
       if (id) fetchProduct();
@@ -208,9 +240,7 @@
         </div>
 
         <div className="max-w-7xl mx-auto px-4 py-2 grid grid-cols-12 gap-8">
-          {/* Phần trái: Hình ảnh và thông tin */}
           <div className="col-span-12 lg:col-span-8 flex flex-col md:flex-row gap-10">
-            {/* Hình ảnh */}
             <div className="w-full md:w-[50%] mx-auto">
               <img src={mainImg} alt={product.name} className="w-full rounded shadow object-contain max-h-[400px]" />
               <div className="flex gap-2 mt-4 justify-center">
@@ -228,24 +258,21 @@
               </div>
             </div>
 
-            {/* Thông tin sản phẩm */}
             <div className="w-full md:w-1/2">
               <h2 className="text-xl font-semibold">{product.name}</h2>
               <div className="text-yellow-400 mb-3">★★★★★</div>
               <p className="text-red-600 text-2xl font-bold mb-3">
-                {product.price.toFixed(3)}
+                {(selectedVariant?.price || product.price || 0).toFixed(3)} VND
               </p>
-
               <div className="text-sm text-gray-600 space-y-1">
                 <p>Tình trạng: <span className="text-green-600">{product.status || 'Còn hàng'}</span></p>
                 <p>Thương hiệu: <span>{product.brandId?.name || 'Không rõ'}</span></p>
                 <p className="text-xs italic text-gray-500">Lưu ý: Mùi hương thực tế tùy vào sở thích cá nhân.</p>
               </div>
-
               <div className="mt-3">
                 <p className="text-sm font-medium">Mùi hương:</p>
                 <div className="flex gap-2 mt-1">
-                  {['Nhẹ nhàng', 'Mạnh mẽ'].map((scent) => (
+                  {[...new Set(variants.map((v) => v.flavors))].map((scent) => (
                     <button
                       key={scent}
                       onClick={() => setSelectedScent(scent)}
@@ -258,11 +285,10 @@
                   ))}
                 </div>
               </div>
-
               <div className="mt-3">
                 <p className="text-sm font-medium">Dung tích:</p>
                 <div className="flex gap-2 mt-1">
-                  {['30ml', '50ml', '100ml'].map((vol) => (
+                  {[...new Set(variants.map((v) => v.volume.toString()))].map((vol) => (
                     <button
                       key={vol}
                       onClick={() => setSelectedVolume(vol)}
@@ -275,7 +301,6 @@
                   ))}
                 </div>
               </div>
-
               <div className="flex gap-2 mt-8">
                 <button onClick={handleAddToCart} className="bg-[#5f518e] text-white px-6 py-2 rounded hover:bg-[#696faa] flex items-center gap-2">
                   <ShoppingCart className="w-5 h-5" />THÊM VÀO GIỎ HÀNG
@@ -284,12 +309,10 @@
                   MUA NGAY
                 </button>
               </div>
-
               {addedMessage && <p className="text-green-600 text-sm mt-2">{addedMessage}</p>}
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="hidden lg:block col-span-4 space-y-6 max-w-sm mx-auto">
             <div className="border p-6 rounded shadow text-center">
               <h3 className="font-semibold mb-4">DANH MỤC</h3>
@@ -314,7 +337,6 @@
                 ))}
               </div>
             </div>
-
             <div className="border p-6 rounded shadow text-center">
               <h3 className="font-semibold mb-4">TỪ KHÓA</h3>
               <div className="flex flex-wrap gap-2 justify-center">
@@ -327,7 +349,6 @@
             </div>
           </div>
 
-          {/* Tabs: Mô tả / Đánh giá */}
           <div className="col-span-12 mt-10">
             <div className="flex gap-4 border-b border-gray-300">
               <button
@@ -347,7 +368,6 @@
                 Đánh giá
               </button>
             </div>
-
             {activeTab === 'description' && (
               <div className="max-w-3xl mx-auto px-4 text-gray-800 space-y-8">
                 <p className="text-lg leading-relaxed whitespace-pre-line">
@@ -355,7 +375,6 @@
                 </p>
               </div>
             )}
-
             {activeTab === 'review' && (
               <div className="p-6">
                 <div className="mb-4">
@@ -399,7 +418,6 @@
             )}
           </div>
 
-          {/* Sản phẩm liên quan */}
           <div className="col-span-12 mt-10">
             <h3 className="text-xl font-semibold mb-6">SẢN PHẨM LIÊN QUAN</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
@@ -416,7 +434,7 @@
                     <p className="mt-3 font-semibold">{name}</p>
                     <div className="flex items-center justify-between mt-1">
                       <p className="text-red-500 font-semibold text-sm mt-1">
-                        {product.price.toFixed(3)}
+                        {(+product.price || 0).toFixed(3)}
                       </p>
                       <div className="mt-2">
                         <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
