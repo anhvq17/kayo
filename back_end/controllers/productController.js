@@ -54,24 +54,28 @@ export const getProductDetail = async (req,res) => {
     }
 }
 
-export const deleteProduct = async (req,res) => {
-    try {
-        const product = await ProductModel.findByIdAndDelete(req.params.id);
-        if(!product) {
-            return res.status(404).json({
-            message:'Not Found',
-        })
-        }
-        return res.status(200).json({
-            message:'Delete Product',
-            data:product
-        })
-    } catch (error) {
-        return res.status(400).json({
-            message:error.message,
-        })
+export const deleteProduct = async (req, res) => {
+  try {
+    const product = await ProductModel.findByIdAndDelete(req.params.id);
+    if (!product) {
+      return res.status(404).json({
+        message: "Product not found",
+      });
     }
-}
+
+    //  Xoá tất cả biến thể liên quan đến sản phẩm
+    await ProductVariantModel.deleteMany({ productId: req.params.id });
+
+    return res.status(200).json({
+      message: "Đã xóa sản phẩm và các biến thể liên quan",
+      data: product,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
 
 export const createProduct = async (req,res) => {
     try {
