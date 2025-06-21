@@ -1,44 +1,79 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { Plus, Minus, X } from "lucide-react"
 
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  volume: string;
+  fragrance: string;
+  image: {
+    src: string;
+    width?: number;
+    height?: number;
+  };
+}
+
 const Cart = () => {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Jean Paul Gaultier",
-      price: 35.0,
-      quantity: 2,
-      size: "100ml",
-      image: {
-        src: "https://byvn.net/CD9y",
-        width: 100,
-        height: 100
-      }
-    },
-    {
-      id: 2,
-      name: "Jean Paul Gaultier",
-      price: 35.0,
-      quantity: 5,
-      size: "100ml",
-      image: {
-        src: "https://byvn.net/QbEB"
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+
+  useEffect(() => {
+    const raw = localStorage.getItem("cart");
+    if (raw) {
+      try {
+        const data = JSON.parse(raw);
+
+        const items: CartItem[] = data.map((item: any) => ({
+          id: `${item._id}-${item.selectedScent}-${item.selectedVolume}`,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          volume: item.selectedVolume,
+          fragrance: item.selectedScent,
+          image: typeof item.image === "string"
+            ? { src: item.image, width: 100, height: 100 }
+            : item.image,
+        }));
+
+        setCartItems(items);
+      } catch (error) {
+        console.error("Lỗi khi parse localStorage:", error);
       }
     }
-  ])
+  }, []);
 
-  const updateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity < 1) return
-    setCartItems(cartItems.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)))
+  const updateQuantity = (id: string, newQuantity: number) => {
+    if (newQuantity < 1) return;
+    const updated = cartItems.map((item) =>
+      item.id === id ? { ...item, quantity: newQuantity } : item
+    );
+    setCartItems(updated);
+    saveToLocalStorage(updated);
   }
 
-  const removeItem = (id: number) => {
-    setCartItems(cartItems.filter((item) => item.id !== id))
+  const removeItem = (id: string) => {
+    const updated = cartItems.filter((item) => item.id !== id);
+    setCartItems(updated);
+    saveToLocalStorage(updated);
+  };
+
+  const saveToLocalStorage = (items: CartItem[]) => {
+    const formatted = items.map((item) => ({
+      _id: item.id.split("-")[0],
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      selectedVolume: item.volume,
+      selectedScent: item.fragrance,
+      image: item.image.src,
+    }));
+    localStorage.setItem("cart", JSON.stringify(formatted));
   }
 
-  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
-  const total = subtotal
+  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+  const total = subtotal;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -54,13 +89,8 @@ const Cart = () => {
         <div className="lg:w-2/3">
           {cartItems.length === 0 ? (
             <div className="text-center py-12 border rounded-lg">
-              <p className="text-gray-500 mb-4">Giỏ hàng của bạn trống.</p>
-              <Link
-                to="/"
-                className="inline-block px-6 py-3 bg-[#5f518e] text-white font-medium rounded hover:bg-[#696faa]"
-              >
-                Tiếp tục mua sắm
-              </Link>
+              <p className="text-gray-500 mb-8">Giỏ hàng của bạn trống.</p>
+              <img src="/img/empty.png" className="w-32 h-32 mb-4 mx-auto" />
             </div>
           ) : (
             <div className="space-y-6">
@@ -77,7 +107,8 @@ const Cart = () => {
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="font-semibold text-lg text-black">{item.name}</h3>
-                        <p className="text-sm text-gray-500 mt-1">Size: {item.size}</p>
+                        <p className="text-sm text-gray-500 mt-1">Hương vị: {item.fragrance}</p>
+                        <p className="text-sm text-gray-500 mt-1">Dung tích: {item.volume}ml</p>
                       </div>
                       <button onClick={() => removeItem(item.id)} className="text-gray-400 hover:text-red-500">
                         <X className="w-5 h-5" />
@@ -102,7 +133,7 @@ const Cart = () => {
                           <Plus className="w-4 h-4" />
                         </button>
                       </div>
-                      <div className="font-bold text-red-600">{(item.price * item.quantity).toFixed(3)}</div>
+                      <div className="font-bold text-red-600">{(item.price * item.quantity).toLocaleString()}</div>
                     </div>
                   </div>
                 </div>
@@ -116,17 +147,9 @@ const Cart = () => {
             <h2 className="text-lg font-semibold mb-4 text-black">Tóm tắt đơn hàng</h2>
 
             <div className="space-y-4 mb-6">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tổng</span>
-                <span className="text-black">{subtotal.toFixed(3)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Phí vận chuyển</span>
-                <span className="text-black">Miễn phí</span>
-              </div>
-              <div className="border-t pt-4 flex justify-between font-semibold text-lg">
+              <div className="border-t pt-4 flex justify-between font-semibold">
                 <span className="font-bold text-red-600">Thành tiền</span>
-                <span className="font-bold text-red-600">{total.toFixed(3)}</span>
+                <span className="font-bold text-red-600">{total.toLocaleString()}</span>
               </div>
             </div>
 

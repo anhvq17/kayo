@@ -2,11 +2,14 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectMongoDB from "./config/db.js";
-
+import commentsRoute from "./routes/comment.js";
 import productRouter from "./routes/productRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
 import brandRouter from "./routes/brandRoutes.js";
 import authRouter from "./routes/authRoutes.js";
+import orderRouter from "./routes/orderRoutes.js";
+
+
 import User from './models/userModel.js';
 import productVariantRouter from "./routes/productVariantRoutes.js";
 
@@ -37,15 +40,17 @@ app.post('/register', async (req, res) => {
   }
 });
 
-
-
 // Routes
 app.get('/', (req, res) => res.send('Hello from Home'));
 app.use('/products', productRouter);
 app.use('/brands', brandRouter);
 app.use('/categories', categoryRouter);
 app.use('/', authRouter);
+app.use('/comments', commentsRoute);
+app.use('/orders', orderRouter);
+
 app.use('/variant',productVariantRouter)
+app.use('/comments', commentsRoute);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);

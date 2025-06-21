@@ -76,18 +76,6 @@ const ProductFemale = () => {
                   />
                 </div>
 
-                {/* Dung tích các biến thể */}
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {product.variants.map((v, i) => (
-                    <span
-                      key={i}
-                      className="bg-gray-200 text-gray-800 text-xs px-2 py-0.5 rounded-full"
-                    >
-                      {v.volume}ml
-                    </span>
-                  ))}
-                </div>
-
                 {/* Tên sản phẩm */}
                 <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2 text-left">
                   {product.name}
@@ -105,7 +93,7 @@ const ProductFemale = () => {
 
                 {/* Giá */}
                 <div className="text-red-500 font-semibold text-sm text-left">
-                  {firstVariant.price.toLocaleString()}đ
+                  {firstVariant.price.toLocaleString()}
                 </div>
               </Link>
             );

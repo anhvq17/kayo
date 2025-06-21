@@ -5,28 +5,50 @@ import axios from "axios";
 
 const ProductManager = () => {
   const [products, setProducts] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 7;
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchProducts = async () => {
       try {
         const res = await axios.get("http://localhost:3000/products");
         setProducts(res.data.data);
       } catch (error) {
-        console.error("❌ Lỗi khi lấy sản phẩm:", error);
+        console.error("Lỗi khi lấy sản phẩm:", error);
+        alert("Lỗi khi lấy danh sách sản phẩm");
       }
     };
-    fetch();
+
+    fetchProducts();
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (confirm("Bạn chắc chắn muốn xóa sản phẩm này?")) {
-      try {
-        await axios.delete(`http://localhost:3000/products/${id}`);
-        setProducts(products.filter((p) => p._id !== id));
-        alert("✅ Xóa thành công");
-      } catch (err) {
-        alert("❌ Xóa thất bại");
+    const confirmDelete = window.confirm("Bạn chắc chắn muốn xóa sản phẩm này?");
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`http://localhost:3000/products/${id}`);
+      const updated = products.filter((p) => p._id !== id);
+      setProducts(updated);
+      if ((currentPage - 1) * productsPerPage >= updated.length && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
       }
+      alert("Đã xóa sản phẩm và các biến thể liên quan");
+    } catch (err) {
+      console.error("Lỗi khi xóa sản phẩm:", err);
+      alert("Xóa sản phẩm thất bại");
+    }
+  };
+
+  // Phân trang
+  const totalPages = Math.ceil(products.length / productsPerPage);
+  const indexOfLast = currentPage * productsPerPage;
+  const indexOfFirst = indexOfLast - productsPerPage;
+  const currentProducts = products.slice(indexOfFirst, indexOfLast);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
     }
   };
 
@@ -53,15 +75,13 @@ const ProductManager = () => {
           </tr>
         </thead>
         <tbody>
-          {products.map((p, index) => {
-            const totalStock = p.variants?.reduce(
-              (sum: number, v: any) => sum + Number(v.stock_quantity || 0),
-              0
-            ) || 0;
+          {currentProducts.map((p, index) => {
+            const totalStock =
+              p.variants?.reduce((sum: number, v: any) => sum + Number(v.stock_quantity || 0), 0) || 0;
 
             return (
               <tr key={p._id} className="hover:bg-gray-50">
-                <td className="px-4 py-2">{index + 1}</td>
+                <td className="px-4 py-2">{indexOfFirst + index + 1}</td>
                 <td className="px-4 py-2">{p.name}</td>
                 <td className="px-4 py-2">{p.categoryId?.name || "Chưa có"}</td>
                 <td className="px-4 py-2">{p.brandId?.name || "Chưa có"}</td>
@@ -91,6 +111,35 @@ const ProductManager = () => {
           })}
         </tbody>
       </table>
+
+      {/* Pagination controls */}
+      <div className="flex justify-center mt-4 gap-2">
+        <button
+          className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          {'<'}
+        </button>
+        {Array.from({ length: totalPages }, (_, i) => (
+          <button
+            key={i}
+            onClick={() => handlePageChange(i + 1)}
+            className={`px-3 py-1 rounded ${
+              currentPage === i + 1 ? "bg-blue-600 text-white" : "bg-gray-100"
+            }`}
+          >
+            {i + 1}
+          </button>
+        ))}
+        <button
+          className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          {'>'}
+        </button>
+      </div>
     </div>
   );
 };
