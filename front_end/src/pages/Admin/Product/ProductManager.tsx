@@ -6,7 +6,7 @@ import axios from "axios";
 const ProductManager = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 10;
+  const productsPerPage = 7;
 
   useEffect(() => {
     const fetchProducts = async () => {

@@ -112,8 +112,8 @@ const Cart = () => {
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="font-semibold text-lg text-black">{item.name}</h3>
-                        <p className="text-sm text-gray-500 mt-1">Volume: {item.volume}</p>
-                        <p className="text-sm text-gray-500 mt-1">Fragrance: {item.fragrance}</p>
+                        <p className="text-sm text-gray-500 mt-1">Hương vị: {item.fragrance}</p>
+                        <p className="text-sm text-gray-500 mt-1">Dung tích: {item.volume}ml</p>
                       </div>
                       <button onClick={() => removeItem(item.id)} className="text-gray-400 hover:text-red-500">
                         <X className="w-5 h-5" />
@@ -138,7 +138,7 @@ const Cart = () => {
                           <Plus className="w-4 h-4" />
                         </button>
                       </div>
-                      <div className="font-bold text-red-600">{(item.price * item.quantity).toFixed(3)}</div>
+                      <div className="font-bold text-red-600">{(item.price * item.quantity).toLocaleString()}</div>
                     </div>
                   </div>
                 </div>
@@ -154,7 +154,7 @@ const Cart = () => {
             <div className="space-y-4 mb-6">
               <div className="flex justify-between">
                 <span className="text-gray-600">Tổng</span>
-                <span className="text-black">{subtotal.toFixed(3)}</span>
+                <span className="text-black">{subtotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Phí vận chuyển</span>
@@ -162,7 +162,7 @@ const Cart = () => {
               </div>
               <div className="border-t pt-4 flex justify-between font-semibold text-lg">
                 <span className="font-bold text-red-600">Thành tiền</span>
-                <span className="font-bold text-red-600">{total.toFixed(3)}</span>
+                <span className="font-bold text-red-600">{total.toLocaleString()}</span>
               </div>
             </div>
 

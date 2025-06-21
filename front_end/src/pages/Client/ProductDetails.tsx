@@ -103,15 +103,16 @@
     const fetchVariants = async (productId: string) => {
     try {
       const res = await axios.get(`http://localhost:3000/variant/product/${productId}`);
-      const variantList = res.data.data;
+      const variantList: VariantType[] = res.data.data;
       setVariants(res.data.data);
 
       if (variantList.length > 0) {
-      const first = variantList[0];
-      setSelectedScent(first.flavors);
-      setSelectedVolume(first.volume.toString());
-      setSelectedVariant(first);
-      setMainImg(first.image);
+      const firstScent = variantList[0].flavors;
+      const firstByScent = variantList.find(v => v.flavors === firstScent);
+      setSelectedScent(firstScent);
+      setSelectedVolume(firstByScent?.volume.toString() || '');
+      setSelectedVariant(firstByScent || null);
+      setMainImg(firstByScent?.image || variantList[0].image);
     }
     } catch (err) {
       console.error('Lỗi khi lấy danh sách biến thể:', err);
@@ -170,7 +171,6 @@
 
     if (matched) {
       setSelectedVariant(matched);
-      setMainImg(matched.image);
     } else {
       setSelectedVariant(null);
     }
@@ -258,7 +258,7 @@
     if (error) return <div className="text-center py-10 text-red-600">{error}</div>;
     if (!product) return <div className="text-center py-10">Không tìm thấy sản phẩm.</div>;
 
-    const thumbnails = [product.image, product.image, product.image, product.image];
+    const thumbnails = [...new Set(variants.map((v) => v.image))];
 
     return (
       <div className="container mx-auto px-4 py-8">
@@ -306,7 +306,11 @@
                   {[...new Set(variants.map((v) => v.flavors))].map((scent) => (
                     <button
                       key={scent}
-                      onClick={() => setSelectedScent(scent)}
+                      onClick={() => {setSelectedScent(scent);
+                        const volumesByScent = variants.filter((v) => v.flavors === scent).map((v) => v.volume);
+                        const minVolume = Math.min(...volumesByScent);
+                        setSelectedVolume(minVolume.toString());
+                      }}
                       className={`px-3 py-1 border rounded text-sm hover:bg-[#696faa] hover:text-white ${
                         selectedScent === scent ? 'bg-[#5f518e] text-white' : ''
                       }`}
@@ -319,7 +323,7 @@
               <div className="mt-3">
                 <p className="text-sm font-medium">Dung tích:</p>
                 <div className="flex gap-2 mt-1">
-                  {[...new Set(variants.map((v) => v.volume.toString()))].map((vol) => (
+                  {[...new Set(variants.filter((v) => v.flavors === selectedScent).map((v) => v.volume.toString()))].map((vol) => (
                     <button
                       key={vol}
                       onClick={() => setSelectedVolume(vol)}
@@ -470,17 +474,6 @@
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
-                      </div>
-
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {product.variants?.map((v, i) => (
-                          <span
-                            key={i}
-                            className="bg-gray-200 text-gray-800 text-xs px-2 py-0.5 rounded-full"
-                          >
-                            {v.volume}ml
-                          </span>
-                        ))}
                       </div>
 
                       <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2 text-left">
