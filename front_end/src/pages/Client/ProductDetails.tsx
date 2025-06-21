@@ -219,7 +219,7 @@
       }
       if (product) {
         addToCart(product);
-        navigate('/cart');
+        navigate('/checkout');
       }
     };
 
