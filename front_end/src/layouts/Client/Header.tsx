@@ -43,8 +43,6 @@ const ClientHeader = () => {
   }
 };
 
-
-
   return (
     <header className="w-full h-[60px] bg-[#fdfdfd] shadow-md">
       <div className="max-w-[1280px] mx-auto px-6 h-full flex items-center justify-between">
@@ -92,9 +90,9 @@ const ClientHeader = () => {
               />
               {isMenuOpen && (
                 <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-50">
-                  <button className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100">
+                  <Link to={"/profile"} className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100">
                     <i className="fas fa-user w-4 h-4 mr-2" /> Tài khoản
-                  </button>
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100"
