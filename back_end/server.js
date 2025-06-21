@@ -7,7 +7,6 @@ import productRouter from "./routes/productRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
 import brandRouter from "./routes/brandRoutes.js";
 import authRouter from "./routes/authRoutes.js";
-import commentsRoute from "./routes/comment.js";
 import orderRouter from "./routes/orderRoutes.js";
 
 

@@ -1,15 +1,51 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  getProvinces,
+  getDistrictsByProvinceCode,
+  getWardsByDistrictCode,
+  type Province,
+  type District,
+  type Ward,
+} from "sub-vn";
 
 const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [provinceCode, setProvinceCode] = useState("");
+  const [districtCode, setDistrictCode] = useState("");
+  const [wardCode, setWardCode] = useState("");
+  const [detailAddress, setDetailAddress] = useState("");
+
+  const provinces: Province[] = getProvinces();
+
+  const allDistricts: District[] = provinces.flatMap((province) =>
+    getDistrictsByProvinceCode(province.code)
+  );
+  const allWards: Ward[] = allDistricts.flatMap((district) =>
+    getWardsByDistrictCode(district.code)
+  );
+
+  const selectedProvince = provinces.find((p) => p.code === provinceCode);
+  const selectedDistrict = allDistricts.find((d) => d.code === districtCode);
+  const selectedWard = allWards.find((w) => w.code === wardCode);
+
+  const shippingInfo = {
+    province: { code: provinceCode, name: selectedProvince?.name || "" },
+    district: { code: districtCode, name: selectedDistrict?.name || "" },
+    ward: { code: wardCode, name: selectedWard?.name || "" },
+    detail: detailAddress,
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center text-sm">
-        <Link to="/" className="text-gray-500 hover:text-gray-900">Trang chủ</Link>
+        <Link to="/" className="text-gray-500 hover:text-gray-900">
+          Trang chủ
+        </Link>
         <span className="mx-2 text-gray-400">/</span>
-        <Link to="/cart" className="text-gray-500 hover:text-gray-900">Giỏ hàng</Link>
+        <Link to="/cart" className="text-gray-500 hover:text-gray-900">
+          Giỏ hàng
+        </Link>
         <span className="mx-2 text-gray-400">/</span>
         <span className="font-medium text-black">Thanh toán</span>
       </div>
@@ -20,21 +56,9 @@ const Checkout = () => {
             Thông tin nhận hàng
           </h2>
           <div className="space-y-4">
-            <input
-              type="text"
-              placeholder="Họ và tên"
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]"
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]"
-            />
-            <input
-              type="text"
-              placeholder="Số điện thoại"
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]"
-            />
+            <input type="text" placeholder="Họ và tên" className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]" />
+            <input type="email" placeholder="Email" className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]" />
+            <input type="text" placeholder="Số điện thoại" className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]" />
           </div>
 
           <h2 className="mt-10 mb-4 text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">
@@ -42,39 +66,71 @@ const Checkout = () => {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
-                Tỉnh/Thành phố
-              </label>
-              <select className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]">
-                <option>Hà Nội</option>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Tỉnh/Thành phố</label>
+              <select
+                value={provinceCode}
+                onChange={(e) => setProvinceCode(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]"
+              >
+                <option value="">Chọn Tỉnh/Thành phố</option>
+                {provinces.map((province) => (
+                  <option key={province.code} value={province.code}>
+                    {province.name}
+                  </option>
+                ))}
               </select>
             </div>
+
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
-                Quận/Huyện
-              </label>
-              <select className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]">
-                <option>Bắc Từ Liêm</option>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Quận/Huyện (toàn quốc)</label>
+              <select
+                value={districtCode}
+                onChange={(e) => setDistrictCode(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]"
+              >
+                <option value="">Chọn Quận/Huyện</option>
+                {allDistricts.map((district) => (
+                  <option key={district.code} value={district.code}>
+                    {district.name}
+                  </option>
+                ))}
               </select>
             </div>
+
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
-                Phường/Xã
-              </label>
-              <select className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]">
-                <option>Đức Thắng</option>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Phường/Xã (toàn quốc)</label>
+              <select
+                value={wardCode}
+                onChange={(e) => setWardCode(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]"
+              >
+                <option value="">Chọn Phường/Xã</option>
+                {allWards.map((ward) => (
+                  <option key={ward.code} value={ward.code}>
+                    {ward.name}
+                  </option>
+                ))}
               </select>
             </div>
+
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
-                Địa chỉ chi tiết
-              </label>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Địa chỉ chi tiết</label>
               <input
                 type="text"
                 placeholder="Số nhà, tên đường..."
+                value={detailAddress}
+                onChange={(e) => setDetailAddress(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]"
               />
             </div>
+          </div>
+
+          <div className="mt-4 text-sm text-gray-600">
+            <strong>Địa chỉ đầy đủ:</strong><br />
+            {detailAddress && `${detailAddress}, `}
+            {selectedWard?.name && `${selectedWard.name}, `}
+            {selectedDistrict?.name && `${selectedDistrict.name}, `}
+            {selectedProvince?.name}
           </div>
 
           <h2 className="mt-10 mb-4 text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">
@@ -82,23 +138,11 @@ const Checkout = () => {
           </h2>
           <div className="space-y-4">
             <label className="flex items-center space-x-3 cursor-pointer">
-              <input
-                type="radio"
-                name="payment"
-                checked={paymentMethod === "cod"}
-                onChange={() => setPaymentMethod("cod")}
-                className="w-5 h-5 text-[#696faa] focus:ring-[#696faa] border-gray-300"
-              />
+              <input type="radio" name="payment" checked={paymentMethod === "cod"} onChange={() => setPaymentMethod("cod")} className="w-5 h-5 text-[#696faa] focus:ring-[#696faa] border-gray-300" />
               <span className="text-gray-700 font-medium">Thanh toán khi nhận hàng</span>
             </label>
             <label className="flex items-center space-x-3 cursor-pointer">
-              <input
-                type="radio"
-                name="payment"
-                checked={paymentMethod === "vnpay"}
-                onChange={() => setPaymentMethod("vnpay")}
-                className="w-5 h-5 text-[#696faa] focus:ring-[#696faa] border-gray-300"
-              />
+              <input type="radio" name="payment" checked={paymentMethod === "vnpay"} onChange={() => setPaymentMethod("vnpay")} className="w-5 h-5 text-[#696faa] focus:ring-[#696faa] border-gray-300" />
               <span className="text-gray-700 font-medium">Tài khoản ngân hàng liên kết VNPay</span>
             </label>
           </div>
@@ -107,10 +151,7 @@ const Checkout = () => {
         <div className="md:w-1/2 bg-white p-8 rounded-lg shadow-md flex flex-col justify-between">
           <div className="space-y-8">
             <div className="flex items-center space-x-5">
-              <img
-                src="https://byvn.net/CD9y"
-                className="w-24 h-24 object-cover rounded-md shadow-sm"
-              />
+              <img src="https://byvn.net/CD9y" className="w-24 h-24 object-cover rounded-md shadow-sm" />
               <div className="flex-1">
                 <p className="font-semibold text-base text-gray-800">JEAN PAUL GAULTIERH</p>
                 <p className="text-sm text-gray-500">Dung tích: 100ml</p>
@@ -139,14 +180,13 @@ const Checkout = () => {
             <span className="text-xl font-bold text-red-600">245.000</span>
           </div>
 
-          <Link to={`/ordersuccessfully`}>
-            <button
-              className="mt-8 w-full bg-[#5f518e] hover:bg-[#696faa] transition-colors text-white font-semibold py-3 rounded-md shadow-lg"
-              type="button"
-            >
-              Xác nhận
-            </button>
-          </Link>
+          <button
+            onClick={() => console.log("Thông tin giao hàng:", shippingInfo)}
+            className="mt-8 w-full bg-[#5f518e] hover:bg-[#696faa] transition-colors text-white font-semibold py-3 rounded-md shadow-lg"
+            type="button"
+          >
+            Xác nhận
+          </button>
         </div>
       </div>
     </div>
@@ -154,4 +194,3 @@ const Checkout = () => {
 };
 
 export default Checkout;
-
