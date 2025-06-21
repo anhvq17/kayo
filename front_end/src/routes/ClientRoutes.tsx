@@ -11,6 +11,7 @@ import OrderNews from "../pages/Client/OrderNews"
 import Checkout from "../pages/Client/Checkout"
 import OrderSuccessfully from "../pages/Client/OrderSuccessfully"
 import SearchResults from "../pages/Client/SearchResults"
+import Profile from "../pages/Client/Profile"
 
 const ClientRoutes = {
   path: '/',
@@ -27,7 +28,7 @@ const ClientRoutes = {
     { path: 'checkout', element: <Checkout/>},
     { path: 'ordersuccessfully', element: <OrderSuccessfully/>},
     { path: 'search', element: <SearchResults /> },
-
+    { path: 'profile', element: <Profile /> },
 
     // Khi đường dẫn sai hoặc không tồn tại, dẫn đến trang NotFound
     { path: '*', element: <NotFound homePath="/"/> },

@@ -89,13 +89,8 @@ const Cart = () => {
         <div className="lg:w-2/3">
           {cartItems.length === 0 ? (
             <div className="text-center py-12 border rounded-lg">
-              <p className="text-gray-500 mb-4">Giỏ hàng của bạn trống.</p>
-              <Link
-                to="/"
-                className="inline-block px-6 py-3 bg-[#5f518e] text-white font-medium rounded hover:bg-[#696faa]"
-              >
-                Tiếp tục mua sắm
-              </Link>
+              <p className="text-gray-500 mb-8">Giỏ hàng của bạn trống.</p>
+              <img src="/img/empty.png" className="w-32 h-32 mb-4 mx-auto" />
             </div>
           ) : (
             <div className="space-y-6">
@@ -152,15 +147,7 @@ const Cart = () => {
             <h2 className="text-lg font-semibold mb-4 text-black">Tóm tắt đơn hàng</h2>
 
             <div className="space-y-4 mb-6">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tổng</span>
-                <span className="text-black">{subtotal.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Phí vận chuyển</span>
-                <span className="text-black">Miễn phí</span>
-              </div>
-              <div className="border-t pt-4 flex justify-between font-semibold text-lg">
+              <div className="border-t pt-4 flex justify-between font-semibold">
                 <span className="font-bold text-red-600">Thành tiền</span>
                 <span className="font-bold text-red-600">{total.toLocaleString()}</span>
               </div>

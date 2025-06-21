@@ -219,7 +219,7 @@
       }
       if (product) {
         addToCart(product);
-        navigate('/cart');
+        navigate('/checkout');
       }
     };
 
@@ -296,8 +296,9 @@
                 {(selectedVariant?.price || product.price || 0).toLocaleString()}
               </p>
               <div className="text-sm text-gray-600 space-y-1">
-                <p>Tình trạng: <span className="text-green-600">{product.status || 'Còn hàng'}</span></p>
-                <p>Thương hiệu: <span>{product.brandId?.name || 'Không rõ'}</span></p>
+                <p>Thương hiệu: <span className="text-[#5f518e] font-semibold">{product.brandId?.name || 'Không rõ'}</span></p>
+                <p>Loại sản phẩm: <span className="text-[#5f518e] font-semibold">Nước hoa {product.categoryId?.name || 'Không rõ'}</span></p>
+                <p>Tình trạng: <span className="text-green-700 font-semibold">{product.status || 'Còn hàng'} {selectedVariant && typeof selectedVariant.stock_quantity === 'number' && (<>({selectedVariant.stock_quantity})</>)}</span></p>
                 <p className="text-xs italic text-gray-500">Lưu ý: Mùi hương thực tế tùy vào sở thích cá nhân.</p>
               </div>
               <div className="mt-3">
@@ -352,7 +353,7 @@
             <div className="border p-6 rounded shadow text-center">
               <h3 className="font-semibold mb-4">DANH MỤC</h3>
               <ul className="text-sm space-y-2">
-                {['Nước hoa Nam', 'Nước hoa Nữ', 'Nước hoa UNISEX'].map((cat) => (
+                {['Nước hoa Nam', 'Nước hoa Nữ'].map((cat) => (
                   <li key={cat}>
                     <Link to={`#`} className="hover:text-[#5f518e] cursor-pointer">
                       {cat}
@@ -404,10 +405,18 @@
               </button>
             </div>
             {activeTab === 'description' && (
-              <div className="max-w-3xl mx-auto px-4 text-gray-800 space-y-8">
-                <p className="text-lg leading-relaxed whitespace-pre-line">
-                  {product.description || 'Chưa có mô tả cho sản phẩm này.'}
-                </p>
+              <div className="max-w-6xl mt-3 mx-auto px-6 py-6 bg-white text-gray-800 leading-relaxed space-y-6">
+                {product.description ? (
+                  product.description
+                    .split("\n")
+                    .map((paragraph, index) => (
+                      <p key={index} className="text-base md:text-lg text-justify">
+                        {paragraph}
+                      </p>
+                    ))
+                ) : (
+                  <p className="italic text-gray-500 text-center">Chưa có mô tả cho sản phẩm này.</p>
+                )}
               </div>
             )}
             {activeTab === 'review' && (
