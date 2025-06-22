@@ -172,6 +172,7 @@
 
     if (matched) {
       setSelectedVariant(matched);
+      setQuantity(1);
     } else {
       setSelectedVariant(null);
     }
@@ -403,7 +404,6 @@
                 ))}
               </div>
             </div>
-
             <div className="border p-6 rounded shadow">
               <h3 className="font-semibold mb-6 text-center">DỊCH VỤ</h3>
               <ul className="space-y-4 text-sm">
@@ -457,7 +457,7 @@
                   product.description
                     .split("\n")
                     .map((paragraph, index) => (
-                      <p key={index} className="text-base md:text-lg text-justify">
+                      <p key={index} className="text-base md:text-base text-justify">
                         {paragraph}
                       </p>
                     ))
