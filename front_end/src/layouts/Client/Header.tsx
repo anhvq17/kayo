@@ -59,7 +59,7 @@ const ClientHeader = () => {
           <Link to={"/products"} className="relative group cursor-pointer">
             <span className="hover:text-gray-700">Nước hoa nữ</span>
           </Link>
-          <Link to={"/"} className="relative group cursor-pointer">
+          <Link to={"/products"} className="relative group cursor-pointer">
             <span className="hover:text-gray-700">Thương hiệu</span>
           </Link>
         </nav>

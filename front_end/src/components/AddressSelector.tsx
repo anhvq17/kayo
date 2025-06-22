@@ -101,7 +101,7 @@ const AddressSelector = ({ onChange, value }: AddressSelectorProps) => {
       return parts.join(', ');
     }
 
-    return "Tỉnh/ Thành phố, Quận/Huyện, Phường/Xã";
+    return "Tỉnh/Thành phố, Quận/Huyện, Phường/Xã";
   };
 
   const renderList = () => {
@@ -173,21 +173,21 @@ const AddressSelector = ({ onChange, value }: AddressSelectorProps) => {
           <div className="flex border-b border-gray-200">
             <button
               onClick={() => setCurrentTab("province")}
-              className={`flex-1 p-2 text-center ${currentTab === "province" ? "border-b-2 border-orange-500 text-orange-500" : "text-gray-500"}`}
+              className={`flex-1 p-2 text-center ${currentTab === "province" ? "border-b-2 border-[#5f518e] text-[#5f518e]" : "text-gray-500"}`}
             >
               Tỉnh/Thành phố
             </button>
             <button
               onClick={() => setCurrentTab("district")}
               disabled={!selectedProvince}
-              className={`flex-1 p-2 text-center ${currentTab === "district" ? "border-b-2 border-orange-500 text-orange-500" : "text-gray-500"} disabled:cursor-not-allowed disabled:text-gray-300`}
+              className={`flex-1 p-2 text-center ${currentTab === "district" ? "border-b-2 border-[#5f518e] text-[#5f518e]" : "text-gray-500"} disabled:cursor-not-allowed disabled:text-gray-300`}
             >
               Quận/Huyện
             </button>
             <button
               onClick={() => setCurrentTab("ward")}
               disabled={!selectedDistrict}
-              className={`flex-1 p-2 text-center ${currentTab === "ward" ? "border-b-2 border-orange-500 text-orange-500" : "text-gray-500"} disabled:cursor-not-allowed disabled:text-gray-300`}
+              className={`flex-1 p-2 text-center ${currentTab === "ward" ? "border-b-2 border-[#5f518e] text-[#5f518e]" : "text-gray-500"} disabled:cursor-not-allowed disabled:text-gray-300`}
             >
               Phường/Xã
             </button>
