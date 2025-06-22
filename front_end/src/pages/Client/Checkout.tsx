@@ -232,10 +232,10 @@ const Checkout = () => {
               <div className="p-6 space-y-4">
                 {cartItems.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">Giỏ hàng trống</p>
+                    <p className="text-gray-500 mb-7">Giỏ hàng trống</p>
                     <Link
                       to="/"
-                      className="inline-block px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
+                      className="inline-block px-4 py-2 bg-[#5f518e] text-white rounded-md"
                     >
                       Tiếp tục mua sắm
                     </Link>

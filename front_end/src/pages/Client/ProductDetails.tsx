@@ -55,6 +55,7 @@
     const [user, setUserInfo] = useState<UserInfoType | null>(null);
     const [error] = useState<string | null>(null);
     const [addedMessage, setAddedMessage] = useState('');
+    const [quantity, setQuantity] = useState(1);
 
    useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -171,6 +172,7 @@
 
     if (matched) {
       setSelectedVariant(matched);
+      setQuantity(1);
     } else {
       setSelectedVariant(null);
     }
@@ -184,7 +186,7 @@
       );
 
       if (existing) {
-        existing.quantity += 1;
+        existing.quantity += quantity;
       } else {
         cart.push({
           variantId: selectedVariant!._id,
@@ -194,7 +196,7 @@
           price: selectedVariant!.price,
           selectedScent,
           selectedVolume,
-          quantity: 1,
+          quantity: quantity,
         });
       }
       localStorage.setItem('cart', JSON.stringify(cart));
@@ -208,6 +210,7 @@
       if (product) {
         addToCart(product);
         setAddedMessage('Đã thêm vào giỏ hàng!');
+        setQuantity(1);
         setTimeout(() => setAddedMessage(''), 2000);
       }
     };
@@ -291,15 +294,47 @@
 
             <div className="w-full md:w-1/2">
               <h2 className="text-xl font-semibold">{product.name}</h2>
-              <div className="text-yellow-400 mb-3">★★★★★</div>
+              <div className="text-yellow-400 mb-2">★★★★★</div>
               <p className="text-red-600 text-2xl font-bold mb-3">
                 {(selectedVariant?.price || product.price || 0).toLocaleString()}
               </p>
               <div className="text-sm text-gray-600 space-y-1">
                 <p>Thương hiệu: <span className="text-[#5f518e] font-semibold">{product.brandId?.name || 'Không rõ'}</span></p>
                 <p>Loại sản phẩm: <span className="text-[#5f518e] font-semibold">Nước hoa {product.categoryId?.name || 'Không rõ'}</span></p>
-                <p>Tình trạng: <span className="text-green-700 font-semibold">{product.status || 'Còn hàng'} {selectedVariant && typeof selectedVariant.stock_quantity === 'number' && (<>({selectedVariant.stock_quantity})</>)}</span></p>
+                <p>Tình trạng: <span className="text-green-700 font-semibold">{product.status || 'Còn hàng'} {selectedVariant && typeof selectedVariant.stock_quantity === 'number' && (<>({selectedVariant.stock_quantity} sản phẩm)</>)}</span></p>
                 <p className="text-xs italic text-gray-500">Lưu ý: Mùi hương thực tế tùy vào sở thích cá nhân.</p>
+                <div className="flex items-center gap-4 !mt-4">
+                  <div className="flex items-center border border-gray-300 rounded overflow-hidden w-fit">
+                    <button
+                      onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                      className="w-8 h-8 text-lg font-semibold text-gray-700 hover:bg-gray-100 flex items-center justify-center"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="text"
+                      value={quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (!isNaN(val)) {
+                          setQuantity(Math.min(Math.max(1, val), selectedVariant?.stock_quantity || 1));
+                        }
+                      }}
+                      className="w-8 h-8 text-center border-x border-gray-300 text-sm focus:outline-none flex items-center justify-center"
+                      style={{ lineHeight: 'normal' }}
+                    />
+                    <button
+                      onClick={() =>
+                        setQuantity((prev) =>
+                          Math.min(prev + 1, selectedVariant?.stock_quantity || prev + 1)
+                        )
+                      }
+                      className="w-8 h-8 text-lg font-semibold text-gray-700 hover:bg-gray-100 flex items-center justify-center"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
               </div>
               <div className="mt-3">
                 <p className="text-sm font-medium">Mùi hương:</p>
@@ -349,43 +384,55 @@
             </div>
           </div>
 
-          <div className="hidden lg:block col-span-4 space-y-6 max-w-sm mx-auto">
+          <div className="hidden lg:block col-span-4 space-y-6 w-full max-w-[600px] mx-auto">
             <div className="border p-6 rounded shadow text-center">
-              <h3 className="font-semibold mb-4">DANH MỤC</h3>
-              <ul className="text-sm space-y-2">
-                {['Nước hoa Nam', 'Nước hoa Nữ'].map((cat) => (
-                  <li key={cat}>
-                    <Link to={`#`} className="hover:text-[#5f518e] cursor-pointer">
-                      {cat}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="border p-6 rounded shadow text-center">
-              <h3 className="font-semibold mb-4">ƯU ĐIỂM</h3>
-              <div className="grid grid-cols-4 text-center text-xs gap-3 justify-center">
-                {['Xuân', 'Hạ', 'Thu', 'Đông'].map((season) => (
-                  <div key={season} className="cursor-pointer border rounded-full px-3 py-1 text-xs hover:bg-[#696faa] hover:text-white">
-                    {season}
+              <h3 className="font-semibold mb-5">ƯU ĐIỂM</h3>
+              <div className="grid grid-cols-4 gap-4 text-sm text-gray-600">
+                {[  
+                  { label: 'Xuân', color: 'bg-green-400', icon: '🍃' },
+                  { label: 'Hạ', color: 'bg-red-300', icon: '🌂' },
+                  { label: 'Thu', color: 'bg-yellow-400', icon: '🍂' },
+                  { label: 'Đông', color: 'bg-blue-400', icon: '❄️' },
+                ].map((item, i) => (
+                  <div key={i} className="flex flex-col items-center">
+                    <div className="text-xl">{item.icon}</div>
+                    <div className="mt-1 font-medium">{item.label}</div>
+                    <div className="w-full h-2 rounded bg-gray-200 mt-1">
+                      <div className={`h-2 rounded ${item.color}`} style={{ width: '60%' }} />
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="border p-6 rounded shadow text-center">
-              <h3 className="font-semibold mb-4">TỪ KHÓA</h3>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {['Thanh lịch', 'Lịch lãm', 'Nước hoa'].map((tag) => (
-                  <span key={tag} className="cursor-pointer border rounded-full px-3 py-1 text-xs hover:bg-[#696faa] hover:text-white">
-                    {tag}
-                  </span>
-                ))}
-              </div>
+            <div className="border p-6 rounded shadow">
+              <h3 className="font-semibold mb-6 text-center">DỊCH VỤ</h3>
+              <ul className="space-y-4 text-sm">
+                <li className="flex items-start gap-3">
+                  <span className="text-2xl">🛡️</span>
+                  <div>
+                    <p className="font-semibold">Cam kết chính hãng 100%</p>
+                    <p className="text-gray-500 text-xs">Tất cả các dòng nước hoa.</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-xl">↩️</span>
+                  <div>
+                    <p className="font-semibold">Bảo hành đến giọt cuối cùng</p>
+                    <p className="text-gray-500 text-xs">Miễn phí đổi trả trong 7 ngày.</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-xl">🚚</span>
+                  <div>
+                    <p className="font-semibold">Giao hàng miễn phí toàn quốc</p>
+                    <p className="text-gray-500 text-xs">Miễn phí thiệp & gói quà.</p>
+                  </div>
+                </li>
+              </ul>
             </div>
           </div>
 
-          <div className="col-span-12 mt-10">
+          <div className="col-span-12">
             <div className="flex gap-4 border-b border-gray-300">
               <button
                 className={`px-6 py-3 font-semibold ${
@@ -410,7 +457,7 @@
                   product.description
                     .split("\n")
                     .map((paragraph, index) => (
-                      <p key={index} className="text-base md:text-lg text-justify">
+                      <p key={index} className="text-base md:text-base text-justify">
                         {paragraph}
                       </p>
                     ))
@@ -443,9 +490,9 @@
                 </div>
 
                 <div className="mt-6">
-                  <h4 className="font-semibold mb-3">Bình luận</h4>
+                  <h4 className="font-semibold mb-3">Đánh giá</h4>
                   {comments.length === 0 ? (
-                    <p className="text-gray-500">Chưa có bình luận nào.</p>
+                    <p className="text-gray-500">Chưa có đánh giá nào.</p>
                   ) : (
                     <ul className="space-y-3">
                       {comments.map((cmt) => (
