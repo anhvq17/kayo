@@ -11,7 +11,9 @@ import orderRouter from "./routes/orderRoutes.js";
 
 
 import User from './models/userModel.js';
-import productVariantRouter from "./routes/productVariantRoutes.js";
+import attributeRouter from "./routes/attributeRoutes.js";
+import attributeValueRouter from "./routes/attributeValueRouter.js";
+import variantRouter from "./routes/variantRoutes.js";
 
 
 dotenv.config();
@@ -48,8 +50,11 @@ app.use('/categories', categoryRouter);
 app.use('/', authRouter);
 app.use('/comments', commentsRoute);
 app.use('/orders', orderRouter);
+app.use('/attribute',attributeRouter)
+app.use('/attribute-value',attributeValueRouter)
 
-app.use('/variant',productVariantRouter)
+
+app.use('/variant',variantRouter)
 app.use('/comments', commentsRoute);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
