@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const AdminHeader = () => {
+const AdminHeader = ({ collapsed }: { collapsed: boolean }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -9,30 +9,30 @@ const AdminHeader = () => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
 
-    // Nếu không có token hoặc không phải admin => tự động đăng xuất
     if (!token || role !== 'admin') {
       localStorage.removeItem('token');
       localStorage.removeItem('role');
-      localStorage.removeItem('user'); // nếu có
+      localStorage.removeItem('user');
       navigate('/login');
     }
   }, [navigate]);
 
-   const handleLogout = () => {
-  const confirmed = window.confirm("Bạn có chắc chắn muốn đăng xuất?");
-  if (confirmed) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("user");
-    navigate("/login");
-  }
-};
+  const handleLogout = () => {
+    const confirmed = window.confirm("Bạn có chắc chắn muốn đăng xuất?");
+    if (confirmed) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("user");
+      navigate("/login");
+    }
+  };
 
   return (
-    <header className="h-[64px] bg-white border-b flex items-center justify-between px-6 fixed top-0 left-[240px] z-40 w-[calc(100%-240px)]">
-      <button className="p-2">
-        <i className="fa-solid fa-bars w-4 h-4 mr-2" />
-      </button>
+    <header
+      className={`h-[64px] bg-white border-b flex items-center justify-end px-6 fixed top-0 z-40 transition-all duration-300 ${
+        collapsed ? 'left-[60px] w-[calc(100%-60px)]' : 'left-[240px] w-[calc(100%-240px)]'
+      }`}
+    >
       <div className="relative">
         <img
           src="https://i.pravatar.cc/40?img=12"
