@@ -35,16 +35,13 @@ const AdminHeader = ({ collapsed }: { collapsed: boolean }) => {
     >
       <div className="relative">
         <img
-          src="https://i.pravatar.cc/40?img=12"
+          src="https://i.pravatar.cc/40"
           alt="avatar"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="w-10 h-10 rounded-full cursor-pointer border-2 border-gray-300"
+          className="w-8 h-8 rounded-full border-2 border-gray-300 cursor-pointer"
         />
         {isMenuOpen && (
           <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-50">
-            <button className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100">
-              <i className="fas fa-user w-4 h-4 mr-2" /> Tài khoản
-            </button>
             <button
               onClick={handleLogout}
               className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100"

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Trash } from "lucide-react";
 import axios from "axios";
 
@@ -47,7 +47,6 @@ const VariantManager = () => {
     }
   };
 
-  // Phân trang
   const totalPages = Math.ceil(variants.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -85,7 +84,7 @@ const VariantManager = () => {
             </thead>
             <tbody>
               {currentItems.length > 0 ? (
-currentItems.map((variant, index) => (
+                currentItems.map((variant, index) => (
                   <tr key={variant._id} className="hover:bg-gray-50 text-left">
                     <td className="px-4 py-2">{indexOfFirstItem + index + 1}</td>
                     <td className="px-4 py-2">{variant.productId?.name || "Không rõ"}</td>
@@ -119,7 +118,6 @@ currentItems.map((variant, index) => (
             </tbody>
           </table>
 
-          {/* Phân trang */}
           <div className="flex justify-center mt-4 gap-2">
             <button
               className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"

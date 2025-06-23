@@ -7,8 +7,13 @@ import productRouter from "./routes/productRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
 import brandRouter from "./routes/brandRoutes.js";
 import authRouter from "./routes/authRoutes.js";
+import orderRouter from "./routes/orderRoutes.js";
+
+
 import User from './models/userModel.js';
-import productVariantRouter from "./routes/productVariantRoutes.js";
+import attributeRouter from "./routes/attributeRoutes.js";
+import attributeValueRouter from "./routes/attributeValueRouter.js";
+import variantRouter from "./routes/variantRoutes.js";
 
 
 dotenv.config();
@@ -37,15 +42,19 @@ app.post('/register', async (req, res) => {
   }
 });
 
-
-
 // Routes
 app.get('/', (req, res) => res.send('Hello from Home'));
 app.use('/products', productRouter);
 app.use('/brands', brandRouter);
 app.use('/categories', categoryRouter);
 app.use('/', authRouter);
-app.use('/variant',productVariantRouter)
+app.use('/comments', commentsRoute);
+app.use('/orders', orderRouter);
+app.use('/attribute',attributeRouter)
+app.use('/attribute-value',attributeValueRouter)
+
+
+app.use('/variant',variantRouter)
 app.use('/comments', commentsRoute);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

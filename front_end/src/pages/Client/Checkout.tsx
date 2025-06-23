@@ -1,168 +1,312 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import {
+  type Province,
+  type District,
+  type Ward,
+} from "sub-vn";
+import AddressSelector from "../../components/AddressSelector";
+
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  volume: string;
+  fragrance: string;
+  image: {
+    src: string;
+    width?: number;
+    height?: number;
+  };
+}
 
 const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [address, setAddress] = useState<{
+    province?: Province;
+    district?: District;
+    ward?: Ward;
+  }>({});
+  const [detailAddress, setDetailAddress] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  useEffect(() => {
+    const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
+    if (userInfo) {
+      setFullName(userInfo.username || "");
+      setPhone(userInfo.phone || "");
+    }
+
+    const raw = localStorage.getItem("cart");
+    if (raw) {
+      try {
+        const data = JSON.parse(raw);
+        const items: CartItem[] = data.map((item: any) => ({
+          id: `${item._id}-${item.selectedScent}-${item.selectedVolume}`,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          volume: item.selectedVolume,
+          fragrance: item.selectedScent,
+          image: typeof item.image === "string"
+            ? { src: item.image, width: 100, height: 100 }
+            : item.image,
+        }));
+        setCartItems(items);
+      } catch (error) {
+        console.error("Lỗi khi parse localStorage:", error);
+      }
+    }
+  }, []);
+
+  const { province: selectedProvince, district: selectedDistrict, ward: selectedWard } = address;
+
+  const isFormValid = () => {
+    return fullName && phone && selectedProvince && selectedDistrict && selectedWard && detailAddress && cartItems.length > 0;
+  };
+
+  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+  const shippingFee = 0;
+  const discount = 0;
+  const total = subtotal + shippingFee - discount;
+
+  const handleSubmit = async () => {
+    if (!isFormValid()) {
+      alert("Vui lòng điền đầy đủ thông tin!");
+      return;
+    }
+
+    setIsLoading(true);
+
+    setTimeout(() => {
+      console.log("Thông tin giao hàng:", {
+        fullName,
+        phone,
+        address: {
+          province: selectedProvince?.name,
+          district: selectedDistrict?.name,
+          ward: selectedWard?.name,
+          detail: detailAddress,
+        },
+        paymentMethod,
+        items: cartItems,
+        total,
+      });
+      setIsLoading(false);
+      window.location.href = "/ordersuccessfully";
+    }, 1000);
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center text-sm">
-        <Link to="/" className="text-gray-500 hover:text-gray-900">Trang chủ</Link>
-        <span className="mx-2 text-gray-400">/</span>
-        <Link to="/cart" className="text-gray-500 hover:text-gray-900">Giỏ hàng</Link>
-        <span className="mx-2 text-gray-400">/</span>
-        <span className="font-medium text-black">Thanh toán</span>
-      </div>
-
-      <div className="flex flex-col md:flex-row w-full min-h-screen p-4 md:p-6 gap-6">
-        <div className="md:w-1/2 bg-white p-8 rounded-lg shadow-md">
-          <h2 className="mb-4 text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">
-            Thông tin nhận hàng
-          </h2>
-          <div className="space-y-4">
-            <input
-              type="text"
-              placeholder="Họ và tên"
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]"
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]"
-            />
-            <input
-              type="text"
-              placeholder="Số điện thoại"
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]"
-            />
-          </div>
-
-          <h2 className="mt-10 mb-4 text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">
-            Địa chỉ nhận hàng
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
-                Tỉnh/Thành phố
-              </label>
-              <select className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]">
-                <option>Hà Nội</option>
-              </select>
-            </div>
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
-                Quận/Huyện
-              </label>
-              <select className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]">
-                <option>Bắc Từ Liêm</option>
-              </select>
-            </div>
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
-                Phường/Xã
-              </label>
-              <select className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]">
-                <option>Đức Thắng</option>
-              </select>
-            </div>
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
-                Địa chỉ chi tiết
-              </label>
-              <input
-                type="text"
-                placeholder="Số nhà, tên đường..."
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#696faa]"
-              />
-            </div>
-          </div>
-
-          <h2 className="mt-10 mb-4 text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">
-            Phương thức thanh toán
-          </h2>
-          <div className="space-y-4">
-            <label className="flex items-center space-x-3 cursor-pointer">
-              <input
-                type="radio"
-                name="payment"
-                checked={paymentMethod === "cod"}
-                onChange={() => setPaymentMethod("cod")}
-                className="w-5 h-5 text-[#696faa] focus:ring-[#696faa] border-gray-300"
-              />
-              <span className="text-gray-700 font-medium">Thanh toán khi nhận hàng</span>
-            </label>
-            <label className="flex items-center space-x-3 cursor-pointer">
-              <input
-                type="radio"
-                name="payment"
-                checked={paymentMethod === "vnpay"}
-                onChange={() => setPaymentMethod("vnpay")}
-                className="w-5 h-5 text-[#696faa] focus:ring-[#696faa] border-gray-300"
-              />
-              <span className="text-gray-700 font-medium">Tài khoản ngân hàng liên kết VNPay</span>
-            </label>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center text-sm mb-6">
+          <Link to="/" className="text-gray-500 hover:text-gray-900">
+            Trang chủ
+          </Link>
+          <span className="mx-2 text-gray-400">/</span>
+          <Link to="/cart" className="text-gray-500 hover:text-gray-900">
+            Giỏ hàng
+          </Link>
+          <span className="mx-2 text-gray-400">/</span>
+          <span className="font-medium text-black">Thanh toán</span>
         </div>
 
-        <div className="md:w-1/2 bg-white p-8 rounded-lg shadow-md flex flex-col justify-between">
-          <div className="space-y-8">
-            <div className="flex items-center space-x-5">
-              <img
-                src="https://byvn.net/CD9y"
-                className="w-24 h-24 object-cover rounded-md shadow-sm"
-              />
-              <div className="flex-1">
-                <p className="font-semibold text-base text-gray-800">JEAN PAUL GAULTIERH</p>
-                <p className="text-sm text-gray-500">Dung tích: 100ml</p>
-                <p className="text-sm text-gray-500">Hương vị: Nhẹ nhàng</p>
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="lg:w-2/3">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-800">Thông tin giao hàng</h2>
               </div>
-              <div className="text-right">
-                <p className="text-red-600 font-bold text-lg">70.000</p>
-                <p className="text-sm text-gray-400">x1</p>
-              </div>
-            </div>
 
-            <div className="flex items-center space-x-5">
-              <img
-                src="https://byvn.net/QbEB"
-                className="w-24 h-24 object-cover rounded-md shadow-sm"
-              />
-              <div className="flex-1">
-                <p className="font-semibold text-base text-gray-800">JEAN PAUL GAULTIERH</p>
-                <p className="text-sm text-gray-500">Dung tích: 100ml</p>
-                <p className="text-sm text-gray-500">Hương vị: Nhẹ nhàng</p>
-              </div>
-              <div className="text-right">
-                <p className="text-red-600 font-bold text-lg">175.000</p>
-                <p className="text-sm text-gray-400">x5</p>
-              </div>
-            </div>
+              <div className="p-6 space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-md font-medium text-gray-700">Thông tin người nhận</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Họ và tên <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Nhập họ và tên"
+                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      />
+                    </div>
 
-            <div className="border-t border-gray-300 pt-6 text-gray-700 space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span>Tổng tiền hàng</span>
-                <span>245.000</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Phí vận chuyển</span>
-                <span>Miễn phí</span>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Số điện thoại <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="Nhập số điện thoại"
+                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-md font-medium text-gray-700">Địa chỉ giao hàng</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tỉnh/Thành phố, Quận/Huyện, Phường/Xã <span className="text-red-500">*</span>
+                      </label>
+                      <AddressSelector 
+                        value={address}
+                        onChange={setAddress}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Địa chỉ chi tiết <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={detailAddress}
+                        onChange={(e) => setDetailAddress(e.target.value)}
+                        placeholder="Số nhà, tên đường, tổ, khu phố..."
+                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      />
+                    </div>
+                  </div>
+                  {detailAddress && selectedWard && selectedDistrict && selectedProvince && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-md">
+                      <p className="text-sm text-gray-600">
+                        <strong>Địa chỉ giao hàng:</strong>
+                      </p>
+                      <p className="text-sm text-gray-800 mt-1">
+                        {detailAddress}, {selectedWard.name}, {selectedDistrict.name}, {selectedProvince.name}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-4">
+                  <h3 className="text-md font-medium text-gray-700">Phương thức thanh toán</h3>
+                  <div className="space-y-3">
+                    <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="payment"
+                        checked={paymentMethod === "cod"}
+                        onChange={() => setPaymentMethod("cod")}
+                        className="w-4 h-4 text-orange-500 focus:ring-orange-500 border-gray-300"
+                      />
+                      <div className="ml-3">
+                        <span className="text-gray-700 font-medium">Thanh toán khi nhận hàng (COD)</span>
+                        <p className="text-sm text-gray-500">Thanh toán bằng tiền mặt khi nhận hàng</p>
+                      </div>
+                    </label>
+                    <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="payment"
+                        checked={paymentMethod === "vnpay"}
+                        onChange={() => setPaymentMethod("vnpay")}
+                        className="w-4 h-4 text-orange-500 focus:ring-orange-500 border-gray-300"
+                      />
+                      <div className="ml-3">
+                        <span className="text-gray-700 font-medium">VNPay</span>
+                        <p className="text-sm text-gray-500">Thanh toán qua cổng VNPay</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+          <div className="lg:w-1/3">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 sticky top-6">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-800">Đơn hàng của bạn</h2>
+              </div>
+              <div className="p-6 space-y-4">
+                {cartItems.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">Giỏ hàng trống</p>
+                    <Link
+                      to="/"
+                      className="inline-block px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
+                    >
+                      Tiếp tục mua sắm
+                    </Link>
+                  </div>
+                ) : (
+                  <>
+                    {cartItems.map((item) => (
+                      <div key={item.id} className="flex items-center space-x-4">
+                        <img
+                          src={item.image.src}
+                          alt={item.name}
+                          className="w-16 h-16 object-cover rounded-md"
+                        />
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-800">{item.name}</h4>
+                          <p className="text-sm text-gray-500">Dung tích: {item.volume}ml</p>
+                          <p className="text-sm text-gray-500">Hương vị: {item.fragrance}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-800">
+                            {(item.price * item.quantity).toLocaleString()}₫
+                          </p>
+                          <p className="text-sm text-gray-500">x{item.quantity}</p>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="border-t border-gray-200 pt-4 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Tạm tính</span>
+                        <span className="text-gray-800">{subtotal.toLocaleString()}₫</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Phí vận chuyển</span>
+                        <span className="text-green-600 font-medium">Miễn phí</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Giảm giá</span>
+                        <span className="text-red-600">-{discount.toLocaleString()}₫</span>
+                      </div>
+                    </div>
+                    <div className="border-t border-gray-200 pt-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold text-gray-800">Tổng cộng</span>
+                        <span className="text-xl font-bold text-orange-500">{total.toLocaleString()}₫</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Đã bao gồm VAT</p>
+                    </div>
+                    <button
+                      onClick={handleSubmit}
+                      disabled={!isFormValid() || isLoading}
+                      className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-lg transition-colors duration-200"
+                    >
+                      {isLoading ? "Đang xử lý..." : "Đặt hàng"}
+                    </button>
 
-          <div className="border-t border-gray-300 mt-6 pt-6 flex justify-between items-center">
-            <span className="text-xl font-bold text-red-600">Tổng tiền</span>
-            <span className="text-xl font-bold text-red-600">245.000</span>
+                    <p className="text-xs text-gray-500 text-center">
+                      Bằng việc đặt hàng, bạn đồng ý với{" "}
+                      <Link to="/terms" className="text-orange-500 hover:underline">
+                        Điều khoản sử dụng
+                      </Link>{" "}
+                      và{" "}
+                      <Link to="/privacy" className="text-orange-500 hover:underline">
+                        Chính sách bảo mật
+                      </Link>
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
-
-          <Link to={`/ordersuccessfully`}>
-            <button
-              className="mt-8 w-full bg-[#5f518e] hover:bg-[#696faa] transition-colors text-white font-semibold py-3 rounded-md shadow-lg"
-              type="button"
-            >
-              Xác nhận
-            </button>
-          </Link>
         </div>
       </div>
     </div>

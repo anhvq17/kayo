@@ -103,15 +103,16 @@
     const fetchVariants = async (productId: string) => {
     try {
       const res = await axios.get(`http://localhost:3000/variant/product/${productId}`);
-      const variantList = res.data.data;
+      const variantList: VariantType[] = res.data.data;
       setVariants(res.data.data);
 
       if (variantList.length > 0) {
-      const first = variantList[0];
-      setSelectedScent(first.flavors);
-      setSelectedVolume(first.volume.toString());
-      setSelectedVariant(first);
-      setMainImg(first.image);
+      const firstScent = variantList[0].flavors;
+      const firstByScent = variantList.find(v => v.flavors === firstScent);
+      setSelectedScent(firstScent);
+      setSelectedVolume(firstByScent?.volume.toString() || '');
+      setSelectedVariant(firstByScent || null);
+      setMainImg(firstByScent?.image || variantList[0].image);
     }
     } catch (err) {
       console.error('Lỗi khi lấy danh sách biến thể:', err);
@@ -170,7 +171,6 @@
 
     if (matched) {
       setSelectedVariant(matched);
-      setMainImg(matched.image);
     } else {
       setSelectedVariant(null);
     }
@@ -258,7 +258,7 @@
     if (error) return <div className="text-center py-10 text-red-600">{error}</div>;
     if (!product) return <div className="text-center py-10">Không tìm thấy sản phẩm.</div>;
 
-    const thumbnails = [product.image, product.image, product.image, product.image];
+    const thumbnails = [...new Set(variants.map((v) => v.image))];
 
     return (
       <div className="container mx-auto px-4 py-8">
@@ -296,8 +296,9 @@
                 {(selectedVariant?.price || product.price || 0).toLocaleString()}
               </p>
               <div className="text-sm text-gray-600 space-y-1">
-                <p>Tình trạng: <span className="text-green-600">{product.status || 'Còn hàng'}</span></p>
-                <p>Thương hiệu: <span>{product.brandId?.name || 'Không rõ'}</span></p>
+                <p>Thương hiệu: <span className="text-[#5f518e] font-semibold">{product.brandId?.name || 'Không rõ'}</span></p>
+                <p>Loại sản phẩm: <span className="text-[#5f518e] font-semibold">Nước hoa {product.categoryId?.name || 'Không rõ'}</span></p>
+                <p>Tình trạng: <span className="text-green-700 font-semibold">{product.status || 'Còn hàng'} {selectedVariant && typeof selectedVariant.stock_quantity === 'number' && (<>({selectedVariant.stock_quantity})</>)}</span></p>
                 <p className="text-xs italic text-gray-500">Lưu ý: Mùi hương thực tế tùy vào sở thích cá nhân.</p>
               </div>
               <div className="mt-3">
@@ -306,7 +307,11 @@
                   {[...new Set(variants.map((v) => v.flavors))].map((scent) => (
                     <button
                       key={scent}
-                      onClick={() => setSelectedScent(scent)}
+                      onClick={() => {setSelectedScent(scent);
+                        const volumesByScent = variants.filter((v) => v.flavors === scent).map((v) => v.volume);
+                        const minVolume = Math.min(...volumesByScent);
+                        setSelectedVolume(minVolume.toString());
+                      }}
                       className={`px-3 py-1 border rounded text-sm hover:bg-[#696faa] hover:text-white ${
                         selectedScent === scent ? 'bg-[#5f518e] text-white' : ''
                       }`}
@@ -319,7 +324,7 @@
               <div className="mt-3">
                 <p className="text-sm font-medium">Dung tích:</p>
                 <div className="flex gap-2 mt-1">
-                  {[...new Set(variants.map((v) => v.volume.toString()))].map((vol) => (
+                  {[...new Set(variants.filter((v) => v.flavors === selectedScent).map((v) => v.volume.toString()))].map((vol) => (
                     <button
                       key={vol}
                       onClick={() => setSelectedVolume(vol)}
@@ -348,7 +353,7 @@
             <div className="border p-6 rounded shadow text-center">
               <h3 className="font-semibold mb-4">DANH MỤC</h3>
               <ul className="text-sm space-y-2">
-                {['Nước hoa Nam', 'Nước hoa Nữ', 'Nước hoa UNISEX'].map((cat) => (
+                {['Nước hoa Nam', 'Nước hoa Nữ'].map((cat) => (
                   <li key={cat}>
                     <Link to={`#`} className="hover:text-[#5f518e] cursor-pointer">
                       {cat}
@@ -400,10 +405,18 @@
               </button>
             </div>
             {activeTab === 'description' && (
-              <div className="max-w-3xl mx-auto px-4 text-gray-800 space-y-8">
-                <p className="text-lg leading-relaxed whitespace-pre-line">
-                  {product.description || 'Chưa có mô tả cho sản phẩm này.'}
-                </p>
+              <div className="max-w-6xl mt-3 mx-auto px-6 py-6 bg-white text-gray-800 leading-relaxed space-y-6">
+                {product.description ? (
+                  product.description
+                    .split("\n")
+                    .map((paragraph, index) => (
+                      <p key={index} className="text-base md:text-lg text-justify">
+                        {paragraph}
+                      </p>
+                    ))
+                ) : (
+                  <p className="italic text-gray-500 text-center">Chưa có mô tả cho sản phẩm này.</p>
+                )}
               </div>
             )}
             {activeTab === 'review' && (
@@ -470,17 +483,6 @@
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
-                      </div>
-
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {product.variants?.map((v, i) => (
-                          <span
-                            key={i}
-                            className="bg-gray-200 text-gray-800 text-xs px-2 py-0.5 rounded-full"
-                          >
-                            {v.volume}ml
-                          </span>
-                        ))}
                       </div>
 
                       <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2 text-left">
