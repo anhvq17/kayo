@@ -9,10 +9,12 @@ export const attributeValueSchema = Joi.object({
     }),
 
   valueCode: Joi.string()
+    .pattern(/^[a-zA-Z0-9-_]+$/)
     .required()
     .messages({
       "string.empty": "Mã giá trị (valueCode) không được để trống",
-      "any.required": "Mã giá trị là bắt buộc"
+      "any.required": "Mã giá trị là bắt buộc",
+      "string.pattern.base": "Mã chỉ bao gồm chữ, số, gạch ngang hoặc gạch dưới",
     }),
 
   attributeId: Joi.string()

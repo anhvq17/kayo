@@ -22,7 +22,7 @@ variantRouter.delete("/hard-delete-many", hardDeleteManyVariants); // Xóa cứn
 variantRouter.patch("/restore-many", restoreManyVariants); // Khôi phục nhiều biến thể trong thùng rác
 variantRouter.delete("/hard/:id", hardDeleteVariant); // Xóa cứng biến thể
 variantRouter.patch("/restore/:id", restoreVariant); // Khôi phục một biến thể trong thùng rác
-variantRouter.delete("/:id", softDeleteVariant); // Xóa mềm một biến thể
+variantRouter.delete("/soft/:id", softDeleteVariant); // Xóa mềm một biến thể
 variantRouter.get("/", getAllVariants); // Lấy tất cả các biến thể chưa bị xóa mềm
 variantRouter.get("/:id", getVariantDetail);
 variantRouter.post("/", createVariant);

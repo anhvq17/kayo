@@ -21,7 +21,7 @@ productRouter.delete("/hard-delete-many", hardDeleteManyProducts); // xóa cứn
 productRouter.patch("/restore-many", restoreManyProducts);     // khôi phục nhiều sản phẩm trong thùng rác
 productRouter.delete("/hard/:id", hardDeleteProduct); // Xóa cứng một sản phẩm
 productRouter.patch("/restore/:id", restoreProduct); // Khôi phục một sản phẩm trong thùng rác (đặt deletedAt = null)
-productRouter.delete("/:id", softDeleteProduct); // Xóa mềm một sản phẩm
+productRouter.delete("/soft/:id", softDeleteProduct); // Xóa mềm một sản phẩm
 productRouter.get("/", getAllProducts); // Lấy tất cả sản phẩm chưa bị xóa mềm
 productRouter.get("/:id", getProductDetail);
 productRouter.post("/", createProduct);

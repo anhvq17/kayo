@@ -117,3 +117,80 @@ export const hardDeleteAttribute = async (req, res) => {
     return res.status(400).json({ message: error.message });
   }
 };
+
+
+// Lấy tất cả attribute đã bị xóa mềm
+export const getTrashedAttributes = async (req, res) => {
+  try {
+    const trashedAttributes = await AttributeModel.find({ deletedAt: { $ne: null } });
+    return res.status(200).json({
+      message: "Danh sách thuộc tính trong thùng rác",
+      data: trashedAttributes,
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
+// Khôi phục nhiều attributes đã bị xóa mềm
+export const restoreManyAttributes = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "Danh sách ID không hợp lệ" });
+    }
+
+    const result = await AttributeModel.updateMany(
+      { _id: { $in: ids } },
+      { deletedAt: null }
+    );
+
+    return res.status(200).json({
+      message: "Khôi phục thành công các thuộc tính",
+      data: result,
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
+// Xóa mềm nhiều attributes
+export const softDeleteManyAttributes = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "Danh sách ID không hợp lệ" });
+    }
+
+    const result = await AttributeModel.updateMany(
+      { _id: { $in: ids } },
+      { deletedAt: new Date() }
+    );
+
+    return res.status(200).json({
+      message: "Đã chuyển các thuộc tính vào thùng rác",
+      data: result,
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
+// Xóa cứng nhiều attributes đã bị xóa mềm
+export const hardDeleteManyAttributes = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "Danh sách ID không hợp lệ" });
+    }
+
+    const result = await AttributeModel.deleteMany({ _id: { $in: ids } });
+
+    return res.status(200).json({
+      message: "Xóa vĩnh viễn các thuộc tính thành công",
+      data: result,
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
