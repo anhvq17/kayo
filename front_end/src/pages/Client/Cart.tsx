@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Plus, Minus, X } from "lucide-react";
 
 interface CartItem {
@@ -20,24 +20,44 @@ interface CartItem {
 const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const raw = localStorage.getItem("cart");
+    const buyNowRaw = localStorage.getItem("buyNowItem");
+
     if (raw) {
       try {
-        const data = JSON.parse(raw);
-        const items: CartItem[] = data.map((item: any) => ({
-          _id: item._id || item.productId,
-          id: `${item._id || item.productId}-${item.selectedScent}-${item.selectedVolume}`,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          volume: item.selectedVolume,
-          fragrance: item.selectedScent,
-          image: typeof item.image === "string"
-            ? { src: item.image, width: 100, height: 100 }
-            : { src: item.image?.src || "/img/default.jpg", width: 100, height: 100 },
-        }));
+        const cartData = JSON.parse(raw);
+        const buyNow = buyNowRaw ? JSON.parse(buyNowRaw) : null;
+
+        const items: CartItem[] = cartData
+          .filter((item: any) => {
+            if (!buyNow) return true;
+            return !(
+              item.productId === buyNow.productId &&
+              item.selectedScent === buyNow.selectedScent &&
+              item.selectedVolume === buyNow.selectedVolume
+            );
+          })
+          .map((item: any) => ({
+            _id: item._id || item.productId,
+            id: `${item._id || item.productId}-${item.selectedScent}-${item.selectedVolume}`,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            volume: item.selectedVolume,
+            fragrance: item.selectedScent,
+            image:
+              typeof item.image === "string"
+                ? { src: item.image, width: 100, height: 100 }
+                : {
+                    src: item.image?.src || "/img/default.jpg",
+                    width: 100,
+                    height: 100,
+                  },
+          }));
+
         setCartItems(items);
       } catch (error) {
         console.error("Lỗi khi parse localStorage:", error);
@@ -87,12 +107,22 @@ const Cart = () => {
     }
   };
 
-  const subtotal = cartItems.reduce((total, item) =>
-    selectedItems.includes(item.id)
-      ? total + item.price * item.quantity
-      : total, 0);
+  const subtotal = cartItems.reduce(
+    (total, item) =>
+      selectedItems.includes(item.id)
+        ? total + item.price * item.quantity
+        : total,
+    0
+  );
   const total = subtotal;
   const allSelected = selectedItems.length === cartItems.length && cartItems.length > 0;
+
+  const handleCheckout = () => {
+    if (selectedItems.length === 0) return;
+    const selected = cartItems.filter((item) => selectedItems.includes(item.id));
+    localStorage.setItem("checkoutItems", JSON.stringify(selected));
+    navigate("/checkout");
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -215,19 +245,17 @@ const Cart = () => {
               </div>
             </div>
 
-            <Link
-              to="/checkout"
+            <button
+              onClick={handleCheckout}
               className={`w-full block text-center px-6 py-3 font-medium rounded ${
                 selectedItems.length === 0
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-[#5f518e] text-white hover:bg-[#696faa]"
               }`}
-              onClick={(e) => {
-                if (selectedItems.length === 0) e.preventDefault();
-              }}
+              disabled={selectedItems.length === 0}
             >
               Tiến hành Thanh toán
-            </Link>
+            </button>
 
             <Link
               to="/"
