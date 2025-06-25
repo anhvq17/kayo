@@ -120,7 +120,20 @@ const OrderDetail = () => {
           <div>
             <h2 className="text-lg font-semibold mb-4">Thông tin đơn hàng</h2>
             <div className="space-y-3">
-              
+              <div>
+                <span className="font-medium">Mã đơn hàng:</span>
+                <span className="ml-2 text-gray-600">{order._id}</span>
+              </div>
+              <div>
+                <span className="font-medium">Ngày đặt:</span>
+                <span className="ml-2 text-gray-600">
+                  {new Date(order.createdAt).toLocaleString("vi-VN")}
+                </span>
+              </div>
+              <div>
+                <span className="font-medium">Họ và tên:</span>
+                <span className="ml-2 text-gray-600">{order.fullName}</span>
+              </div>
               <div>
                 <span className="font-medium">Số điện thoại:</span>
                 <span className="ml-2 text-gray-600">{order.phone}</span>
