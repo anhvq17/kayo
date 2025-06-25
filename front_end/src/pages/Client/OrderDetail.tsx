@@ -117,6 +117,7 @@ const OrderDetail = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Thông tin đơn hàng */}
           <div>
             <h2 className="text-lg font-semibold mb-4">Thông tin đơn hàng</h2>
             <div className="space-y-3">
@@ -196,7 +197,27 @@ const OrderDetail = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                
+                {orderItems.map((item) => (
+                  <tr key={item._id}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center">
+                        {item.product?.image && (
+                          <img 
+                            src={item.product.image} 
+                            alt={item.product.name} 
+                            className="w-12 h-12 object-cover rounded mr-3"
+                          />
+                        )}
+                        <span className="text-sm text-gray-900">{item.product?.name || 'Sản phẩm'}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-900">{item.quantity}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900">{item.price.toLocaleString()}₫</td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                      {(item.price * item.quantity).toLocaleString()}₫
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -216,3 +237,4 @@ const OrderDetail = () => {
 };
 
 export default OrderDetail;
+
