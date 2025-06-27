@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react"
-import { Link } from "react-router-dom"
-import { Plus, Minus, X } from "lucide-react"
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Plus, Minus, X } from "lucide-react";
 
 interface CartItem {
+  _id: string;
   id: string;
   name: string;
   price: number;
@@ -17,34 +18,45 @@ interface CartItem {
 }
 
 const Cart = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const raw = localStorage.getItem("cart");
+    const buyNowRaw = localStorage.getItem("buyNowItem");
+
     if (raw) {
       try {
-        const data = JSON.parse(raw);
+        const cartData = JSON.parse(raw);
+        const buyNow = buyNowRaw ? JSON.parse(buyNowRaw) : null;
 
-        const items: CartItem[] = data.map((item: any) => {
-          // Handle both variantId (from ProductDetails) and _id (from Cart save)
-          const variantId = item.variantId || item._id;
-          if (!variantId) {
-            console.warn("Item thiếu variantId/_id:", item);
-            return null;
-          }
-          
-          return {
-            id: `${variantId}-${item.selectedScent || item.fragrance || 'unknown'}-${item.selectedVolume || item.volume || 'unknown'}`,
+        const items: CartItem[] = cartData
+          .filter((item: any) => {
+            if (!buyNow) return true;
+            return !(
+              item.productId === buyNow.productId &&
+              item.selectedScent === buyNow.selectedScent &&
+              item.selectedVolume === buyNow.selectedVolume
+            );
+          })
+          .map((item: any) => ({
+            _id: item._id || item.productId,
+            id: `${item._id || item.productId}-${item.selectedScent}-${item.selectedVolume}`,
             name: item.name,
             price: item.price,
             quantity: item.quantity,
-            volume: item.selectedVolume || item.volume,
-            fragrance: item.selectedScent || item.fragrance,
-            image: typeof item.image === "string"
-              ? { src: item.image, width: 100, height: 100 }
-              : item.image,
-          };
-        }).filter(Boolean); // Remove null items
+            volume: item.selectedVolume,
+            fragrance: item.selectedScent,
+            image:
+              typeof item.image === "string"
+                ? { src: item.image, width: 100, height: 100 }
+                : {
+                    src: item.image?.src || "/img/default.jpg",
+                    width: 100,
+                    height: 100,
+                  },
+          }));
 
         setCartItems(items);
       } catch (error) {
@@ -53,24 +65,9 @@ const Cart = () => {
     }
   }, []);
 
-  const updateQuantity = (id: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    const updated = cartItems.map((item) =>
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    );
-    setCartItems(updated);
-    saveToLocalStorage(updated);
-  }
-
-  const removeItem = (id: string) => {
-    const updated = cartItems.filter((item) => item.id !== id);
-    setCartItems(updated);
-    saveToLocalStorage(updated);
-  };
-
   const saveToLocalStorage = (items: CartItem[]) => {
     const formatted = items.map((item) => ({
-      variantId: item.id.split("-")[0],
+      _id: item._id,
       name: item.name,
       price: item.price,
       quantity: item.quantity,
@@ -79,10 +76,53 @@ const Cart = () => {
       image: item.image.src,
     }));
     localStorage.setItem("cart", JSON.stringify(formatted));
-  }
+  };
 
-  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+  const updateQuantity = (id: string, newQuantity: number) => {
+    const targetItem = cartItems.find((item) => item.id === id);
+    if (!targetItem) return;
+
+    if (newQuantity < 1) {
+      if (window.confirm("Bạn có muốn xoá sản phẩm này khỏi giỏ hàng?")) {
+        const updated = cartItems.filter((item) => item.id !== id);
+        setCartItems(updated);
+        saveToLocalStorage(updated);
+        setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+      }
+    } else {
+      const updated = cartItems.map((item) =>
+        item.id === id ? { ...item, quantity: newQuantity } : item
+      );
+      setCartItems(updated);
+      saveToLocalStorage(updated);
+    }
+  };
+
+  const removeItem = (id: string) => {
+    if (window.confirm("Xác nhận xoá sản phẩm này khỏi giỏ hàng?")) {
+      const updated = cartItems.filter((item) => item.id !== id);
+      setCartItems(updated);
+      saveToLocalStorage(updated);
+      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+    }
+  };
+
+  const subtotal = cartItems.reduce(
+    (total, item) =>
+      selectedItems.includes(item.id)
+        ? total + item.price * item.quantity
+        : total,
+    0
+  );
   const total = subtotal;
+  const allSelected = selectedItems.length === cartItems.length && cartItems.length > 0;
+
+  const handleCheckout = () => {
+    if (selectedItems.length === 0) return;
+    const selected = cartItems.filter((item) => selectedItems.includes(item.id));
+    localStorage.setItem("checkoutItems", JSON.stringify(selected));
+    navigate("/checkout");
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -102,72 +142,120 @@ const Cart = () => {
               <img src="/img/empty.png" className="w-32 h-32 mb-4 mx-auto" />
             </div>
           ) : (
-            <div className="space-y-6">
-              {cartItems.map((item) => (
-                <div key={item.id} className="flex border rounded-lg p-4">
-                  <div className="w-24 h-24 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
-                    <img
-                      src={item.image.src}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="ml-4 flex-grow">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold text-lg text-black">{item.name}</h3>
-                        <p className="text-sm text-gray-500 mt-1">Hương vị: {item.fragrance}</p>
-                        <p className="text-sm text-gray-500 mt-1">Dung tích: {item.volume}ml</p>
-                      </div>
-                      <button onClick={() => removeItem(item.id)} className="text-gray-400 hover:text-red-500">
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
+            <>
+              <div className="flex items-center mb-4">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedItems(cartItems.map((item) => item.id));
+                    } else {
+                      setSelectedItems([]);
+                    }
+                  }}
+                  className="mr-2"
+                />
+                <label className="text-black font-medium">Chọn tất cả</label>
+              </div>
 
-                    <div className="flex justify-between items-center mt-4">
-                      <div className="flex items-center border rounded overflow-hidden">
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="px-3 py-1 text-black hover:bg-gray-200"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <div className="px-4 py-1 text-black text-sm border-l border-r">
-                          {item.quantity}
+              <div className="space-y-6">
+                {cartItems.map((item) => (
+                  <div key={item.id} className="flex border rounded-lg p-4 items-start">
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.includes(item.id)}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setSelectedItems((prev) =>
+                          checked
+                            ? [...prev, item.id]
+                            : prev.filter((id) => id !== item.id)
+                        );
+                      }}
+                      className="mr-4 mt-2"
+                    />
+                    <div className="w-24 h-24 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
+                      <Link to={`/productdetails/${item._id}`}>
+                        <img
+                          src={item.image.src}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </Link>
+                    </div>
+                    <div className="ml-4 flex-grow">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <Link to={`/productdetails/${item._id}`}>
+                            <h3 className="font-semibold text-lg text-black hover:underline">
+                              {item.name}
+                            </h3>
+                          </Link>
+                          <p className="text-sm text-gray-500 mt-1">Hương vị: {item.fragrance}</p>
+                          <p className="text-sm text-gray-500 mt-1">Dung tích: {item.volume}ml</p>
                         </div>
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="px-3 py-1 text-black hover:bg-gray-200"
+                          onClick={() => removeItem(item.id)}
+                          className="text-gray-400 hover:text-red-500"
                         >
-                          <Plus className="w-4 h-4" />
+                          <X className="w-5 h-5" />
                         </button>
                       </div>
-                      <div className="font-bold text-red-600">{(item.price * item.quantity).toLocaleString()}</div>
+
+                      <div className="flex justify-between items-center mt-4">
+                        <div className="flex items-center border rounded overflow-hidden">
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            className="px-3 py-1 text-black hover:bg-gray-200"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <div className="px-4 py-1 text-black text-sm border-l border-r">
+                            {item.quantity}
+                          </div>
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            className="px-3 py-1 text-black hover:bg-gray-200"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="font-bold text-red-600">
+                          {(item.price * item.quantity).toLocaleString()}₫
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
 
         <div className="lg:w-1/3">
           <div className="border rounded-lg p-6 shadow-sm">
             <h2 className="text-lg font-semibold mb-4 text-black">Tóm tắt đơn hàng</h2>
-
             <div className="space-y-4 mb-6">
               <div className="border-t pt-4 flex justify-between font-semibold">
                 <span className="font-bold text-red-600">Thành tiền</span>
-                <span className="font-bold text-red-600">{total.toLocaleString()}</span>
+                <span className="font-bold text-red-600">
+                  {selectedItems.length > 0 ? total.toLocaleString() + "₫" : "0₫"}
+                </span>
               </div>
             </div>
 
-            <Link
-              to="/checkout"
-              className="w-full block text-center px-6 py-3 bg-[#5f518e] text-white font-medium rounded hover:bg-[#696faa]"
+            <button
+              onClick={handleCheckout}
+              className={`w-full block text-center px-6 py-3 font-medium rounded ${
+                selectedItems.length === 0
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-[#5f518e] text-white hover:bg-[#696faa]"
+              }`}
+              disabled={selectedItems.length === 0}
             >
               Tiến hành Thanh toán
-            </Link>
+            </button>
 
             <Link
               to="/"
@@ -179,7 +267,7 @@ const Cart = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Cart
+export default Cart;
