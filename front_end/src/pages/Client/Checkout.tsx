@@ -41,12 +41,12 @@ const Checkout = () => {
       setPhone(parsedUser.phone || "");
     }
 
-    const raw = localStorage.getItem("cart");
-    if (raw) {
+    const buyNowRaw = localStorage.getItem("buyNowItem");
+    if (buyNowRaw) {
       try {
-        const data = JSON.parse(raw);
-        const items: CartItem[] = data.map((item: any) => ({
-          id: `${item._id}-${item.selectedScent}-${item.selectedVolume}`,
+        const item = JSON.parse(buyNowRaw);
+        const buyNowCartItem: CartItem = {
+          id: `${item._id || item.variantId}-${item.selectedScent}-${item.selectedVolume}`,
           name: item.name,
           price: item.price,
           quantity: item.quantity,
@@ -54,13 +54,37 @@ const Checkout = () => {
           fragrance: item.selectedScent,
           image:
             typeof item.image === "string"
-              ? { src: item.image }
+              ? { src: item.image, width: 100, height: 100 }
               : item.image,
-          variantId: item.variantId || item._id,
+        };
+        setCartItems([buyNowCartItem]);
+        localStorage.removeItem("buyNowItem");
+        return;
+      } catch (error) {
+        console.error("Lỗi khi parse buyNowItem:", error);
+      }
+    }
+
+    const checkoutRaw = localStorage.getItem("checkoutItems");
+    if (checkoutRaw) {
+      try {
+        const data = JSON.parse(checkoutRaw);
+        const items: CartItem[] = data.map((item: any) => ({
+          id: `${item._id || item.variantId}-${item.selectedScent}-${item.selectedVolume}`,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          volume: item.selectedVolume,
+          fragrance: item.selectedScent,
+          image:
+            typeof item.image === "string"
+              ? { src: item.image, width: 100, height: 100 }
+              : item.image,
         }));
         setCartItems(items);
+        localStorage.removeItem("checkoutItems");
       } catch (error) {
-        console.error("Lỗi khi parse localStorage:", error);
+        console.error("Lỗi khi parse checkoutItems:", error);
       }
     }
   }, []);
@@ -122,12 +146,10 @@ const Checkout = () => {
       const orderId = orderResult.orderId;
 
       if (paymentMethod === "vnpay") {
-        // For VNPay, redirect to payment gateway
         const paymentRes = await fetch(`http://localhost:3000/payment/create_payment?amount=${total}&orderId=${orderId}`);
         const paymentData = await paymentRes.json();
         window.location.href = paymentData.paymentUrl;
       } else {
-        // For COD, redirect to success page and clear cart
         localStorage.removeItem("cart");
         window.location.href = `/order-successfully?orderId=${orderId}`;
       }
