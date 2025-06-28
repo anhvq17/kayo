@@ -46,10 +46,12 @@ export const productSchema = Joi.object({
   brandId: Joi.string()
     .length(24)
     .hex()
-    .optional()
+    .required()
     .messages({
       "string.length": "ID thương hiệu phải có 24 ký tự",
       "string.hex": "ID thương hiệu không hợp lệ",
+      "any.required": "ID thương hiệu là bắt buộc",
     }),
+
 
 });

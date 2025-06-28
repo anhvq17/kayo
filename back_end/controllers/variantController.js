@@ -7,7 +7,8 @@ export const getAllVariants = async (req, res) => {
     const variants = await VariantModel.find({ deletedAt: null })
       .populate("productId")
       .populate("attributes.attributeId")
-      .populate("attributes.valueId");
+      .populate("attributes.valueId")
+      .sort({ createdAt: -1 }) ; 
     return res.status(200).json({
       message: "All Variants",
       data: variants,
@@ -29,6 +30,28 @@ export const getVariantDetail = async (req, res) => {
     return res.status(200).json({
       message: "Detail Variant",
       data: variant,
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
+// lấy tất cả các biến thể trong sản phẩm 
+export const getVariantsByProductId = async (req, res) => {
+  const { productId } = req.params;
+
+  try {
+    const variants = await VariantModel.find({
+      productId,
+      deletedAt: null, // lọc biến thể chưa bị xóa mềm nếu có
+    })
+      .populate("productId")
+      .populate("attributes.attributeId")
+      .populate("attributes.valueId");
+
+    return res.status(200).json({
+      message: "Variants by Product ID",
+      data: variants,
     });
   } catch (error) {
     return res.status(400).json({ message: error.message });

@@ -10,7 +10,8 @@ import {
   getTrashedVariants,
   restoreManyVariants,
   hardDeleteManyVariants,
-  softDeleteManyVariants
+  softDeleteManyVariants,
+  getVariantsByProductId
 } from "../controllers/variantController.js";
 
 const variantRouter = Router();
@@ -23,7 +24,8 @@ variantRouter.patch("/restore-many", restoreManyVariants); // Khôi phục nhi�
 variantRouter.delete("/hard/:id", hardDeleteVariant); // Xóa cứng biến thể
 variantRouter.patch("/restore/:id", restoreVariant); // Khôi phục một biến thể trong thùng rác
 variantRouter.delete("/soft/:id", softDeleteVariant); // Xóa mềm một biến thể
-variantRouter.get("/", getAllVariants); // Lấy tất cả các biến thể chưa bị xóa mềm
+variantRouter.get("/", getAllVariants); // Lấy tất cả các biến thể
+variantRouter.get("/product/:productId", getVariantsByProductId); // lấy tất cả các biến thể trong sản phẩm (chi tiết và update)
 variantRouter.get("/:id", getVariantDetail);
 variantRouter.post("/", createVariant);
 variantRouter.put("/:id", updateVariant);

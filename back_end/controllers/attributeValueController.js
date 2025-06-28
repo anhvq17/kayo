@@ -4,7 +4,9 @@ import { attributeValueSchema } from "../validations/attributeValue.js";
 // Lấy tất cả attribute values chưa bị xóa mềm
 export const getAllAttributeValues = async (req, res) => {
   try {
-    const values = await AttributeValueModel.find({ deletedAt: null }).populate("attributeId");
+    const values = await AttributeValueModel.find({ deletedAt: null })
+      .populate("attributeId")
+      .sort({ createdAt: -1 }) ;  
     return res.status(200).json({
       message: "All Attribute Values",
       data: values,

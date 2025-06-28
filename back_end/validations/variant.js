@@ -65,13 +65,6 @@ export const variantSchema = Joi.object({
       "any.required": "Số lượng là bắt buộc"
     }),
 
-  sku: Joi.string()
-    .required()
-    .messages({
-      "string.empty": "SKU không được để trống",
-      "any.required": "SKU là bắt buộc"
-    }),
-
     image: Joi.string()
     .uri()
     .required()
