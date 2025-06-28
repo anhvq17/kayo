@@ -39,6 +39,7 @@ import AddAttributeValue from "../pages/Admin/AttributeValue/AddAttributeValue"
 import AttributeValueManager from "../pages/Admin/AttributeValue/AttributeValueManager"
 import TrashAttributeValue from "../pages/Admin/AttributeValue/TrashAttributeValue"
 import EditAttributeValue from "../pages/Admin/AttributeValue/EditAttributeValue"
+import TrashProduct from "../pages/Admin/Product/TrashProduct"
 
 const AdminRoutes = {
   path: '/admin',
@@ -59,6 +60,7 @@ const AdminRoutes = {
     { path: 'orderDetails', element: <DetailOrder /> },
 
     { path: 'products', element: <ProductManager /> },
+    { path: 'products/trash', element: <TrashProduct /> },
     { path: 'products/add', element: <AddProduct /> },
     { path: 'products/edit/:id', element: <EditProduct /> },
 

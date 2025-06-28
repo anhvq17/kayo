@@ -12,11 +12,13 @@ type Attribute = {
 
 const AttributeManager = () => {
     const [attributes, setAttributes] = useState<Attribute[]>([]);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
     const fetchAttributes = async () => {
         try {
             const res = await axios.get("http://localhost:3000/attribute");
             setAttributes(res.data.data);
+            setSelectedIds([]);
         } catch (error) {
             console.error("Lỗi khi lấy danh sách thuộc tính:", error);
         }
@@ -26,18 +28,36 @@ const AttributeManager = () => {
         fetchAttributes();
     }, []);
 
-    // Xử lý xóa mềm
+    const handleSelect = (id: string) => {
+        setSelectedIds((prev) =>
+            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+        );
+    };
+
     const handleSoftDelete = async (id: string) => {
         const confirm = window.confirm("Bạn có chắc chắn muốn xóa thuộc tính này?");
         if (!confirm) return;
-
         try {
             await axios.delete(`http://localhost:3000/attribute/soft/${id}`);
             alert("Đã chuyển vào thùng rác");
-            fetchAttributes(); // load lại danh sách
+            fetchAttributes();
         } catch (error) {
-            console.error("Xóa mềm thất bại:", error);
-            alert("Xóa mềm thất bại");
+            alert("Xóa thất bại");
+        }
+    };
+
+    const handleSoftDeleteMany = async () => {
+        if (selectedIds.length === 0) return;
+        const confirm = window.confirm("Bạn có chắc chắn muốn xóa các thuộc tính đã chọn?");
+        if (!confirm) return;
+        try {
+            await axios.delete("http://localhost:3000/attribute/soft-delete-many", {
+                data: { ids: selectedIds },
+            });
+            alert("Đã chuyển các thuộc tính vào thùng rác");
+            fetchAttributes();
+        } catch (error) {
+            alert("Xóa nhiều thất bại");
         }
     };
 
@@ -46,11 +66,24 @@ const AttributeManager = () => {
             {/* Tiêu đề */}
             <div className="flex justify-between items-center mb-2">
                 <h1 className="text-2xl font-semibold">Danh sách thuộc tính</h1>
-                <Link to="/admin/attributes/add">
-                    <button className="w-8 h-8 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center">
-                        <Plus size={14} />
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleSoftDeleteMany}
+                        disabled={selectedIds.length === 0}
+                        className={`px-3 h-8 rounded text-sm text-white transition 
+              ${selectedIds.length === 0
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-red-600 hover:bg-red-700"}
+            `}
+                    >
+                        Xóa đã chọn ({selectedIds.length})
                     </button>
-                </Link>
+                    <Link to="/admin/attributes/add">
+                        <button className="w-8 h-8 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center">
+                            <Plus size={14} />
+                        </button>
+                    </Link>
+                </div>
             </div>
 
             {/* Menu */}
@@ -73,6 +106,7 @@ const AttributeManager = () => {
             <table className="min-w-full bg-white border text-sm">
                 <thead>
                     <tr className="bg-black text-white text-left">
+                        <th className="px-4 py-2"></th> {/* không có checkbox ở tiêu đề */}
                         <th className="px-4 py-2">STT</th>
                         <th className="px-4 py-2">Tên thuộc tính</th>
                         <th className="px-4 py-2">Mã thuộc tính</th>
@@ -83,6 +117,14 @@ const AttributeManager = () => {
                 <tbody>
                     {attributes.map((attr, index) => (
                         <tr key={attr._id} className="hover:bg-gray-50">
+                            <td className="px-4 py-2">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedIds.includes(attr._id)}
+                                    onChange={() => handleSelect(attr._id)}
+                                    className="w-5 h-5 accent-blue-600"
+                                />
+                            </td>
                             <td className="px-4 py-2">{index + 1}</td>
                             <td className="px-4 py-2">{attr.name}</td>
                             <td className="px-4 py-2">{attr.attributeCode}</td>

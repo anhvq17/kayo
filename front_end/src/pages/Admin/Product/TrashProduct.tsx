@@ -1,5 +1,7 @@
+"use client"
+
 import { useEffect, useState } from "react"
-import { Edit, Trash, Plus, Eye } from "lucide-react"
+import { RotateCcw, Trash2 } from "lucide-react"
 import axios from "axios"
 
 type Product = {
@@ -16,37 +18,52 @@ type Product = {
     _id: string
     name: string
   }
+  deletedAt: string
 }
 
-const ProductManager = () => {
-  const [products, setProducts] = useState<Product[]>([])
+const TrashProduct = () => {
+  const [trashedProducts, setTrashedProducts] = useState<Product[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   useEffect(() => {
-    fetchProducts()
+    fetchTrashedProducts()
   }, [])
 
-  const fetchProducts = async () => {
+  const fetchTrashedProducts = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/products")
-      setProducts(res.data.data)
+      const res = await axios.get("http://localhost:3000/products/trash")
+      setTrashedProducts(res.data.data)
       setSelectedIds([])
     } catch (error) {
-      console.error("Lỗi khi lấy danh sách sản phẩm:", error)
+      console.error("Lỗi khi lấy danh sách sản phẩm đã xóa:", error)
     }
   }
 
-  const handleSoftDelete = async (id: string) => {
-    const confirm = window.confirm("Bạn có chắc muốn xóa sản phẩm này?")
+  const handleRestore = async (id: string) => {
+    const confirm = window.confirm("Bạn có chắc muốn khôi phục sản phẩm này?")
     if (!confirm) return
 
     try {
-      await axios.delete(`http://localhost:3000/products/soft/${id}`)
-      alert("Đã chuyển các sản phẩm và biến thể vào thùng rác")
-      fetchProducts()
+      await axios.patch(`http://localhost:3000/products/restore/${id}`)
+      alert("Khôi phục thành công")
+      fetchTrashedProducts()
     } catch (error) {
-      console.error("Lỗi xóa mềm:", error)
-      alert("Xóa thất bại")
+      console.error("Lỗi khôi phục:", error)
+      alert("Khôi phục thất bại")
+    }
+  }
+
+  const handleHardDelete = async (id: string) => {
+    const confirm = window.confirm("Bạn có chắc muốn xóa vĩnh viễn sản phẩm này?")
+    if (!confirm) return
+
+    try {
+      await axios.delete(`http://localhost:3000/products/hard/${id}`)
+      alert("Xóa vĩnh viễn thành công")
+      fetchTrashedProducts()
+    } catch (error) {
+      console.error("Lỗi xóa vĩnh viễn:", error)
+      alert("Xóa vĩnh viễn thất bại")
     }
   }
 
@@ -54,20 +71,37 @@ const ProductManager = () => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
   }
 
-  const handleSoftDeleteMany = async () => {
+  const handleRestoreMany = async () => {
     if (selectedIds.length === 0) return
 
-    const confirm = window.confirm(`Xóa ${selectedIds.length} sản phẩm đã chọn?`)
+    const confirm = window.confirm(`Khôi phục ${selectedIds.length} sản phẩm đã chọn?`)
     if (!confirm) return
 
     try {
-      await axios.delete("http://localhost:3000/products/soft-delete-many", {
+      await axios.patch("http://localhost:3000/products/restore-many", {
+        ids: selectedIds,
+      })
+      alert("Khôi phục thành công")
+      fetchTrashedProducts()
+    } catch (error) {
+      alert("Khôi phục thất bại")
+    }
+  }
+
+  const handleHardDeleteMany = async () => {
+    if (selectedIds.length === 0) return
+
+    const confirm = window.confirm(`Xóa vĩnh viễn ${selectedIds.length} sản phẩm đã chọn?`)
+    if (!confirm) return
+
+    try {
+      await axios.delete("http://localhost:3000/products/hard-delete-many", {
         data: { ids: selectedIds },
       })
-      alert("Đã chuyển các sản phẩm và biến thể vào thùng rác")
-      fetchProducts()
+      alert("Xóa vĩnh viễn thành công")
+      fetchTrashedProducts()
     } catch (error) {
-      alert("Xóa thất bại")
+      alert("Xóa vĩnh viễn thất bại")
     }
   }
 
@@ -80,32 +114,37 @@ const ProductManager = () => {
 
   return (
     <div className="p-1">
-      {/* Tiêu đề + nút thêm + xóa đã chọn */}
+      {/* Tiêu đề + các nút hành động */}
       <div className="flex justify-between items-center mb-2">
-        <h1 className="text-2xl font-semibold">Danh sách sản phẩm</h1>
+        <h1 className="text-2xl font-semibold">Thùng rác sản phẩm</h1>
         <div className="flex items-center gap-2">
           <button
-            onClick={handleSoftDeleteMany}
+            onClick={handleRestoreMany}
             disabled={selectedIds.length === 0}
-            className={`px-3 h-8 rounded text-sm text-white transition ${selectedIds.length === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"
-              }`}
+            className={`px-3 h-8 rounded text-sm text-white transition ${
+              selectedIds.length === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+            }`}
           >
-            Xóa đã chọn ({selectedIds.length})
+            Khôi phục đã chọn ({selectedIds.length})
           </button>
-          <a href="/admin/products/add">
-            <button className="w-8 h-8 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center">
-              <Plus size={14} />
-            </button>
-          </a>
+          <button
+            onClick={handleHardDeleteMany}
+            disabled={selectedIds.length === 0}
+            className={`px-3 h-8 rounded text-sm text-white transition ${
+              selectedIds.length === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"
+            }`}
+          >
+            Xóa vĩnh viễn ({selectedIds.length})
+          </button>
         </div>
       </div>
 
       {/* Menu */}
       <div className="flex gap-6 border-b my-4 text-base font-medium text-gray-500">
-        <a href="/admin/products" className="pb-2 border-b-2 border-blue-500 text-blue-600">
+        <a href="/admin/products" className="pb-2 hover:text-blue-500 hover:border-b-2 hover:border-blue-300">
           Sản phẩm đang hoạt động
         </a>
-        <a href="/admin/products/trash" className="pb-2 hover:text-blue-500 hover:border-b-2 hover:border-blue-300">
+        <a href="/admin/products/trash" className="pb-2 border-b-2 border-blue-500 text-blue-600">
           Thùng rác
         </a>
       </div>
@@ -125,7 +164,7 @@ const ProductManager = () => {
           </tr>
         </thead>
         <tbody>
-          {products.map((item, index) => (
+          {trashedProducts.map((item, index) => (
             <tr key={item._id} className="hover:bg-gray-50 border-b">
               <td className="px-4 py-2">
                 <input
@@ -160,21 +199,17 @@ const ProductManager = () => {
               </td>
               <td className="px-4 py-2">
                 <div className="flex gap-1">
-                  <a href={`/admin/products/${item._id}`}>
-                    <button className="w-8 h-8 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center justify-center">
-                      <Eye size={14} />
-                    </button>
-                  </a>
-                  <a href={`/admin/products/edit/${item._id}`}>
-                    <button className="w-8 h-8 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center">
-                      <Edit size={14} />
-                    </button>
-                  </a>
                   <button
-                    onClick={() => handleSoftDelete(item._id)}
+                    onClick={() => handleRestore(item._id)}
+                    className="w-8 h-8 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
+                  >
+                    <RotateCcw size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleHardDelete(item._id)}
                     className="w-8 h-8 bg-red-600 text-white rounded hover:bg-red-700 flex items-center justify-center"
                   >
-                    <Trash size={14} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </td>
@@ -186,4 +221,4 @@ const ProductManager = () => {
   )
 }
 
-export default ProductManager
+export default TrashProduct
