@@ -11,6 +11,11 @@ const BrandSchema = new mongoose.Schema({
         required: true
     },
 
+    deletedAt: {
+        type: Date,
+        default: null
+    },
+
     createdAt: {
         type: Date,
         default: Date.now,
@@ -22,11 +27,11 @@ const BrandSchema = new mongoose.Schema({
     },
 
 })
-    // Cập nhật tự động updatedAt trước khi lưu
-    BrandSchema.pre('save', function (next) {
+// Cập nhật tự động updatedAt trước khi lưu
+BrandSchema.pre('save', function (next) {
     this.updatedAt = Date.now();
     next();
 });
 
-export default mongoose.model('brands',BrandSchema)
+export default mongoose.model('brands', BrandSchema)
 

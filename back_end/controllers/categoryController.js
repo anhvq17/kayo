@@ -1,19 +1,30 @@
-import CategoryModel from "../models/CategoryModel";
+import CategoryModel from "../models/CategoryModel.js";
+import ProductModel from "../models/ProductModel.js";
 
+export const getAllCategories = async (req, res) => {
+  try {
+    const categories = await CategoryModel.find();
 
-export const getAllCategories = async (req,res) => {
-    try {
-        const categories = await CategoryModel.find();
-        return res.status(200).json({
-            message: 'All Categories',
-            data:categories
-        })
-    } catch (error) {
-         return res.status(400).json({
-            message:error.message,
-        })
-    }
-}
+    const categoriesWithCount = await Promise.all(
+      categories.map(async (category) => {
+        const count = await ProductModel.countDocuments({ categoryId: category._id });
+        return {
+          ...category.toObject(),
+          productCount: count,
+        };
+      })
+    );
+
+    return res.status(200).json({
+      message: "All Categories with Product Count",
+      data: categoriesWithCount,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: error.message,
+    });
+  }
+};
 
 export const getCategoryDetail = async (req,res) => {
     try {
