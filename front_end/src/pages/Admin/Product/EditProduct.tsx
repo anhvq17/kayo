@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import axios from "axios"
 import { useForm } from "react-hook-form"
 import AttributeSelector from "./AttributeSelector"
-import { Trash2, Upload, ArrowLeft } from "lucide-react"
+import { Trash2, Upload } from "lucide-react"
 import type { AttributeValue, GroupedAttribute, VariantInput, VariantErrors, ProductInput } from "../../../types/Product"
 import { validateVariantField, validateAllVariants } from "./validate"
 import { useNavigate } from "react-router-dom"
@@ -445,12 +445,7 @@ const EditProduct = () => {
   return (
     <div className="max-w-6xl mx-auto p-6 bg-white space-y-6">
       <div className="flex items-center gap-4 mb-6">
-        <a href="/admin/products">
-          <button className="w-8 h-8 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center justify-center">
-            <ArrowLeft size={14} />
-          </button>
-        </a>
-        <h2 className="text-xl font-semibold">Chỉnh sửa sản phẩm (ID: {productId})</h2>
+        <h2 className="text-xl font-semibold">Chỉnh sửa sản phẩm</h2>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
