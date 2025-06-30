@@ -1,367 +1,714 @@
-import React, { useEffect, useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
-import axios from "axios";
-import { useParams, useNavigate } from "react-router-dom";
-
-type VariantType = {
-  _id?: string;
-  flavors: string;
-  volume: string;
-  price: string;
-  stock_quantity: string;
-  image: string;
-};
-
-type FormData = {
-  name: string;
-  description: string;
-  categoryId: string;
-  brandId: string;
-  variants: VariantType[];
-};
+import { useEffect, useState } from "react"
+import axios from "axios"
+import { useForm } from "react-hook-form"
+import AttributeSelector from "./AttributeSelector"
+import { Trash2, Upload } from "lucide-react"
+import type { AttributeValue, GroupedAttribute, VariantInput, VariantErrors, ProductInput } from "../../../types/Product"
+import { validateVariantField, validateAllVariants } from "./validate"
+import { useNavigate } from "react-router-dom"
 
 const EditProduct = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+  // Lấy productId từ URL (giả sử URL có dạng /admin/products/edit/:id)
+  const getProductIdFromUrl = () => {
+    const path = window.location.pathname
+    const segments = path.split("/")
+    return segments[segments.length - 1] // Lấy segment cuối cùng
+  }
+
+  const [productId] = useState(() => getProductIdFromUrl())
+  const [attributes, setAttributes] = useState<GroupedAttribute[]>([])
+  const [selectedValues, setSelectedValues] = useState<{ [key: string]: AttributeValue[] }>({})
+  const [variants, setVariants] = useState<VariantInput[]>([])
+  const [categories, setCategories] = useState<{ _id: string; name: string }[]>([])
+  const [brands, setBrands] = useState<{ _id: string; name: string }[]>([])
+  const [variantErrors, setVariantErrors] = useState<VariantErrors[]>([])
+  const [hasSubmitted, setHasSubmitted] = useState(false)
+  const [productImagePreview, setProductImagePreview] = useState<string>("")
+  const [isUploading, setIsUploading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [attributesLoaded, setAttributesLoaded] = useState(false)
+  const [variantDuplicationError, setVariantDuplicationError] = useState<string>("")
+  const [originalVariantIds, setOriginalVariantIds] = useState<string[]>([]) // xóa biến thể
+
 
   const {
     register,
     handleSubmit,
-    control,
-    setValue,
-    reset,
-    watch,
-    setError,
     formState: { errors },
-  } = useForm<FormData>({
-    defaultValues: {
-      name: "",
-      description: "",
-      categoryId: "",
-      brandId: "",
-      variants: [],
-    },
-  });
+    watch,
+    setValue,
+  } = useForm<ProductInput>()
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "variants",
-  });
+  const imageFile = watch("image")
 
-  const [categories, setCategories] = useState<any[]>([]);
-  const [brands, setBrands] = useState<any[]>([]);
-
+  // Preview ảnh sản phẩm chính
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [cateRes, brandRes, productRes, variantRes] = await Promise.all([
-          axios.get("http://localhost:3000/categories"),
-          axios.get("http://localhost:3000/brands"),
-          axios.get(`http://localhost:3000/products/${id}`),
-          axios.get(`http://localhost:3000/variant/product/${id}`),
-        ]);
-
-        setCategories(cateRes.data.data);
-        setBrands(brandRes.data.data);
-
-        const product = productRes.data.data;
-        const variants = variantRes.data.data;
-
-        reset({
-          name: product.name,
-          description: product.description,
-          categoryId:
-            typeof product.categoryId === "object"
-              ? product.categoryId._id
-              : product.categoryId,
-          brandId:
-            typeof product.brandId === "object"
-              ? product.brandId._id
-              : product.brandId,
-          variants: variants.map((v: any) => ({
-            _id: v._id,
-            flavors: v.flavors,
-            volume: String(v.volume),
-            price: String(v.price),
-            stock_quantity: String(v.stock_quantity),
-            image: v.image,
-          })),
-        });
-      } catch (err) {
-        console.error("Lỗi khi load dữ liệu:", err);
+    if (imageFile && imageFile.length > 0) {
+      const file = imageFile[0]
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setProductImagePreview(reader.result as string)
       }
-    };
-    fetchData();
-  }, [id, reset]);
+      reader.readAsDataURL(file)
+    }
+  }, [imageFile])
 
-  const onSubmit = async (data: FormData) => {
+  // Fetch initial data (attributes, categories, brands)
+  useEffect(() => {
+    // Kiểm tra productId có hợp lệ không
+    if (!productId || productId === "edit" || productId === "add") {
+      alert("ID sản phẩm không hợp lệ")
+      window.location.href = "/admin/products"
+      return
+    }
+
+    fetchInitialData()
+  }, [productId])
+
+  // Fetch product details khi attributes đã được load
+  useEffect(() => {
+    if (attributesLoaded && attributes.length > 0) {
+      console.log("Attributes loaded, now fetching product details...")
+      console.log("Loaded attributes:", attributes)
+      fetchProductDetails(attributes);
+    }
+  }, [attributesLoaded, attributes])
+
+  const fetchInitialData = async () => {
     try {
-      await axios.put(`http://localhost:3000/products/${id}`, {
+      setLoading(true)
+      console.log("Fetching data for product ID:", productId)
+
+      // Fetch attributes, categories, brands
+      const [attributeRes, categoryRes, brandRes] = await Promise.all([
+        axios.get("http://localhost:3000/attribute-value"),
+        axios.get("http://localhost:3000/categories"),
+        axios.get("http://localhost:3000/brands"),
+      ])
+
+      // Group attributes
+      const values: AttributeValue[] = attributeRes.data.data
+      const grouped: { [key: string]: GroupedAttribute } = {}
+      values.forEach((val) => {
+        const attrId = val.attributeId._id
+        if (!grouped[attrId]) {
+          grouped[attrId] = {
+            attributeId: attrId,
+            name: val.attributeId.name,
+            values: [],
+          }
+        }
+        grouped[attrId].values.push(val)
+      })
+
+      const groupedAttributes = Object.values(grouped)
+      console.log("Grouped attributes:", groupedAttributes)
+
+      setAttributes(groupedAttributes)
+      setCategories(categoryRes.data.data)
+      setBrands(brandRes.data.data)
+
+      // Đánh dấu attributes đã được load
+      setAttributesLoaded(true)
+    } catch (error) {
+      console.error("Lỗi khi tải dữ liệu:", error)
+      alert("Không thể tải dữ liệu sản phẩm")
+      setLoading(false)
+    }
+  }
+
+  const fetchProductDetails = async (currentAttributes: GroupedAttribute[]) => {
+    try {
+      console.log("Fetching product details for ID:", productId)
+      console.log("Using attributes:", currentAttributes)
+
+      // Fetch product info
+      const productRes = await axios.get(`http://localhost:3000/products/${productId}`)
+      const product = productRes.data.data
+
+      console.log("Product data:", product)
+
+      // Set form values
+      setValue("name", product.name)
+      setValue("description", product.description)
+      setValue("priceDefault", product.priceDefault.toString())
+      setValue("categoryId", product.categoryId._id)
+      setValue("brandId", product.brandId._id)
+      setProductImagePreview(product.image)
+
+      // Lấy tất cả variants
+      try {
+        const variantRes = await axios.get(`http://localhost:3000/variant/product/${productId}`)
+        const existingVariants = variantRes.data.data
+
+        console.log("Variants data:", existingVariants)
+
+        // Convert variants to VariantInput format
+        const convertedVariants: VariantInput[] = existingVariants.map((variant: any) => ({
+          _id: variant._id,
+          attributes: variant.attributes.map((attr: any) => ({
+            attributeId: typeof attr.attributeId === "string" ? attr.attributeId : attr.attributeId._id,
+            valueId: typeof attr.valueId === "string" ? attr.valueId : attr.valueId._id,
+          })),
+          price: variant.price.toString(),
+          stock: variant.stock_quantity.toString(),
+          image: null,
+          imagePreview: variant.image,
+        }))
+        console.log("convertedVariants:", convertedVariants);
+
+        setVariants(convertedVariants)
+        setOriginalVariantIds(existingVariants.map((v: any) => v._id)) // lưu lại ID các variant cũ
+        setVariantErrors(new Array(convertedVariants.length).fill(0).map(() => ({})))
+
+
+        // Set selected attribute values based on existing variants
+        const selectedAttrs: { [key: string]: AttributeValue[] } = {}
+
+        existingVariants.forEach((variant: any) => {
+          variant.attributes.forEach((attr: any) => {
+            const attrId = attr.attributeId
+            const valueId = attr.valueId
+
+            console.log("Processing attribute:", attrId, "value:", valueId)
+
+            // Find the attribute value using currentAttributes parameter
+            const attrGroup = currentAttributes.find((a) => a.attributeId === attrId)
+            console.log("Found attribute group:", attrGroup)
+
+            if (attrGroup) {
+              const attrValue = attrGroup.values.find((v) => v._id === valueId)
+              console.log("Found attribute value:", attrValue)
+
+              if (attrValue) {
+                if (!selectedAttrs[attrId]) {
+                  selectedAttrs[attrId] = []
+                }
+                if (!selectedAttrs[attrId].find((v) => v._id === valueId)) {
+                  selectedAttrs[attrId].push(attrValue)
+                }
+              }
+            }
+          })
+        })
+
+        console.log("Final selected attributes:", selectedAttrs)
+        setSelectedValues(selectedAttrs)
+      } catch (variantError) {
+        console.log("Không có variants hoặc lỗi khi tải variants:", variantError)
+        // Không có variants thì để trống
+        setVariants([])
+        setVariantErrors([])
+        setSelectedValues({})
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải chi tiết sản phẩm:", error)
+      alert("Không thể tải chi tiết sản phẩm. Vui lòng kiểm tra ID sản phẩm.")
+      window.location.href = "/admin/products"
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSelectValues = (attributeId: string, selectedIds: string[]) => {
+    const group = attributes.find((a) => a.attributeId === attributeId)
+    if (!group) return
+    const selected = group.values.filter((val) => selectedIds.includes(val._id))
+    setSelectedValues((prev) => ({ ...prev, [attributeId]: selected }))
+  }
+
+  function cartesianProduct(arr: AttributeValue[][]): AttributeValue[][] {
+    return arr.reduce(
+      (a, b) => a.flatMap((d) => b.map((e) => [...d, e])),
+      [[]] as AttributeValue[][]
+    );
+  }
+
+  function areAttributesEqual(a1: VariantInput["attributes"], a2: VariantInput["attributes"]): boolean {
+    if (a1.length !== a2.length) return false;
+    const sortById = (arr: any[]) => [...arr].sort((a, b) => a.attributeId.localeCompare(b.attributeId));
+    const sorted1 = sortById(a1);
+    const sorted2 = sortById(a2);
+    return sorted1.every((attr, i) =>
+      attr.attributeId === sorted2[i].attributeId && attr.valueId === sorted2[i].valueId
+    );
+  }
+
+  const generateVariants = () => {
+    const entries = Object.entries(selectedValues)
+    const attrVals = entries.map(([_, vals]) => vals)
+    if (attrVals.some((arr) => arr.length === 0)) return
+
+    const cartesian = cartesianProduct(attrVals)
+
+    const newVariants: VariantInput[] = []
+    const duplicatedVariants: string[] = []
+
+    cartesian.forEach((combo) => {
+      const attrs = combo.map((val) => ({
+        attributeId: val.attributeId._id,
+        valueId: val._id,
+      }))
+
+      const isDuplicate = variants.some((v) => areAttributesEqual(v.attributes, attrs))
+
+      if (isDuplicate) {
+        // Mô tả lỗi trùng
+        const comboLabel = combo.map((v) => v.value).join(" - ")
+        duplicatedVariants.push(comboLabel)
+        return
+      }
+
+      newVariants.push({
+        attributes: attrs,
+        price: "",
+        stock: "",
+        image: null,
+        imagePreview: "",
+      })
+    })
+
+    if (newVariants.length > 0) {
+      setVariants((prev) => [...prev, ...newVariants])
+      setVariantErrors((prev) => [...prev, ...new Array(newVariants.length).fill(0).map(() => ({}))])
+    }
+
+    if (duplicatedVariants.length > 0) {
+      const message = `Các biến thể sau đã tồn tại và không được tạo lại:\n- ${duplicatedVariants.join("\n- ")}`
+      setVariantDuplicationError(message)
+    } else {
+      setVariantDuplicationError("")
+    }
+  }
+
+
+  const handleVariantChange = (index: number, field: keyof VariantInput, value: any) => {
+    setVariants((prev) => {
+      const updated = [...prev]
+      updated[index][field] = value
+
+      // Nếu là file ảnh, tạo preview
+      if (field === "image" && value) {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setVariants((prevVariants) => {
+            const updatedVariants = [...prevVariants]
+            updatedVariants[index].imagePreview = reader.result as string
+            return updatedVariants
+          })
+        }
+        reader.readAsDataURL(value)
+      }
+
+      return updated
+    })
+
+    // Validate field immediately
+    validateVariantField(variants, index, field, value, setVariantErrors)
+  }
+
+  const removeVariant = (index: number) => {
+    setVariants((prev) => prev.filter((_, i) => i !== index))
+    setVariantErrors((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const canGenerateVariants = attributes.every((attr) => selectedValues[attr.attributeId]?.length > 0)
+
+  // Upload ảnh lên Cloudinary
+  const uploadToCloudinary = async (file: File): Promise<string> => {
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("upload_preset", "DATN_upload")
+
+    const cloudRes = await axios.post("https://api.cloudinary.com/v1_1/dvourchjx/image/upload", formData)
+    return cloudRes.data.secure_url
+  }
+
+  const onSubmit = async (data: ProductInput) => {
+    setHasSubmitted(true)
+    setIsUploading(true)
+
+    if (variants.length === 0) {
+      alert("Bạn phải tạo ít nhất một biến thể.")
+      setIsUploading(false)
+      return
+    }
+
+    if (!validateAllVariants(variants, setVariantErrors)) {
+      alert("Vui lòng kiểm tra và sửa các lỗi trong biến thể.")
+      setIsUploading(false)
+      return
+    }
+
+    try {
+      // Upload ảnh sản phẩm chính nếu có thay đổi
+      let productImageUrl = productImagePreview
+      if (data.image && data.image.length > 0) {
+        console.log("Uploading product image to Cloudinary...")
+        productImageUrl = await uploadToCloudinary(data.image[0])
+        console.log("Product image uploaded:", productImageUrl)
+      }
+
+      // Update product
+      const productData = {
         name: data.name,
         description: data.description,
+        priceDefault: Number.parseFloat(data.priceDefault),
         categoryId: data.categoryId,
         brandId: data.brandId,
-      });
+        image: productImageUrl,
+      }
 
-      let hasError = false;
+      console.log("Updating product with data:", productData)
+      await axios.put(`http://localhost:3000/products/${productId}`, productData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
 
-      for (let index = 0; index < data.variants.length; index++) {
-        const variant = data.variants[index];
-        const { _id, ...rest } = variant;
+      // Xử lý từng biến thể: update nếu có _id, tạo mới nếu không
+      for (let i = 0; i < variants.length; i++) {
+        const variant = variants[i]
 
-        const payload = {
-          productId: id,
-          ...rest,
-          volume: Number(rest.volume),
-          price: Number(rest.price),
-          stock_quantity: Number(rest.stock_quantity),
-        };
+        // Upload ảnh nếu có file mới
+        let variantImageUrl = variant.imagePreview || ""
+        if (variant.image) {
+          console.log(`Uploading variant ${i + 1} image to Cloudinary...`)
+          variantImageUrl = await uploadToCloudinary(variant.image)
+          console.log(`Variant ${i + 1} image uploaded:`, variantImageUrl)
+        }
 
-        try {
-          if (_id) {
-            await axios.put(`http://localhost:3000/variant/${_id}`, payload);
-          } else {
-            await axios.post("http://localhost:3000/variant", payload);
-          }
-        } catch (err: any) {
-          hasError = true;
-          const msg =
-            err.response?.data?.message ||
-            "Có lỗi xảy ra khi cập nhật biến thể.";
+        const variantData = {
+          productId,
+          price: Number.parseFloat(variant.price),
+          stock_quantity: Number.parseInt(variant.stock),
+          image: variantImageUrl,
+          attributes: variant.attributes,
+        }
 
-          setError(`variants.${index}.volume`, {
-            type: "server",
-            message: msg,
-          });
+        if (variant._id) {
+          // Cập nhật biến thể cũ
+          await axios.put(`http://localhost:3000/variant/${variant._id}`, variantData, {
+            headers: { "Content-Type": "application/json" },
+          })
+          console.log(`Updated variant ${i + 1}`)
+        } else {
+          // Thêm mới biến thể
+          await axios.post("http://localhost:3000/variant", variantData, {
+            headers: { "Content-Type": "application/json" },
+          })
+          console.log(`Created variant ${i + 1}`)
         }
       }
 
-      if (hasError) {
-        alert("Cập nhật sản phẩm thất bại với một số biến thể!");
-        return;
+      //  Xử lý xóa những biến thể đã bị loại khỏi danh sách hiện tại
+      const currentVariantIds = variants.filter(v => v._id).map(v => v._id)
+      const deletedVariantIds = originalVariantIds.filter(id => !currentVariantIds.includes(id))
+
+      for (const variantId of deletedVariantIds) {
+        try {
+          await axios.delete(`http://localhost:3000/variant/soft/${variantId}`)
+          console.log(`Deleted variant ${variantId}`)
+        } catch (deleteError) {
+          console.error(`Error deleting variant ${variantId}:`, deleteError)
+        }
       }
 
-      alert("Cập nhật thành công!");
-      navigate("/admin/products");
-    } catch (error) {
-      console.error("Lỗi khi cập nhật sản phẩm:", error);
-      alert("Cập nhật thất bại!");
+      alert("Cập nhật sản phẩm thành công!")
+      navigate("/admin/products")
+    } catch (error: any) {
+      console.error("Error updating product:", error)
+      if (error?.response?.data) {
+        const errorMessage = error.response.data.message || error.response.data.error || "Lỗi không xác định"
+        alert(`Cập nhật sản phẩm thất bại: ${errorMessage}`)
+      } else if (error?.message) {
+        alert(`Cập nhật sản phẩm thất bại: ${error.message}`)
+      } else {
+        alert("Cập nhật sản phẩm thất bại: Lỗi kết nối")
+      }
+    } finally {
+      setIsUploading(false)
     }
-  };
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto p-6 bg-white">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg">Đang tải dữ liệu sản phẩm ID: {productId}...</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="max-w-4xl mx-auto p-6 bg-white space-y-6"
-    >
-      <h2 className="text-xl font-semibold">CẬP NHẬT SẢN PHẨM</h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium">Tên sản phẩm</label>
-          <input
-            {...register("name", { required: "Không được để trống" })}
-            className="border rounded px-3 py-2 w-full"
-          />
-          {errors.name && <p className="text-red-500">{errors.name.message}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium">Danh mục</label>
-          <select
-            {...register("categoryId", { required: "Bắt buộc" })}
-            className="border rounded px-3 py-2 w-full"
-          >
-            <option value="">-- Chọn danh mục --</option>
-            {categories.map((cate) => (
-              <option key={cate._id} value={cate._id}>
-                {cate.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium">Thương hiệu</label>
-          <select
-            {...register("brandId", { required: "Bắt buộc" })}
-            className="border rounded px-3 py-2 w-full"
-          >
-            <option value="">-- Chọn thương hiệu --</option>
-            {brands.map((brand) => (
-              <option key={brand._id} value={brand._id}>
-                {brand.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium">Mô tả</label>
-          <textarea
-            {...register("description")}
-            className="border rounded px-3 py-2 w-full"
-            rows={4}
-          />
-        </div>
+    <div className="max-w-6xl mx-auto p-6 bg-white space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <h2 className="text-xl font-semibold">Chỉnh sửa sản phẩm</h2>
       </div>
 
-      {/* Biến thể */}
-      <div>
-        <h3 className="text-lg font-medium mb-2">Biến thể sản phẩm</h3>
-        {fields.map((field, index) => {
-          const image = watch(`variants.${index}.image`);
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block font-medium mb-1">
+              Tên sản phẩm <span className="text-red-500">*</span>
+            </label>
+            <input
+              {...register("name", { required: "Tên sản phẩm không được để trống" })}
+              className="border rounded px-3 py-2 w-full"
+              placeholder="Nhập tên sản phẩm"
+            />
+            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+          </div>
 
-          const onImageUpload = async (
-            e: React.ChangeEvent<HTMLInputElement>
-          ) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("upload_preset", "DATN_upload");
+          <div>
+            <label className="block font-medium mb-1">
+              Giá mặc định <span className="text-red-500">*</span>
+            </label>
+            <input
+              {...register("priceDefault", {
+                required: "Giá mặc định là bắt buộc",
+                min: { value: 1, message: "Giá phải lớn hơn 0" },
+              })}
+              className="border rounded px-3 py-2 w-full"
+              placeholder="VD: 1000000"
+              type="number"
+            />
+            {errors.priceDefault && <p className="text-red-500 text-sm mt-1">{errors.priceDefault.message}</p>}
+          </div>
 
-            try {
-              const res = await axios.post(
-                "https://api.cloudinary.com/v1_1/dvourchjx/image/upload",
-                formData
-              );
-              setValue(`variants.${index}.image`, res.data.secure_url);
-            } catch (err) {
-              console.error("Upload thất bại:", err);
-            }
-          };
-
-          return (
-            <div
-              key={field.id}
-              className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6 border p-4 rounded-md shadow-sm"
+          <div>
+            <label className="block font-medium mb-1">
+              Danh mục <span className="text-red-500">*</span>
+            </label>
+            <select
+              {...register("categoryId", { required: "Danh mục là bắt buộc" })}
+              className="border rounded px-3 py-2 w-full"
             >
-              <input type="hidden" {...register(`variants.${index}._id`)} />
+              <option value="">-- Chọn danh mục --</option>
+              {categories.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            {errors.categoryId && <p className="text-red-500 text-sm mt-1">{errors.categoryId.message}</p>}
+          </div>
 
-              <div>
-                <label className="block font-medium mb-1">Hương vị</label>
-                <input
-                  {...register(`variants.${index}.flavors`, {
-                    required: "Nhập hương vị",
-                  })}
-                  className="border px-2 py-1 rounded w-full"
-                />
-                {errors.variants?.[index]?.flavors && (
-                  <p className="text-red-500 text-sm">
-                    {errors.variants[index].flavors?.message}
-                  </p>
-                )}
-              </div>
+          <div>
+            <label className="block font-medium mb-1">
+              Thương hiệu <span className="text-red-500">*</span>
+            </label>
+            <select
+              {...register("brandId", { required: "Thương hiệu là bắt buộc" })}
+              className="border rounded px-3 py-2 w-full"
+            >
+              <option value="">-- Chọn thương hiệu --</option>
+              {brands.map((b) => (
+                <option key={b._id} value={b._id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+            {errors.brandId && <p className="text-red-500 text-sm mt-1">{errors.brandId.message}</p>}
+          </div>
+        </div>
 
-              <div>
-                <label className="block font-medium mb-1">Thể tích (ml)</label>
-                <input
-                  {...register(`variants.${index}.volume`, {
-                    required: "Nhập thể tích",
-                    pattern: { value: /^[0-9]+$/, message: "Chỉ nhập số" },
-                    min: { value: 1, message: "Thể tích phải > 0" },
-                  })}
-                  className="border px-2 py-1 rounded w-full"
-                />
-                {errors.variants?.[index]?.volume && (
-                  <p className="text-red-500 text-sm">
-                    {errors.variants[index].volume?.message}
-                  </p>
-                )}
-              </div>
+        <div>
+          <label className="block font-medium mb-1">
+            Mô tả <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            {...register("description", { required: "Mô tả là bắt buộc" })}
+            className="border rounded px-3 py-2 w-full"
+            placeholder="Nhập mô tả sản phẩm"
+          />
+          {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
+        </div>
 
-              <div>
-                <label className="block font-medium mb-1">Giá (vnđ)</label>
-                <input
-                  {...register(`variants.${index}.price`, {
-                    required: "Nhập giá",
-                    pattern: { value: /^[0-9]+$/, message: "Chỉ nhập số" },
-                    min: { value: 1, message: "Giá phải > 0" },
-                  })}
-                  className="border px-2 py-1 rounded w-full"
-                />
-                {errors.variants?.[index]?.price && (
-                  <p className="text-red-500 text-sm">
-                    {errors.variants[index].price?.message}
-                  </p>
-                )}
-              </div>
+        <div>
+          <label className="block font-medium mb-1">Ảnh sản phẩm</label>
+          <input type="file" {...register("image")} accept="image/*" />
+          <p className="text-sm text-gray-500 mt-1">Để trống nếu không muốn thay đổi ảnh</p>
 
-              <div>
-                <label className="block font-medium mb-1">Số lượng</label>
-                <input
-                  {...register(`variants.${index}.stock_quantity`, {
-                    required: "Nhập số lượng",
-                    pattern: { value: /^[0-9]+$/, message: "Chỉ nhập số" },
-                    min: { value: 1, message: "Số lượng phải > 0" },
-                  })}
-                  className="border px-2 py-1 rounded w-full"
-                />
-                {errors.variants?.[index]?.stock_quantity && (
-                  <p className="text-red-500 text-sm">
-                    {errors.variants[index].stock_quantity?.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block font-medium mb-1">Ảnh</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={onImageUpload}
-                  className="border px-2 py-1 rounded w-full"
-                />
-                {image && (
-                  <img
-                    src={image}
-                    alt="Preview"
-                    className="mt-2 w-20 h-20 object-cover border rounded"
-                  />
-                )}
-              </div>
-
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  onClick={() => remove(index)}
-                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 h-fit"
-                >
-                  Xóa
-                </button>
-              </div>
+          {/* Preview ảnh sản phẩm */}
+          {productImagePreview && (
+            <div className="mt-2">
+              <img
+                src={productImagePreview || "/placeholder.svg"}
+                alt="Preview"
+                className="w-32 h-32 object-cover border rounded"
+              />
             </div>
-          );
-        })}
+          )}
+        </div>
 
-        <button
-          type="button"
-          onClick={() =>
-            append({
-              flavors: "",
-              volume: "",
-              price: "",
-              stock_quantity: "",
-              image: "",
-            })
-          }
-          className="px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          + Thêm biến thể
-        </button>
-      </div>
+        {/* --- Chọn thuộc tính --- */}
+        <div>
+          <h3 className="font-semibold mb-2">
+            Chọn thuộc tính <span className="text-red-500">*</span>
+          </h3>
+          {attributes.map((attr) => (
+            <AttributeSelector
+              key={attr.attributeId}
+              name={attr.name}
+              attributeId={attr.attributeId}
+              values={attr.values}
+              selected={(selectedValues[attr.attributeId] || []).map((v) => v._id)}
+              onChange={(ids) => handleSelectValues(attr.attributeId, ids)}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={generateVariants}
+            className={`mt-2 px-4 py-2 rounded text-white ${canGenerateVariants ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"
+              }`}
+            disabled={!canGenerateVariants}
+          >
+            Tạo lại biến thể
+          </button>
+          {variantDuplicationError && (
+            <pre className="text-red-500 text-sm whitespace-pre mt-2">{variantDuplicationError}</pre>
+          )}
+        </div>
 
-      <div>
-        <button
-          type="submit"
-          className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-        >
-          Cập nhật sản phẩm
-        </button>
-      </div>
-    </form>
-  );
-};
+        {/* --- Danh sách biến thể --- */}
+        <div>
+          <h3 className="font-semibold mb-2">Danh sách biến thể</h3>
 
-export default EditProduct;
+          {hasSubmitted && variants.length === 0 && (
+            <p className="text-red-500 text-sm mt-2">Bạn phải tạo ít nhất một biến thể.</p>
+          )}
+
+          {variants.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="table-auto w-full border">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="border px-2 py-1">#</th>
+                    {attributes.map((attr) => (
+                      <th key={attr.attributeId} className="border px-2 py-1">
+                        {attr.name}
+                      </th>
+                    ))}
+                    <th className="border px-2 py-1">
+                      Giá <span className="text-red-500">*</span>
+                    </th>
+                    <th className="border px-2 py-1">
+                      Số lượng <span className="text-red-500">*</span>
+                    </th>
+                    <th className="border px-2 py-1">Ảnh</th>
+                    <th className="border px-2 py-1">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {variants.map((v, i) => (
+                    <tr key={i} className="text-center">
+                      <td className="border px-2 py-1">{i + 1}</td>
+                      {attributes.map((attr) => {
+                        const foundAttr = v.attributes.find(
+                          (a) => a.attributeId?.toString() === attr.attributeId?.toString()
+                        )
+                        const foundVal = attr.values.find(
+                          (val) => val._id?.toString() === foundAttr?.valueId?.toString()
+                        )
+                        return (
+                          <td key={attr.attributeId} className="border px-2 py-1">
+                            {foundVal?.value}
+                          </td>
+                        )
+                      })}
+                      <td className="border px-2 py-1">
+                        <div className="space-y-1">
+                          <input
+                            type="number"
+                            value={v.price}
+                            onChange={(e) => handleVariantChange(i, "price", e.target.value)}
+                            className={`w-24 border px-1 py-1 rounded ${variantErrors[i]?.price ? "border-red-500" : "border-gray-300"}`}
+                            placeholder="0"
+                          />
+                          {variantErrors[i]?.price && <p className="text-red-500 text-xs">{variantErrors[i].price}</p>}
+                        </div>
+                      </td>
+                      <td className="border px-2 py-1">
+                        <div className="space-y-1">
+                          <input
+                            type="number"
+                            value={v.stock}
+                            onChange={(e) => handleVariantChange(i, "stock", e.target.value)}
+                            className={`w-20 border px-1 py-1 rounded ${variantErrors[i]?.stock ? "border-red-500" : "border-gray-300"}`}
+                            placeholder="0"
+                          />
+                          {variantErrors[i]?.stock && <p className="text-red-500 text-xs">{variantErrors[i].stock}</p>}
+                        </div>
+                      </td>
+                      <td className="border px-2 py-1">
+                        <div className="space-y-1">
+                          <input
+                            type="file"
+                            onChange={(e) => handleVariantChange(i, "image", e.target.files?.[0] || null)}
+                            className="text-xs"
+                            accept="image/*"
+                          />
+                          <p className="text-xs text-gray-500">Để trống nếu không đổi</p>
+
+                          {/* Preview ảnh variant */}
+                          {v.imagePreview && (
+                            <div className="mt-1">
+                              <img
+                                src={v.imagePreview || "/placeholder.svg"}
+                                alt="Variant preview"
+                                className="w-16 h-16 object-cover border rounded"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="border px-2 py-1">
+                        <button
+                          type="button"
+                          onClick={() => removeVariant(i)}
+                          className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors"
+                          title="Xóa biến thể"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-4">
+          <button
+            type="submit"
+            disabled={isUploading}
+            className={`px-4 py-2 rounded text-white transition-colors ${isUploading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+              }`}
+          >
+            {isUploading ? (
+              <div className="flex items-center gap-2">
+                <Upload className="animate-spin" size={16} />
+                Đang cập nhật...
+              </div>
+            ) : (
+              "Cập nhật sản phẩm"
+            )}
+          </button>
+
+          <a href="/admin/products">
+            <button type="button" className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50">
+              Hủy
+            </button>
+          </a>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+export default EditProduct

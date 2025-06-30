@@ -1,72 +1,132 @@
 import { Link } from "react-router-dom"
+import { useState } from "react"
 
-const AdminSidebar = () => {
-    return (
-        <aside className="w-[240px] h-screen bg-white fixed top-0 left-0 z-50 border-r">
-            <div className="p-6">
-                <div className="mb-6">
-                    <img src="/img/logo.png" alt="Logo" className="mx-auto" />
+type Props = {
+  collapsed: boolean;
+  setCollapsed: (value: boolean) => void;
+};
+
+const AdminSidebar = ({ collapsed, setCollapsed }: Props) => {
+  const [isVariantOpen, setIsVariantOpen] = useState(false)
+
+  return (
+    <aside
+      className={`h-screen bg-white fixed top-0 left-0 z-50 border-r transition-all duration-300 ${
+        collapsed ? 'w-[60px]' : 'w-[240px]'
+      }`}
+    >
+      {/* Nút thu gọn */}
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="absolute -right-4 top-4 w-8 h-8 bg-gray-200 border border-gray-300 rounded-full flex items-center justify-center z-50 shadow"
+        title={collapsed ? "Mở rộng" : "Thu gọn"}
+      >
+        <i className={`fas ${collapsed ? "fa-chevron-right" : "fa-chevron-left"}`} />
+      </button>
+
+      <div className={`p-4 transition-all ${collapsed ? 'px-2' : 'px-6'}`}>
+        <div className="mb-6">
+          {!collapsed && (
+            <img src="/img/logo.png" alt="Logo" className="mx-auto" />
+          )}
+        </div>
+
+        <nav>
+          <ul className="space-y-2 text-sm text-gray-800">
+            <SidebarItem to="/admin" icon="fas fa-home" label="Tổng quan" collapsed={collapsed} />
+            <SidebarItem to="/admin/statistics" icon="fas fa-chart-line" label="Thống kê" collapsed={collapsed} />
+            <SidebarItem to="/admin/products" icon="fas fa-cube" label="Sản phẩm" collapsed={collapsed} />
+
+            {/* Biến thể có submenu */}
+            <li>
+              <button
+                onClick={() => setIsVariantOpen(!isVariantOpen)}
+                className="flex items-center w-full p-2 rounded hover:bg-gray-100 hover:text-gray-500"
+                title={collapsed ? "Biến thể" : ""}
+              >
+                <div className="w-5 mr-2 flex justify-center">
+                  <i className="fas fa-sliders-h" />
                 </div>
+                <span
+                  className={`transition-all duration-300 ${
+                    collapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
+                  }`}
+                >
+                  Biến thể
+                </span>
 
-                <input type="text" placeholder="Tìm kiếm" className="w-full text-sm px-3 py-2 mb-6 border border-gray-300 rounded-md" />
+                {!collapsed && (
+                  <i
+                    className={`fas ml-auto transition-transform duration-200 ${
+                      isVariantOpen ? 'fa-chevron-up' : 'fa-chevron-down'
+                    }`}
+                  />
+                )}
+              </button>
 
-                <nav>
-                    <ul className="space-y-2 text-sm">
-                        <li>
-                            <Link to={"/admin"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
-                                <i className="fas fa-home w-5 mr-2 hover:text-gray-500" /> Tổng quan
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to={"/admin/statistics"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
-                                <i className="fas fa-chart-line w-5 mr-2 hover:text-gray-500" /> Thống kê
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to={"/admin/products"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
-                                <i className="fas fa-cube w-5 mr-2 hover:text-gray-500" /> Sản phẩm
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to={"/admin/variants"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
-                                <i className="fas fa-sliders-h w-5 mr-2 hover:text-gray-500" /> Biến thể
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to={"/admin/categories"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
-                                <i className="fas fa-th-list w-5 mr-2 hover:text-gray-500" /> Danh mục
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to={"/admin/brands"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
-                                <i className="fas fa-gem w-5 mr-2 hover:text-gray-500" /> Thương hiệu
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to={"/admin/orders"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
-                                <i className="fas fa-receipt w-5 mr-2 hover:text-gray-500" /> Đơn hàng
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to={"/admin/users"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
-                                <i className="fas fa-users w-5 mr-2 hover:text-gray-500" /> Người dùng
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to={"/admin/reviews"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
-                                <i className="fas fa-comment-dots w-5 mr-2 hover:text-gray-500" /> Đánh giá
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to={"/admin/vouchers"} className="flex items-center p-2 rounded hover:bg-gray-100 text-gray-800 hover:text-gray-500">
-                                <i className="fas fa-ticket-alt w-5 mr-2 hover:text-gray-500" /> Mã giảm giá
-                            </Link>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
-        </aside>
-    )
-}
+              {isVariantOpen && !collapsed && (
+                <ul className="pl-6 mt-1 space-y-1 text-gray-700 text-sm bg-sky-100 rounded-md py-2">
+                  <li>
+                    <Link to="/admin/attributes" className="block px-2 py-1 rounded hover:bg-sky-200">
+                      Attribute
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/admin/attribute-values" className="block px-2 py-1 rounded hover:bg-sky-200">
+                      AttributeValue
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/admin/variants" className="block px-2 py-1 rounded hover:bg-sky-200">
+                      Variant
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
 
-export default AdminSidebar
+            <SidebarItem to="/admin/categories" icon="fas fa-th-list" label="Danh mục" collapsed={collapsed} />
+            <SidebarItem to="/admin/brands" icon="fas fa-gem" label="Thương hiệu" collapsed={collapsed} />
+            <SidebarItem to="/admin/orders" icon="fas fa-receipt" label="Đơn hàng" collapsed={collapsed} />
+            <SidebarItem to="/admin/users" icon="fas fa-users" label="Người dùng" collapsed={collapsed} />
+            <SidebarItem to="/admin/reviews" icon="fas fa-comment-dots" label="Đánh giá" collapsed={collapsed} />
+            <SidebarItem to="/admin/vouchers" icon="fas fa-ticket-alt" label="Mã giảm giá" collapsed={collapsed} />
+          </ul>
+        </nav>
+      </div>
+    </aside>
+  )
+};
+
+const SidebarItem = ({
+  to,
+  icon,
+  label,
+  collapsed
+}: {
+  to: string;
+  icon: string;
+  label: string;
+  collapsed: boolean;
+}) => (
+  <li>
+    <Link
+      to={to}
+      className="flex items-center p-2 rounded hover:bg-gray-100 hover:text-gray-500"
+      title={collapsed ? label : ""}
+    >
+      <div className="w-5 mr-2 flex justify-center">
+        <i className={icon} />
+      </div>
+      <span
+        className={`transition-all duration-300 ${
+          collapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
+        }`}
+      >
+        {label}
+      </span>
+    </Link>
+  </li>
+);
+
+export default AdminSidebar;

@@ -2,7 +2,8 @@ import BrandModel from "../models/BrandModel"
 
 export const getAllBrands = async (req,res) => {
     try {
-        const brands = await BrandModel.find();
+        const brands = await BrandModel.find()
+            .sort({ createdAt: -1 })
         return res.status(200).json({
             message: 'All Brands',
             data:brands
