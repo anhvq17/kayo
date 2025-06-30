@@ -1,4 +1,5 @@
 import AttributeValueModel from "../models/AttributeValueModel.js";
+import VariantModel from "../models/VariantModel.js"
 import { attributeValueSchema } from "../validations/attributeValue.js";
 
 // Lấy tất cả attribute values chưa bị xóa mềm
@@ -6,7 +7,7 @@ export const getAllAttributeValues = async (req, res) => {
   try {
     const values = await AttributeValueModel.find({ deletedAt: null })
       .populate("attributeId")
-      .sort({ createdAt: -1 }) ;  
+      .sort({ createdAt: -1 });
     return res.status(200).json({
       message: "All Attribute Values",
       data: values,
@@ -39,10 +40,45 @@ export const createAttributeValue = async (req, res) => {
       return res.status(400).json({ message: "Validation failed", errors });
     }
 
-    const value = await AttributeValueModel.create(req.body);
+    const { value, valueCode, attributeId } = req.body;
+
+    // Check trùng value trong cùng attributeId
+    const existingValue = await AttributeValueModel.findOne({
+      value: value.trim(),
+      attributeId,
+      deletedAt: null,
+    });
+
+    if (existingValue) {
+      return res.status(400).json({
+        message: "Validation failed",
+        errors: ["Giá trị đã tồn tại trong thuộc tính này"],
+      });
+    }
+
+    // Check trùng valueCode trong cùng attributeId
+    const existingCode = await AttributeValueModel.findOne({
+      valueCode: valueCode.trim(),
+      attributeId,
+      deletedAt: null,
+    });
+
+    if (existingCode) {
+      return res.status(400).json({
+        message: "Validation failed",
+        errors: ["Mã giá trị đã tồn tại trong thuộc tính này"],
+      });
+    }
+
+    const valueCreated = await AttributeValueModel.create({
+      value: value.trim(),
+      valueCode: valueCode.trim(),
+      attributeId,
+    });
+
     return res.status(200).json({
       message: "Create Attribute Value",
-      data: value,
+      data: valueCreated,
     });
   } catch (error) {
     return res.status(400).json({ message: error.message });
@@ -77,15 +113,29 @@ export const updateAttributeValue = async (req, res) => {
 // XÓA MỀM
 export const softDeleteAttributeValue = async (req, res) => {
   try {
-    const value = await AttributeValueModel.findByIdAndUpdate(req.params.id, {
+    const { id } = req.params;
+
+    //  Kiểm tra xem giá trị có đang dùng trong variant nào không
+    const isUsed = await VariantModel.exists({
+      "attributes.valueId": id,
+      deletedAt: null,
+    });
+
+    if (isUsed) {
+      return res
+        .status(400)
+        .json({ message: "Giá trị này đang được sử dụng trong sản phẩm." });
+    }
+
+    const value = await AttributeValueModel.findByIdAndUpdate(id, {
       deletedAt: new Date(),
     });
 
     if (!value) {
-      return res.status(404).json({ message: "Not Found" });
+      return res.status(404).json({ message: "Không tìm thấy giá trị thuộc tính." });
     }
 
-    return res.status(200).json({ message: "Soft Deleted Attribute Value" });
+    return res.status(200).json({ message: "Đã chuyển vào thùng rác." });
   } catch (error) {
     return res.status(400).json({ message: error.message });
   }
