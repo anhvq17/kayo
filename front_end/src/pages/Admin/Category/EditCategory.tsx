@@ -23,7 +23,7 @@ const EditCategory = () => {
     async function fetchCategory() {
       try {
         const res = await axios.get(`http://localhost:3000/categories/${id}`);
-        reset(res.data.data);// reset form với dữ liệu lấy về
+        reset(res.data.data); // reset form với dữ liệu lấy về
       } catch (error) {
         alert("Lỗi khi tải chi tiết danh mục");
         console.error(error);
@@ -46,66 +46,69 @@ const EditCategory = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10 bg-white shadow-xl rounded-xl mt-8">
-      <h1 className="text-3xl font-semibold text-gray-800 mb-8 text-center">
-        ✏️ Chỉnh sửa Danh Mục
-      </h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Tên danh mục
-          </label>
-          <input
-            {...register("name", { required: "Tên danh mục là bắt buộc" })}
-            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
-            placeholder="Nhập tên danh mục"
-          />
-          {errors.name && (
-            <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-          )}
-        </div>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="max-w-2xl mx-auto p-6 bg-white rounded shadow space-y-6 mt-8"
+    >
+      <h2 className="text-2xl font-semibold mb-4 text-center">
+        Chỉnh sửa Danh Mục
+      </h2>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Mô tả
-          </label>
-          <textarea
-            {...register("description")}
-            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
-            placeholder="Mô tả danh mục (tuỳ chọn)"
-          />
-        </div>
+      {/* Tên danh mục */}
+      <div>
+        <label className="block font-medium mb-1">
+          <span className="text-red-500">*</span> Tên danh mục
+        </label>
+        <input
+          {...register("name", { required: "Tên danh mục là bắt buộc" })}
+          className="w-full border rounded px-3 py-2"
+          placeholder="VD: Điện thoại"
+        />
+        {errors.name && (
+          <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+        )}
+      </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Trạng thái
-          </label>
-          <select
-            {...register("status")}
-            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:ring focus:ring-blue-200"
-          >
-            <option value="activated">Kích hoạt</option>
-            <option value="deactivated">Không kích hoạt</option>
-          </select>
-        </div>
+      {/* Mô tả */}
+      <div>
+        <label className="block font-medium mb-1">Mô tả</label>
+        <textarea
+          {...register("description")}
+          className="w-full border rounded px-3 py-2 h-24"
+          placeholder="Mô tả danh mục (không bắt buộc)"
+        />
+      </div>
 
-        <div className="flex justify-between">
-          <button
-            type="button"
-            onClick={() => navigate("/admin/categories")}
-            className="bg-gray-300 text-gray-800 font-medium px-5 py-2 rounded-lg hover:bg-gray-400 transition"
-          >
-            🔙 Quay lại
-          </button>
-          <button
-            type="submit"
-            className="bg-green-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-green-700 transition"
-          >
-            💾 Lưu thay đổi
-          </button>
-        </div>
-      </form>
-    </div>
+      {/* Trạng thái */}
+      <div>
+        <label className="block font-medium mb-1">Trạng thái</label>
+        <select
+          {...register("status")}
+          className="w-full border rounded px-3 py-2"
+        >
+          <option value="activated">Kích hoạt</option>
+          <option value="deactivated">Không kích hoạt</option>
+        </select>
+      </div>
+
+      {/* Nút hành động */}
+      <div className="flex gap-x-4 mt-4 justify-end">
+        <button
+          type="submit"
+          className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Lưu thay đổi
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate("/admin/categories")}
+          className="px-6 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+        >
+          Quay lại
+        </button>
+      </div>
+    </form>
   );
 };
 

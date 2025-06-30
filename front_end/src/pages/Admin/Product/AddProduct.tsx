@@ -290,7 +290,7 @@ const AddProduct = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block font-medium mb-1">Tên sản phẩm *</label>
+            <label className="block font-medium mb-1">Tên sản phẩm <span className="text-red-500">*</span></label>
             <input
               {...register("name", { required: "Tên sản phẩm không được để trống" })}
               className="border rounded px-3 py-2 w-full"
@@ -300,7 +300,7 @@ const AddProduct = () => {
           </div>
 
           <div>
-            <label className="block font-medium mb-1">Giá mặc định *</label>
+            <label className="block font-medium mb-1">Giá mặc định <span className="text-red-500">*</span></label>
             <input
               {...register("priceDefault", {
                 required: "Giá mặc định là bắt buộc",
@@ -314,7 +314,7 @@ const AddProduct = () => {
           </div>
 
           <div>
-            <label className="block font-medium mb-1">Danh mục *</label>
+            <label className="block font-medium mb-1">Danh mục <span className="text-red-500">*</span></label>
             <select
               {...register("categoryId", { required: "Danh mục là bắt buộc" })}
               className="border rounded px-3 py-2 w-full"
@@ -330,7 +330,7 @@ const AddProduct = () => {
           </div>
 
           <div>
-            <label className="block font-medium mb-1">Thương hiệu *</label>
+            <label className="block font-medium mb-1">Thương hiệu <span className="text-red-500">*</span></label>
             <select
               {...register("brandId", { required: "Thương hiệu là bắt buộc" })}
               className="border rounded px-3 py-2 w-full"
@@ -347,7 +347,7 @@ const AddProduct = () => {
         </div>
 
         <div>
-          <label className="block font-medium mb-1">Mô tả</label>
+          <label className="block font-medium mb-1">Mô tả <span className="text-red-500">*</span></label>
           <textarea
             {...register("description", { required: "Mô tả là bắt buộc" })}
             className="border rounded px-3 py-2 w-full"
@@ -357,7 +357,7 @@ const AddProduct = () => {
         </div>
 
         <div>
-          <label className="block font-medium mb-1">Ảnh sản phẩm *</label>
+          <label className="block font-medium mb-1">Ảnh sản phẩm <span className="text-red-500">*</span></label>
           <input
             type="file"
             {...register("image", {
@@ -431,9 +431,9 @@ const AddProduct = () => {
                         {attr.name}
                       </th>
                     ))}
-                    <th className="border px-2 py-1">Giá *</th>
-                    <th className="border px-2 py-1">Số lượng *</th>
-                    <th className="border px-2 py-1">Ảnh *</th>
+                    <th className="border px-2 py-1">Giá <span className="text-red-500">*</span></th>
+                    <th className="border px-2 py-1">Số lượng <span className="text-red-500">*</span></th>
+                    <th className="border px-2 py-1">Ảnh <span className="text-red-500">*</span></th>
                     <th className="border px-2 py-1">Thao tác</th>
                   </tr>
                 </thead>
