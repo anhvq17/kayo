@@ -53,22 +53,22 @@ const AddAttributeValue = () => {
             reset();
         } catch (error: any) {
             const msg = error.response?.data?.message || "Lỗi khi thêm giá trị!";
-            if (Array.isArray(error.response?.data?.errors)) {
-                error.response.data.errors.forEach((err: string) => {
-                    if (err.includes("value")) {
+            const errors = error.response?.data?.errors;
+
+            if (Array.isArray(errors)) {
+                errors.forEach((err: string) => {
+                    if (err.includes("Giá trị")) {
                         setError("value", { type: "server", message: err });
                     }
-                    if (err.includes("valueCode")) {
+                    if (err.includes("Mã")) {
                         setError("valueCode", { type: "server", message: err });
-                    }
-                    if (err.includes("attributeId")) {
-                        setError("attributeId", { type: "server", message: err });
                     }
                 });
             } else {
                 alert(msg);
             }
         }
+
     };
 
     return (

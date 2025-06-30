@@ -33,10 +33,10 @@ const AddAttribute = () => {
             const msg = error.response?.data?.message || "Lỗi khi thêm thuộc tính!";
             if (Array.isArray(error.response?.data?.errors)) {
                 error.response.data.errors.forEach((err: string) => {
-                    if (err.includes("name")) {
+                    if (err.includes("Tên")) {
                         setError("name", { type: "server", message: err });
                     }
-                    if (err.includes("attributeCode")) {
+                    if (err.includes("Mã")) {
                         setError("attributeCode", { type: "server", message: err });
                     }
                 });
@@ -85,9 +85,7 @@ const AddAttribute = () => {
                     placeholder="VD: volume"
                 />
                 {errors.attributeCode && (
-                    <p className="text-red-500 text-sm">
-                        {errors.attributeCode.message}
-                    </p>
+                    <p className="text-red-500 text-sm">{errors.attributeCode.message}</p>
                 )}
             </div>
 
