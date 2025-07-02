@@ -9,14 +9,14 @@ import {
   restoreAttribute,
   getTrashedAttributes,
   restoreManyAttributes,
-  softDeleteManyAttributes,
+  // softDeleteManyAttributes,
   hardDeleteManyAttributes
 } from "../controllers/attributeController.js";
 
 const attributeRouter = Router();
 
 attributeRouter.get("/trash", getTrashedAttributes); // lấy danh sách thuộc tính đã xóa mềm
-attributeRouter.delete("/soft-delete-many", softDeleteManyAttributes); // xóa mềm nhiều thuộc tính
+// attributeRouter.delete("/soft-delete-many", softDeleteManyAttributes); // xóa mềm nhiều thuộc tính
 attributeRouter.delete("/hard-delete-many", hardDeleteManyAttributes); // xóa cứng nhiều thuộc tính
 attributeRouter.patch("/restore-many", restoreManyAttributes); // khôi phục nhiều thuộc tính
 attributeRouter.delete("/hard/:id", hardDeleteAttribute); // xóa cứng một thuộc tính
