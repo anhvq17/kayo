@@ -580,6 +580,7 @@ const uniqueVolumes = [
 
             {/* SCENT SELECTION */}
             {/* SCENT SELECTION */}
+{/* SCENT SELECTION */}
 <div className="mt-3">
   <p className="text-sm font-medium">{scentAttr?.name || 'Mùi hương'}:</p>
   <div className="flex gap-2 mt-1">
@@ -587,15 +588,24 @@ const uniqueVolumes = [
       <button
         key={`${scent}-${idx}`}
         onClick={() => {
-  setSelectedScent(scent);
-  const volumesByScent = variants
-    .filter((v) => v.flavors === scent)
-    .map((v) => v.volume);
+          setSelectedScent(scent);
 
-  const minVolume = Math.min(...volumesByScent);
-  setSelectedVolume(minVolume.toString());
-}}
+          // Lọc các biến thể theo mùi hương này
+          const variantsByScent = variants.filter((v) => {
+            const scentAttr = v.attributes?.find((a) => a.attributeId.name === 'Mùi hương');
+            const value = scentAttr?.valueId?.value || v.flavors;
+            return value === scent;
+          });
 
+          // Tự động chọn dung tích đầu tiên
+          if (variantsByScent.length > 0) {
+            const firstVolume =
+              variantsByScent[0].attributes?.find((a) => a.attributeId.name === 'Dung tích')?.valueId?.value ||
+              variantsByScent[0].volume.toString();
+
+            setSelectedVolume(firstVolume);
+          }
+        }}
         className={`px-3 py-1 border rounded text-sm hover:bg-[#696faa] hover:text-white ${
           selectedScent === scent ? 'bg-[#5f518e] text-white' : ''
         }`}
