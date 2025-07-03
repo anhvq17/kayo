@@ -52,5 +52,22 @@ router.patch('/:id/status', async (req, res) => {
     res.status(500).json({ message: 'Lỗi server' });
   }
 });
+router.patch('/:id', async (req, res) => {
+  try {
+    const { username, email, phone, address, avatar } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { username, email, phone, address, avatar },
+      { new: true }
+    );
+
+    if (!user) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+
+    res.json({ message: 'Cập nhật thành công', user });
+  } catch (error) {
+    console.error('Lỗi cập nhật:', error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
 
 export default router;
