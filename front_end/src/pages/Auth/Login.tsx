@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { EyeOff, Eye } from 'lucide-react';
 
@@ -11,12 +11,10 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState('');
 
-  // ✅ Kiểm tra đăng nhập
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
 
   if (token) {
-    // ⛔ Đã đăng nhập thì chuyển hướng (không render form)
     return <Navigate to={role === 'admin' ? '/admin' : '/'} replace />;
   }
 

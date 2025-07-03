@@ -156,13 +156,13 @@ const Checkout = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Họ và tên <span className="text-red-500">*</span>
+                      Họ tên <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Nhập họ và tên"
+                      placeholder="Nhập họ tên"
                       className="w-full p-3 border border-gray-300 rounded-md"
                     />
                   </div>
@@ -275,11 +275,11 @@ const Checkout = () => {
                       <div className="flex-1 text-sm">
                         <h4 className="font-medium text-gray-800">{item.name}</h4>
                         <p className="text-sm text-gray-500">Hương vị: {item.fragrance}</p>
-                        <p className="text-sm text-gray-500">Dung tích: {item.volume}ml</p>
+                        <p className="text-sm text-gray-500">Dung tích: {item.volume}</p>
                       </div>
                       <div className="text-right text-sm">
                         <p className="font-semibold text-gray-800">
-                          {(item.price * item.quantity).toLocaleString()}₫
+                          {(item.price * item.quantity).toLocaleString()}
                         </p>
                         <p className="text-sm text-gray-500">x{item.quantity}</p>
                       </div>
@@ -289,7 +289,7 @@ const Checkout = () => {
                   <div className="border-t border-gray-200 pt-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Tạm tính</span>
-                      <span className="text-gray-800 font-medium">{subtotal.toLocaleString()}₫</span>
+                      <span className="text-gray-800 font-medium">{subtotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Phí vận chuyển</span>
@@ -297,14 +297,14 @@ const Checkout = () => {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Giảm giá</span>
-                      <span className="text-gray-800 font-medium">{discount.toLocaleString()}₫</span>
+                      <span className="text-gray-800 font-medium">{discount.toLocaleString()}</span>
                     </div>
                   </div>
 
                   <div className="border-t border-gray-200 pt-4">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-bold text-red-500">Tổng tiền</span>
-                      <span className="text-lg font-bold text-red-500">{total.toLocaleString()}₫</span>
+                      <span className="text-lg font-bold text-red-500">{total.toLocaleString()}</span>
                     </div>
                   </div>
 
@@ -317,9 +317,9 @@ const Checkout = () => {
                   </button>
 
                   <p className="text-xs text-gray-500 text-center mt-2">
-                    Bằng việc nhấn đặt hàng, bạn đồng ý với{" "}
+                    Bằng việc nhấn nút đặt hàng, bạn đồng ý với{" "} <br />
                     <Link to="#" className="text-[#5f518e] underline">Điều khoản</Link> và{" "}
-                    <Link to="#" className="text-[#5f518e] underline">Chính sách</Link>
+                    <Link to="#" className="text-[#5f518e] underline">Chính sách</Link>{" "}của chúng tôi.
                   </p>
                 </>
               )}

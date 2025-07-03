@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import { Edit, Plus } from "lucide-react";
+import { Edit } from "lucide-react";
 
 interface Category {
   _id: string;
@@ -47,11 +47,6 @@ const CategoryManager = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-2">
         <h1 className="text-2xl font-semibold mb-4">Danh sách danh mục</h1>
-        {/* <Link to="/admin/categories/add">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs">
-            <Plus size={14} />
-          </button>
-        </Link> */}
       </div>
 
       <table className="min-w-full bg-white border text-sm">
@@ -88,7 +83,7 @@ const CategoryManager = () => {
                       }`}
                     title="Nhấn để đổi trạng thái"
                   >
-                    {category.status === "activated" ? "Activated" : "Inactivated"}
+                    {category.status === "activated" ? "Hoạt động" : "Tạm khoá"}
                   </button>
                 </td>
                 <td className="px-4 py-2">

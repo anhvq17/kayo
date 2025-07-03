@@ -23,7 +23,7 @@ const EditCategory = () => {
     async function fetchCategory() {
       try {
         const res = await axios.get(`http://localhost:3000/categories/${id}`);
-        reset(res.data.data); // reset form với dữ liệu lấy về
+        reset(res.data.data);
       } catch (error) {
         alert("Lỗi khi tải chi tiết danh mục");
         console.error(error);
@@ -51,10 +51,9 @@ const EditCategory = () => {
       className="max-w-2xl mx-auto p-6 bg-white rounded shadow space-y-6 mt-8"
     >
       <h2 className="text-2xl font-semibold mb-4 text-center">
-        Chỉnh sửa Danh Mục
+        Chỉnh sửa danh mục
       </h2>
 
-      {/* Tên danh mục */}
       <div>
         <label className="block font-medium mb-1">
           <span className="text-red-500">*</span> Tên danh mục
@@ -69,7 +68,6 @@ const EditCategory = () => {
         )}
       </div>
 
-      {/* Mô tả */}
       <div>
         <label className="block font-medium mb-1">Mô tả</label>
         <textarea
@@ -79,19 +77,17 @@ const EditCategory = () => {
         />
       </div>
 
-      {/* Trạng thái */}
       <div>
         <label className="block font-medium mb-1">Trạng thái</label>
         <select
           {...register("status")}
           className="w-full border rounded px-3 py-2"
         >
-          <option value="activated">Kích hoạt</option>
-          <option value="deactivated">Không kích hoạt</option>
+          <option value="activated">Hoạt động</option>
+          <option value="deactivated">Tạm khoá</option>
         </select>
       </div>
 
-      {/* Nút hành động */}
       <div className="flex gap-x-4 mt-4 justify-end">
         <button
           type="submit"

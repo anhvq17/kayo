@@ -96,7 +96,7 @@ const SearchResults = () => {
 
                 <div className="text-red-500 font-semibold text-sm text-left">
                   {product.priceDefault
-                    ? `${product.priceDefault.toLocaleString()} ₫`
+                    ? `${product.priceDefault.toLocaleString()}`
                     : "Liên hệ"}
                 </div>
               </Link>

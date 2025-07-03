@@ -193,7 +193,7 @@ const Cart = () => {
                             </h3>
                           </Link>
                           <p className="text-sm text-gray-500 mt-1">Hương vị: {item.fragrance}</p>
-                          <p className="text-sm text-gray-500 mt-1">Dung tích: {item.volume}ml</p>
+                          <p className="text-sm text-gray-500 mt-1">Dung tích: {item.volume}</p>
                         </div>
                         <button
                           onClick={() => removeItem(item.id)}
@@ -222,7 +222,7 @@ const Cart = () => {
                           </button>
                         </div>
                         <div className="font-bold text-red-600">
-                          {(item.price * item.quantity).toLocaleString()}₫
+                          {(item.price * item.quantity).toLocaleString()}
                         </div>
                       </div>
                     </div>
@@ -240,7 +240,7 @@ const Cart = () => {
               <div className="border-t pt-4 flex justify-between font-semibold">
                 <span className="font-bold text-red-600">Thành tiền</span>
                 <span className="font-bold text-red-600">
-                  {selectedItems.length > 0 ? total.toLocaleString() + "₫" : "0₫"}
+                  {selectedItems.length > 0 ? total.toLocaleString() + "" : "0"}
                 </span>
               </div>
             </div>

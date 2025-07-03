@@ -236,7 +236,7 @@ const ProductList = () => {
                   </span>
                 </div>
                 <div className="text-red-500 font-semibold text-sm text-left">
-                  {product.priceDefault.toLocaleString()} ₫
+                  {product.priceDefault.toLocaleString()}
                 </div>
               </Link>
             ))}

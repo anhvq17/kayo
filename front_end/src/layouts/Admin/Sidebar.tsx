@@ -15,10 +15,9 @@ const AdminSidebar = ({ collapsed, setCollapsed }: Props) => {
         collapsed ? 'w-[60px]' : 'w-[240px]'
       }`}
     >
-      {/* Nút thu gọn */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-4 top-4 w-8 h-8 bg-gray-200 border border-gray-300 rounded-full flex items-center justify-center z-50 shadow"
+        className="absolute -right-4 top-4 w-8 h-8 bg-white border border-gray-300 rounded-full flex items-center justify-center z-50 shadow"
         title={collapsed ? "Mở rộng" : "Thu gọn"}
       >
         <i className={`fas ${collapsed ? "fa-chevron-right" : "fa-chevron-left"}`} />
@@ -32,12 +31,9 @@ const AdminSidebar = ({ collapsed, setCollapsed }: Props) => {
         </div>
 
         <nav>
-          <ul className="space-y-2 text-sm text-gray-800">
+          <ul className="space-y-2 mt-10 text-sm text-gray-800">
             <SidebarItem to="/admin" icon="fas fa-home" label="Tổng quan" collapsed={collapsed} />
-            <SidebarItem to="/admin/statistics" icon="fas fa-chart-line" label="Thống kê" collapsed={collapsed} />
             <SidebarItem to="/admin/products" icon="fas fa-cube" label="Sản phẩm" collapsed={collapsed} />
-
-            {/* Biến thể có submenu */}
             <li>
               <button
                 onClick={() => setIsVariantOpen(!isVariantOpen)}
@@ -65,20 +61,20 @@ const AdminSidebar = ({ collapsed, setCollapsed }: Props) => {
               </button>
 
               {isVariantOpen && !collapsed && (
-                <ul className="pl-6 mt-1 space-y-1 text-gray-700 text-sm bg-sky-100 rounded-md py-2">
+                <ul className="pl-6 mt-1 space-y-1 text-gray-700 text-sm bg-gray-100 rounded-md py-2">
                   <li>
-                    <Link to="/admin/attributes" className="block px-2 py-1 rounded hover:bg-sky-200">
-                      Attribute
+                    <Link to="/admin/attributes" className="block px-2 py-1 rounded hover:bg-gray-200">
+                      Thuộc tính
                     </Link>
                   </li>
                   <li>
-                    <Link to="/admin/attribute-values" className="block px-2 py-1 rounded hover:bg-sky-200">
-                      AttributeValue
+                    <Link to="/admin/attribute-values" className="block px-2 py-1 rounded hover:bg-gray-200">
+                      Giá trị thuộc tính
                     </Link>
                   </li>
                   <li>
-                    <Link to="/admin/variants" className="block px-2 py-1 rounded hover:bg-sky-200">
-                      Variant
+                    <Link to="/admin/variants" className="block px-2 py-1 rounded hover:bg-gray-200">
+                      Biến thể
                     </Link>
                   </li>
                 </ul>

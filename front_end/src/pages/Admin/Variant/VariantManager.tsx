@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { Trash } from "lucide-react";
 import axios from "axios";
 
 const VariantManager = () => {
   const [variants, setVariants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 5;
 
   useEffect(() => {
     const fetchVariants = async () => {
@@ -39,8 +38,8 @@ const VariantManager = () => {
   };
 
   return (
-    <div className="">
-      <div className="flex justify-between items-center">
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-2">
         <h1 className="text-2xl font-semibold mb-4">Danh sách biến thể</h1>
       </div>
 
