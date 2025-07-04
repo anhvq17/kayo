@@ -5,18 +5,21 @@ import { variantSchema } from "../validations/variant.js";
 export const getAllVariants = async (req, res) => {
   try {
     const variants = await VariantModel.find({ deletedAt: null })
-      .populate("productId")
-      .populate("attributes.attributeId")
-      .populate("attributes.valueId")
-      .sort({ createdAt: -1 }) ; 
+      .populate("productId", "name")
+      .populate("attributes.attributeId", "name")
+      .populate("attributes.valueId", "value")
+      .sort({ createdAt: -1 });
+
     return res.status(200).json({
       message: "All Variants",
       data: variants,
     });
   } catch (error) {
-    return res.status(400).json({ message: error.message });
+    console.error("Lỗi khi lấy danh sách biến thể:", error);
+    return res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
+
 
 export const getVariantDetail = async (req, res) => {
   try {

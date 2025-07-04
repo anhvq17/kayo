@@ -1,25 +1,18 @@
-import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getOrdersByUser } from '../../services/Order';
+import type { Order } from '../../types/Order';
 
-interface OrderItem {
-  id: string;
-  price: number;
-  content: string;
-  creatAt: string;
-  status: string;
-  details: string;
-}
-
-const Order = () => {
-  const [orderList, setOrderList] = useState<OrderItem[]>([]);
+const OrderList = () => {
+  const [orderList, setOrderList] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await axios.get('http://localhost:3000/');
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        const data = await getOrdersByUser(user._id);
         if (Array.isArray(data)) {
           setOrderList(data);
         }
@@ -30,7 +23,27 @@ const Order = () => {
       }
     })();
   }, []);
-  
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'pending': return 'Chờ xử lý';
+      case 'processed': return 'Đã xử lý';
+      case 'shipping': return 'Đang giao hàng';
+      case 'shipped': return 'Đã giao hàng';
+      case 'delivered': return 'Đã nhận hàng';
+      case 'cancelled': return 'Đã huỷ đơn hàng';
+      default: return status;
+    }
+  };
+
+  const getPaymentMethodText = (method: string) => {
+    switch (method) {
+      case 'cod': return 'Thanh toán khi nhận hàng';
+      case 'vnpay': return 'Thanh toán qua VNPay';
+      default: return method;
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center text-sm">
@@ -49,7 +62,7 @@ const Order = () => {
             <tr>
               <th className="px-4 py-2 border">Mã đơn hàng</th>
               <th className="px-4 py-2 border">Tổng tiền</th>
-              <th className="px-4 py-2 border">Nội dung</th>
+              <th className="px-4 py-2 border">Phương thức thanh toán</th>
               <th className="px-4 py-2 border">Ngày tạo</th>
               <th className="px-4 py-2 border">Tình trạng</th>
               <th className="px-4 py-2 border">Chi tiết</th>
@@ -70,20 +83,30 @@ const Order = () => {
               </tr>
             ) : orderList.length > 0 ? (
               orderList.map((item) => (
-                <tr key={item.id}>
-                  <td className="px-4 py-2 border">{item.id}</td>
-                  <td className="px-4 py-2 border">{item.price}</td>
-                  <td className="px-4 py-2 border">{item.content}</td>
-                  <td className="px-4 py-2 border">{item.creatAt}</td>
-                  <td className="px-4 py-2 border">{item.status}</td>
-                  <td className="px-4 py-2 border">{item.details}</td>
+                <tr key={item._id}>
+                  <td className="px-4 py-2 border">{item._id}</td>
+                  <td className="px-4 py-2 border">{item.totalAmount.toLocaleString()}₫</td>
+                  <td className="px-4 py-2 border">{getPaymentMethodText(item.paymentMethod)}</td>
+                  <td className="px-4 py-2 border">{new Date(item.createdAt).toLocaleString("vi-VN")}</td>
+                  <td className="px-4 py-2 border">
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      item.status === 'paid' ? 'bg-green-100 text-green-800' :
+                      item.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      item.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                      item.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {getStatusText(item.status)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2 border">
+                    <Link to={`/orders/${item._id}`} className="text-blue-500 underline">Xem</Link>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="text-center py-4 text-gray-500 min-h-[200px] h-[200px] align-middle">
-                  Danh sách trống
-                </td>
+                <td colSpan={6} className="text-center py-4 text-gray-500">Danh sách trống</td>
               </tr>
             )}
           </tbody>
@@ -93,4 +116,4 @@ const Order = () => {
   );
 };
 
-export default Order;
+export default OrderList;

@@ -1,13 +1,25 @@
-import Order from '../models/OrderModel.js';
+import Order from '../models/orderModel.js';
 import OrderItem from '../models/OrderItemModel.js';
 
 export const createOrder = async (req, res) => {
   try {
-    const { userId, items } = req.body;
+    const { userId, fullName, phone, address, paymentMethod, items } = req.body;
+
+    if (!userId || !fullName || !phone || !address || !items?.length) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
 
     const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-    const order = await Order.create({ userId, totalAmount, status: 'pending' });
+    const order = await Order.create({
+      userId,
+      fullName,
+      phone,
+      address,
+      paymentMethod,
+      totalAmount,
+      status: 'pending'
+    });
 
     await Promise.all(items.map(item => OrderItem.create({
       orderId: order._id,
@@ -21,6 +33,7 @@ export const createOrder = async (req, res) => {
     return res.status(400).json({ error: err.message });
   }
 };
+
 
 export const getAllOrders = async (req, res) => {
   try {
@@ -36,12 +49,22 @@ export const getOrderById = async (req, res) => {
     const order = await Order.findById(req.params.id).populate('userId');
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
-    const items = await OrderItem.find({ orderId: order._id });
+    const items = await OrderItem.find({ orderId: order._id }).populate({
+      path: 'variantId',
+      populate: [
+        { path: 'productId', model: 'products' },
+        { path: 'attributes.attributeId', model: 'attributes' },
+        { path: 'attributes.valueId', model: 'attribute_values' }
+      ]
+    });
+
     return res.status(200).json({ order, items });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 };
+
+
 
 export const getOrdersByUser = async (req, res) => {
   try {

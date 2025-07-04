@@ -5,7 +5,7 @@ import {
   getOrderById,
   getOrdersByUser,
   updateOrder,
-  deleteOrder
+  deleteOrder,
 } from '../controllers/orderController.js';
 
 const router = Router();
