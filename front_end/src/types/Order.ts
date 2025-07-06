@@ -44,11 +44,12 @@ export interface Order {
   fullName: string;
   phone: string;
   address: Address;
-  orderStatus: 'Chờ xử lý' | 'Đã xử lý' | 'Đang giao hàng' | 'Đã giao hàng' | 'Đã nhận hàng' | 'Đã huỷ đơn hàng';
+  orderStatus: 'Chờ xử lý' | 'Đã xử lý' | 'Đang giao hàng' | 'Đã giao hàng' | 'Đã nhận hàng' | 'Đã huỷ đơn hàng' | 'Yêu cầu hoàn hàng' | 'Đã hoàn hàng' | 'Từ chối hoàn hàng';
   totalAmount: number;
   paymentMethod: 'cod' | 'vnpay';
-  paymentStatus: 'Đã thanh toán' | 'Chưa thanh toán';
+  paymentStatus: 'Đã thanh toán' | 'Chưa thanh toán' | 'Đã hoàn tiền';
   cancelReason?: string; // Lý do hủy đơn hàng
+  returnReason?: string; // Lý do hoàn hàng
   createdAt: string;
   updatedAt: string;
 }

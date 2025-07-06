@@ -2,7 +2,7 @@ import { Router } from "express";
 import qs from "querystring";
 import crypto from "crypto";
 import moment from "moment";
-import Order from "../models/orderModel.js";
+import Order from "../models/OrderModel.js";
 
 const paymentRouter = Router();
 

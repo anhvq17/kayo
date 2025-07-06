@@ -1,4 +1,4 @@
-import Order from '../models/orderModel.js';
+import Order from '../models/OrderModel.js';
 import OrderItem from '../models/OrderItemModel.js';
 
 export const createOrder = async (req, res) => {
@@ -121,16 +121,38 @@ export const updateOrder = async (req, res) => {
       const newIndex = statusOrder.indexOf(req.body.orderStatus);
 
       // Kiểm tra quy tắc chuyển đổi
-      const isValidTransition = 
+      let isValidTransition = 
         currentIndex === newIndex || // Cùng trạng thái
         newIndex === currentIndex + 1 || // Lên trạng thái tiếp theo
-        newIndex === currentIndex - 1 || // Xuống trạng thái trước đó (để sửa lỗi)
-        (req.body.orderStatus === 'Đã huỷ đơn hàng' && (order.orderStatus === 'Chờ xử lý' || order.orderStatus === 'Đã xử lý')); // Hủy đơn hàng chỉ khi ở trạng thái Chờ xử lý hoặc Đã xử lý
+        newIndex === currentIndex - 1; // Xuống trạng thái trước đó (để sửa lỗi)
+
+      // Kiểm tra hủy đơn hàng
+      if (req.body.orderStatus === 'Đã huỷ đơn hàng') {
+        isValidTransition = order.orderStatus === 'Chờ xử lý' || order.orderStatus === 'Đã xử lý';
+      }
+
+      // Kiểm tra yêu cầu hoàn hàng
+      if (req.body.orderStatus === 'Yêu cầu hoàn hàng') {
+        isValidTransition = order.orderStatus === 'Đã nhận hàng';
+      }
+
+      // Kiểm tra xử lý hoàn hàng (chỉ admin mới có thể thực hiện)
+      if (req.body.orderStatus === 'Đã hoàn hàng' || req.body.orderStatus === 'Từ chối hoàn hàng') {
+        isValidTransition = order.orderStatus === 'Yêu cầu hoàn hàng';
+      }
 
       if (!isValidTransition) {
         if (req.body.orderStatus === 'Đã huỷ đơn hàng') {
           return res.status(400).json({ 
             error: 'Chỉ có thể hủy đơn hàng khi đang ở trạng thái "Chờ xử lý" hoặc "Đã xử lý"' 
+          });
+        } else if (req.body.orderStatus === 'Yêu cầu hoàn hàng') {
+          return res.status(400).json({ 
+            error: 'Chỉ có thể yêu cầu hoàn hàng khi đơn hàng đã được nhận' 
+          });
+        } else if (req.body.orderStatus === 'Đã hoàn hàng' || req.body.orderStatus === 'Từ chối hoàn hàng') {
+          return res.status(400).json({ 
+            error: 'Chỉ có thể xử lý hoàn hàng khi đơn hàng đang ở trạng thái "Yêu cầu hoàn hàng"' 
           });
         } else {
           return res.status(400).json({ 
@@ -144,6 +166,15 @@ export const updateOrder = async (req, res) => {
     // thì tự động cập nhật trạng thái thanh toán thành "Đã thanh toán"
     if (req.body.orderStatus === 'Đã nhận hàng') {
       updateData.paymentStatus = 'Đã thanh toán';
+    }
+    
+    // Nếu trạng thái đơn hàng được cập nhật thành "Đã hoàn hàng" 
+    // và phương thức thanh toán là VNPAY thì tự động cập nhật trạng thái thanh toán thành "Đã hoàn tiền"
+    if (req.body.orderStatus === 'Đã hoàn hàng') {
+      const order = await Order.findById(req.params.id);
+      if (order && order.paymentMethod === 'vnpay') {
+        updateData.paymentStatus = 'Đã hoàn tiền';
+      }
     }
     
     const updated = await Order.findByIdAndUpdate(req.params.id, updateData, { new: true });

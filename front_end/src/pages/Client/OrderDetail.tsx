@@ -82,6 +82,8 @@ const OrderDetail = () => {
         return 'Chưa thanh toán';
       case 'pending':
         return 'Chờ thanh toán';
+      case 'Đã hoàn tiền':
+        return 'Đã hoàn tiền';
       default:
         return status;
     }
@@ -139,7 +141,9 @@ const OrderDetail = () => {
               {getStatusText(order.orderStatus)}
             </span>
             <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${
-              getPaymentStatusText(order.paymentStatus) === 'Đã thanh toán' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}
+              getPaymentStatusText(order.paymentStatus) === 'Đã thanh toán' ? 'bg-green-100 text-green-800' :
+              getPaymentStatusText(order.paymentStatus) === 'Đã hoàn tiền' ? 'bg-blue-100 text-blue-800' :
+              'bg-yellow-100 text-yellow-800'}`}
             >
               <span role="img" aria-label="payment">💰</span>
               {getPaymentStatusText(order.paymentStatus)}
@@ -176,6 +180,18 @@ const OrderDetail = () => {
                 </h2>
                 <div className="text-red-700 text-sm">
                   <p>{order.cancelReason}</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Hiển thị lý do hoàn hàng nếu có */}
+            {(order.orderStatus === 'Yêu cầu hoàn hàng' || order.orderStatus === 'Đã hoàn hàng' || order.orderStatus === 'Từ chối hoàn hàng') && order.returnReason && (
+              <div className="bg-orange-50 rounded-lg p-6 border border-orange-200">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-orange-800">
+                  <span role="img" aria-label="return">🔄</span>Lý do hoàn hàng
+                </h2>
+                <div className="text-orange-700 text-sm">
+                  <p>{order.returnReason}</p>
                 </div>
               </div>
             )}

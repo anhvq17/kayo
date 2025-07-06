@@ -52,6 +52,9 @@ const DetailOrder = () => {
   const [statusError, setStatusError] = useState('');
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [processingReturnId, setProcessingReturnId] = useState<string | null>(null);
+  const [returnAction, setReturnAction] = useState<'approve' | 'reject'>('approve');
 
   useEffect(() => {
     if (id) {
@@ -147,6 +150,35 @@ const DetailOrder = () => {
     }
   };
 
+  // Xử lý hoàn hàng
+  const handleProcessReturn = async () => {
+    if (!orderData || !id) return;
+
+    try {
+      setUpdating(true);
+      const newStatus = returnAction === 'approve' ? 'Đã hoàn hàng' : 'Từ chối hoàn hàng';
+      
+      await updateOrder(id, { 
+        orderStatus: newStatus
+      });
+      
+      // Cập nhật lại dữ liệu
+      await fetchOrderDetails();
+      setShowReturnModal(false);
+      
+      setSuccessMessage(`${returnAction === 'approve' ? 'Đồng ý' : 'Từ chối'} hoàn hàng thành công!`);
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setSuccessMessage('');
+      }, 3000);
+    } catch (err: any) {
+      setError(err.message || 'Đã xảy ra lỗi khi xử lý hoàn hàng.');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     let color = '';
     switch (status) {
@@ -181,16 +213,26 @@ const DetailOrder = () => {
   const getPaymentStatusText = (status: string) => {
     if (status === 'paid' || status === 'Đã thanh toán') return 'Đã thanh toán';
     if (status === 'unpaid' || status === 'Chưa thanh toán') return 'Chưa thanh toán';
+    if (status === 'Đã hoàn tiền') return 'Đã hoàn tiền';
     return status;
   };
 
-  const getPaymentBadge = (paymentStatus: string) => (
-    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-      getPaymentStatusText(paymentStatus) === 'Đã thanh toán' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-    }`}>
-      {getPaymentStatusText(paymentStatus)}
-    </span>
-  );
+  const getPaymentBadge = (paymentStatus: string) => {
+    const statusText = getPaymentStatusText(paymentStatus);
+    let badgeClass = 'bg-yellow-100 text-yellow-800';
+    
+    if (statusText === 'Đã thanh toán') {
+      badgeClass = 'bg-green-100 text-green-800';
+    } else if (statusText === 'Đã hoàn tiền') {
+      badgeClass = 'bg-blue-100 text-blue-800';
+    }
+    
+    return (
+      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${badgeClass}`}>
+        {statusText}
+      </span>
+    );
+  };
 
   // Kiểm tra quy tắc cập nhật trạng thái tuần tự
   const validateStatusTransition = (currentStatus: string, newStatus: string): boolean => {
@@ -225,6 +267,11 @@ const DetailOrder = () => {
     return orderStatus === 'Chờ xử lý' || orderStatus === 'Đã xử lý';
   };
 
+  // Kiểm tra xem đơn hàng có thể xử lý hoàn hàng không (chỉ khi ở trạng thái Yêu cầu hoàn hàng)
+  const canProcessReturn = (orderStatus: string) => {
+    return orderStatus === 'Yêu cầu hoàn hàng';
+  };
+
   // Lấy danh sách trạng thái có thể chuyển đổi từ trạng thái hiện tại
   const getAvailableStatuses = (currentStatus: string): string[] => {
     const statusOrder = [
@@ -254,6 +301,11 @@ const DetailOrder = () => {
     // Thêm trạng thái hủy (chỉ khi có thể hủy)
     if (canCancelOrder(currentStatus)) {
       availableStatuses.push('Đã huỷ đơn hàng');
+    }
+
+    // Thêm trạng thái hoàn hàng (chỉ khi ở trạng thái Đã nhận hàng)
+    if (currentStatus === 'Đã nhận hàng') {
+      availableStatuses.push('Yêu cầu hoàn hàng');
     }
 
     return availableStatuses;
@@ -303,6 +355,17 @@ const DetailOrder = () => {
               Hủy đơn hàng
             </button>
           )}
+          {canProcessReturn(order.orderStatus) && (
+            <button
+              onClick={() => {
+                setShowReturnModal(true);
+                setReturnAction('approve'); // Reset action khi mở modal
+              }}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md text-sm transition duration-200"
+            >
+              Xử lý hoàn hàng
+            </button>
+          )}
           <button
             onClick={() => setIsModalOpen(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm transition duration-200"
@@ -343,6 +406,19 @@ const DetailOrder = () => {
                   <div>
                     <p className="text-sm font-medium text-red-800 mb-1">Lý do hủy đơn hàng:</p>
                     <p className="text-sm text-red-700">{order.cancelReason}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Hiển thị lý do hoàn hàng nếu có */}
+            {(order.orderStatus === 'Yêu cầu hoàn hàng' || order.orderStatus === 'Đã hoàn hàng' || order.orderStatus === 'Từ chối hoàn hàng') && order.returnReason && (
+              <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-md">
+                <div className="flex items-start">
+                  <span className="text-orange-600 mr-2">📝</span>
+                  <div>
+                    <p className="text-sm font-medium text-orange-800 mb-1">Lý do hoàn hàng:</p>
+                    <p className="text-sm text-orange-700">{order.returnReason}</p>
                   </div>
                 </div>
               </div>
@@ -557,6 +633,81 @@ const DetailOrder = () => {
                 className="border bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm transition duration-200 disabled:opacity-50"
               >
                 {updating ? 'Đang hủy...' : 'Xác nhận hủy'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal xử lý hoàn hàng */}
+      {showReturnModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-[500px] shadow-lg relative">
+            <h3 className="text-lg font-semibold mb-4 text-orange-600">Xử lý yêu cầu hoàn hàng</h3>
+            <div className="mb-4">
+              <p className="text-gray-700 mb-4">
+                Bạn muốn xử lý yêu cầu hoàn hàng này như thế nào?
+              </p>
+              
+              {/* Chọn hành động */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Hành động <span className="text-red-500">*</span>
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="approve"
+                      checked={returnAction === 'approve'}
+                      onChange={(e) => setReturnAction(e.target.value as 'approve' | 'reject')}
+                      className="mr-2"
+                    />
+                    <span className="text-green-700 font-medium">✅ Đồng ý hoàn hàng</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="reject"
+                      checked={returnAction === 'reject'}
+                      onChange={(e) => setReturnAction(e.target.value as 'approve' | 'reject')}
+                      className="mr-2"
+                    />
+                    <span className="text-red-700 font-medium">❌ Từ chối hoàn hàng</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                <span role="img" aria-label="info">ℹ️</span> 
+                {returnAction === 'approve' 
+                  ? 'Đồng ý hoàn hàng sẽ chuyển trạng thái đơn hàng thành "Đã hoàn hàng". Nếu thanh toán qua VNPAY, trạng thái thanh toán sẽ tự động chuyển thành "Đã hoàn tiền".'
+                  : 'Từ chối hoàn hàng sẽ chuyển trạng thái đơn hàng thành "Từ chối hoàn hàng"'
+                }
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button 
+                type="button" 
+                onClick={() => {
+                  setShowReturnModal(false);
+                }}
+                disabled={updating}
+                className="border bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm transition duration-200 disabled:opacity-50"
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                type="button"
+                onClick={handleProcessReturn}
+                disabled={updating}
+                className={`border px-4 py-2 rounded-md text-sm transition duration-200 disabled:opacity-50 ${
+                  returnAction === 'approve' 
+                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                    : 'bg-red-600 hover:bg-red-700 text-white'
+                }`}
+              >
+                {updating ? 'Đang xử lý...' : (returnAction === 'approve' ? 'Đồng ý' : 'Từ chối')}
               </button>
             </div>
           </div>

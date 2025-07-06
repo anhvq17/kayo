@@ -48,6 +48,9 @@ const OrderList = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnReason, setReturnReason] = useState('');
+  const [requestingReturnId, setRequestingReturnId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -93,6 +96,8 @@ const OrderList = () => {
         return 'Chưa thanh toán';
       case 'Chờ thanh toán':
         return 'Chờ thanh toán';
+      case 'Đã hoàn tiền':
+        return 'Đã hoàn tiền';
       default:
         return status;
     }
@@ -101,6 +106,11 @@ const OrderList = () => {
   // Kiểm tra xem đơn hàng có thể hủy không
   const canCancelOrder = (orderStatus: string) => {
     return orderStatus === 'Chờ xử lý' || orderStatus === 'Đã xử lý';
+  };
+
+  // Kiểm tra xem đơn hàng có thể yêu cầu hoàn hàng không (chỉ khi ở trạng thái Đã nhận hàng)
+  const canRequestReturn = (orderStatus: string) => {
+    return orderStatus === 'Đã nhận hàng';
   };
 
   // Xử lý hủy đơn hàng
@@ -131,11 +141,46 @@ const OrderList = () => {
     }
   };
 
+  // Xử lý yêu cầu hoàn hàng
+  const handleRequestReturn = async () => {
+    if (!selectedOrderId || !returnReason.trim()) return;
+
+    try {
+      setRequestingReturnId(selectedOrderId);
+      await updateOrder(selectedOrderId, { 
+        orderStatus: 'Yêu cầu hoàn hàng',
+        returnReason: returnReason.trim()
+      });
+      
+      // Cập nhật lại danh sách đơn hàng
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const data = await getOrdersByUserWithItems(user._id);
+      if (Array.isArray(data)) {
+        setOrderList(data);
+      }
+      
+      setShowReturnModal(false);
+      setSelectedOrderId(null);
+      setReturnReason(''); // Reset lý do
+    } catch (err: any) {
+      setError(err.message || 'Đã xảy ra lỗi khi yêu cầu hoàn hàng.');
+    } finally {
+      setRequestingReturnId(null);
+    }
+  };
+
   // Mở modal hủy đơn hàng
   const openCancelModal = (orderId: string) => {
     setSelectedOrderId(orderId);
     setCancelReason(''); // Reset lý do khi mở modal
     setShowCancelModal(true);
+  };
+
+  // Mở modal yêu cầu hoàn hàng
+  const openReturnModal = (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setReturnReason(''); // Reset lý do khi mở modal
+    setShowReturnModal(true);
   };
 
   // Lọc đơn theo tab
@@ -202,7 +247,9 @@ const OrderList = () => {
                         {getStatusText(item.orderStatus)}
                       </span>
                       <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                        getPaymentStatusText(item.paymentStatus) === 'Đã thanh toán' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}
+                        getPaymentStatusText(item.paymentStatus) === 'Đã thanh toán' ? 'bg-green-100 text-green-800' :
+                        getPaymentStatusText(item.paymentStatus) === 'Đã hoàn tiền' ? 'bg-blue-100 text-blue-800' :
+                        'bg-yellow-100 text-yellow-800'}`}
                       >
                         <span role="img" aria-label="payment">💰</span>
                         {getPaymentStatusText(item.paymentStatus)}
@@ -229,6 +276,16 @@ const OrderList = () => {
                       className="inline-flex items-center gap-2 bg-red-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-red-700 transition text-sm"
                     >
                       <span role="img" aria-label="cancel">❌</span> Hủy đơn hàng
+                    </button>
+                  )}
+                  {canRequestReturn(item.orderStatus) && (
+                    <button
+                      onClick={() => openReturnModal(item._id)}
+                      disabled={requestingReturnId === item._id}
+                      className="inline-flex items-center gap-2 bg-orange-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-orange-700 transition text-sm disabled:opacity-50"
+                    >
+                      <span role="img" aria-label="return">🔄</span> 
+                      {requestingReturnId === item._id ? 'Đang gửi...' : 'Yêu cầu hoàn hàng'}
                     </button>
                   )}
                 </div>
@@ -318,6 +375,64 @@ const OrderList = () => {
                 className="border bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm transition duration-200 disabled:opacity-50"
               >
                 {cancellingOrderId ? 'Đang hủy...' : 'Xác nhận hủy'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal yêu cầu hoàn hàng */}
+      {showReturnModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-[500px] shadow-lg relative">
+            <h3 className="text-lg font-semibold mb-4 text-orange-600">Yêu cầu hoàn hàng</h3>
+            <div className="mb-4">
+              <p className="text-gray-700 mb-4">
+                Bạn có chắc chắn muốn yêu cầu hoàn hàng cho đơn hàng này không?
+              </p>
+              
+              {/* Form nhập lý do hoàn hàng */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Lý do hoàn hàng <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={returnReason}
+                  onChange={(e) => setReturnReason(e.target.value)}
+                  placeholder="Vui lòng nhập lý do hoàn hàng..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                  rows={4}
+                  required
+                />
+                {!returnReason.trim() && (
+                  <p className="text-red-500 text-xs mt-1">Vui lòng nhập lý do hoàn hàng</p>
+                )}
+              </div>
+
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                <span role="img" aria-label="info">ℹ️</span> Yêu cầu hoàn hàng sẽ được gửi đến admin để xem xét và phê duyệt. Nếu thanh toán qua VNPAY và được chấp thuận, bạn sẽ được hoàn tiền.
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button 
+                type="button" 
+                onClick={() => {
+                  setShowReturnModal(false);
+                  setSelectedOrderId(null);
+                  setReturnReason('');
+                }}
+                disabled={requestingReturnId !== null}
+                className="border bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm transition duration-200 disabled:opacity-50"
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                type="button"
+                onClick={handleRequestReturn}
+                disabled={requestingReturnId !== null || !returnReason.trim()}
+                className="border bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md text-sm transition duration-200 disabled:opacity-50"
+              >
+                {requestingReturnId ? 'Đang gửi...' : 'Gửi yêu cầu'}
               </button>
             </div>
           </div>
