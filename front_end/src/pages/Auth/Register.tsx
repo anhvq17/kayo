@@ -8,155 +8,193 @@ const Register = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const uploadImageToCloudinary = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "DATN_SEVEND");
+    formData.append("cloud_name", "dm9f2fi07");
+
+    const res = await fetch("https://api.cloudinary.com/v1_1/dm9f2fi07/image/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+    return data.secure_url;
+  };
+
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setMessage('');
+    setLoading(true);
 
-    if (!username.trim()) {
-      setMessage('Vui lòng nhập họ và tên');
-      return;
-    }
-    if (username.trim().split(' ').length < 1) {
-      setMessage('Họ và tên phải có ít nhất 1 từ');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setMessage('Email không hợp lệ');
-      return;
-    }
-
-    const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
-    if (!phoneRegex.test(phone)) {
-      setMessage('Số điện thoại không hợp lệ');
-      return;
-    }
-
-    if (password.length < 6) {
-      setMessage('Mật khẩu phải có ít nhất 6 ký tự');
+    if (!username || !email || !phone || !password || !confirmPassword) {
+      setMessage('Vui lòng điền đầy đủ thông tin');
+      setLoading(false);
       return;
     }
 
     if (password !== confirmPassword) {
       setMessage('Mật khẩu không khớp');
+      setLoading(false);
       return;
     }
 
     try {
+      let avatarUrl = '';
+      if (avatarFile) {
+        avatarUrl = await uploadImageToCloudinary(avatarFile);
+      }
+
       const res = await fetch('http://localhost:3000/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, phone, password }),
+        body: JSON.stringify({
+          username,
+          email,
+          phone,
+          password,
+          address,
+          avatar: avatarUrl,
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setMessage(data.message || 'Đăng ký thất bại!');
+        setMessage(data.message || 'Đăng ký thất bại');
       } else {
         setMessage('Đăng ký thành công!');
-        setUsername('');
-        setEmail('');
-        setPhone('');
-        setPassword('');
-        setConfirmPassword('');
-
-        setTimeout(() => {
-          navigate('/login');
-        }, 1000);
+        setTimeout(() => navigate('/login'), 1500);
       }
     } catch (error) {
-      setMessage('Lỗi server khi đăng ký!');
       console.error(error);
+      setMessage('Đăng ký thất bại');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex justify-center items-center">
-      <div className="mt-14 mb-14 rounded-md shadow-lg w-full max-w-3xl p-8">
-        <h2 className="text-[#5f518e] text-3xl font-bold text-center mb-6">ĐĂNG KÝ NGAY ĐỂ TRỞ THÀNH SEVENDER</h2>
+      <div className="mt-14 mb-14 bg-white rounded-md shadow-lg w-full max-w-md p-8">
+        <h2 className="text-[#5f518e] text-3xl font-bold text-center mb-6">ĐĂNG KÝ TÀI KHOẢN</h2>
 
         {message && <p className="text-center text-red-500 mb-4">{message}</p>}
 
-        <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
+        <form onSubmit={handleRegister} className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e]"
               value={username}
-              placeholder="Họ và tên"
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={e => setUsername(e.target.value)}
+              placeholder="Họ tên"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e]"
             />
-          </div>
-
-          <div>
             <input
               type="email"
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e]"
               value={email}
+              onChange={e => setEmail(e.target.value)}
               placeholder="Email"
-              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e]"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              type="tel"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              placeholder="Số điện thoại"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e]"
+            />
+            <input
+              type="text"
+              value={address}
+              onChange={e => setAddress(e.target.value)}
+              placeholder="Địa chỉ"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e]"
             />
           </div>
 
           <div>
+            <label className="text-sm block mb-1">Ảnh đại diện</label>
             <input
-              type="tel"
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e]"
-              value={phone}
-              placeholder="Số điện thoại"
-              onChange={(e) => setPhone(e.target.value)}
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setAvatarFile(file);
+                  setAvatarPreview(URL.createObjectURL(file));
+                }
+              }}
+              className="w-full"
             />
+            {avatarPreview && (
+              <img
+                src={avatarPreview}
+                alt="Avatar preview"
+                className="mt-2 max-w-[120px] h-auto object-contain border rounded shadow"
+              />
+            )}
           </div>
 
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e]"
-              value={password}
-              placeholder="Mật khẩu"
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <span
-              className="absolute right-3 top-2.5 text-sm text-gray-500 cursor-pointer hover:text-[#5f518e]"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Mật khẩu"
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e] pr-10"
+              />
+              <span
+                className="absolute right-3 top-2.5 text-sm text-gray-500 cursor-pointer hover:text-[#5f518e]"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </span>
+            </div>
+
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Nhập lại mật khẩu"
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e] pr-10"
+              />
+              <span
+                className="absolute right-3 top-2.5 text-sm text-gray-500 cursor-pointer hover:text-[#5f518e]"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </span>
+            </div>
           </div>
 
-          <div className="relative">
-            <input
-              type={showConfirmPassword ? 'text' : 'password'}
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#5f518e]"
-              value={confirmPassword}
-              placeholder="Nhập lại mật khẩu"
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-            <span
-              className="absolute right-3 top-2.5 text-sm text-gray-500 cursor-pointer hover:text-[#5f518e]"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </span>
-          </div>
-
-          <div className="col-span-1 md:col-span-1 flex items-end justify-end">
-            <button
-              type="submit"
-              className="w-full bg-[#696faa] hover:bg-[#5f518e] text-white font-semibold py-2 rounded transition"
-            >
-              XÁC NHẬN
-            </button>
-          </div>
+          <button
+            type="submit"
+            className="w-full bg-[#696faa] hover:bg-[#5f518e] text-white font-semibold py-2 rounded transition"
+            disabled={loading}
+          >
+            {loading ? 'Đang xử lý...' : 'ĐĂNG KÝ'}
+          </button>
         </form>
+
 
         <div className="flex items-center my-6">
           <hr className="flex-grow border-gray-300" />
@@ -176,10 +214,7 @@ const Register = () => {
 
         <div className="text-center mt-4">
           Bạn đã có tài khoản?
-          <a href="/login" className="text-[#5f518e] hover:underline ml-1">
-            Đăng nhập
-          </a>{' '}
-          ngay
+          <a href="/login" className="text-[#5f518e] hover:underline ml-1">Đăng nhập</a> ngay
         </div>
       </div>
     </div>

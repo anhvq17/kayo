@@ -20,6 +20,8 @@ function CheckPayment() {
         if (data.data.vnp_ResponseCode == "00") {
           setStatus("success");
           setTitle("Thanh toán thành công");
+          // Xóa giỏ hàng khi thanh toán thành công
+          localStorage.removeItem('cart');
           // Extract orderId from transaction reference
           if (data.data.vnp_TxnRef) {
             setOrderId(data.data.vnp_TxnRef);

@@ -11,20 +11,27 @@ const orderSchema = new mongoose.Schema({
     detail: { type: String, required: true },
   },
   paymentStatus: {
-  type: String,
-  enum: ['pending', 'paid', 'failed'],
-  default: 'pending'
-},
+    type: String,
+    enum: ['Đã thanh toán', 'Chưa thanh toán'],
+    default: 'Chưa thanh toán'
+  },
 
   paymentMethod: {
     type: String,
     enum: ['cod', 'vnpay'],
     default: 'cod',
   },
-  status: {
+  orderStatus: {
     type: String,
-    enum: ['pending', 'paid', 'shipped', 'cancelled'],
-    default: 'pending',
+    enum: [
+      'Chờ xử lý',
+      'Đã xử lý',
+      'Đang giao hàng',
+      'Đã giao hàng',
+      'Đã nhận hàng',
+      'Đã huỷ đơn hàng'
+    ],
+    default: 'Chờ xử lý',
   },
   totalAmount: { type: Number, required: true },
 }, { timestamps: true });

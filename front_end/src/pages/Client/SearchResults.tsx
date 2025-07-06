@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 
-interface Variant {
-  image: string;
-  price: number;
-  volume: number;
-}
-
 interface Brand {
   _id: string;
   name: string;
@@ -20,9 +14,10 @@ interface Category {
 interface Product {
   _id: string;
   name: string;
+  image: string;
+  priceDefault: number;
   brandId: Brand;
   categoryId: Category;
-  variants: Variant[];
 }
 
 const SearchResults = () => {
@@ -72,42 +67,40 @@ const SearchResults = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredProducts.map((product) => {
-              const firstVariant = product.variants?.[0];
+            {filteredProducts.map((product) => (
+              <Link
+                to={`/productdetails/${product._id}`}
+                key={product._id}
+                className="group p-4 border rounded-lg hover:shadow transition block"
+              >
+                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
+                  <img
+                    src={product.image || "/placeholder.jpg"}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
 
-              return (
-                <Link
-                  to={`/productdetails/${product._id}`}
-                  key={product._id}
-                  className="group p-4 border rounded-lg hover:shadow transition block"
-                >
-                  <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
-                    <img
-                      src={firstVariant?.image || "/placeholder.jpg"}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
+                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2 text-left">
+                  {product.name}
+                </h3>
 
-                  <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2 text-left">
-                    {product.name}
-                  </h3>
+                <div className="flex gap-2 mb-2">
+                  <span className="inline-block px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
+                    {product.categoryId?.name || "Danh mục?"}
+                  </span>
+                  <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+                    {product.brandId?.name || "Thương hiệu?"}
+                  </span>
+                </div>
 
-                  <div className="flex gap-2 mb-2">
-                    <span className="inline-block px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
-                      {product.categoryId?.name || "Danh mục?"}
-                    </span>
-                    <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                      {product.brandId?.name || "Thương hiệu?"}
-                    </span>
-                  </div>
-
-                  <div className="text-red-500 font-semibold text-sm text-left">
-                    {firstVariant?.price?.toLocaleString() || "Liên hệ"}
-                  </div>
-                </Link>
-              );
-            })}
+                <div className="text-red-500 font-semibold text-sm text-left">
+                  {product.priceDefault
+                    ? `${product.priceDefault.toLocaleString()}`
+                    : "Liên hệ"}
+                </div>
+              </Link>
+            ))}
           </div>
         )}
       </div>

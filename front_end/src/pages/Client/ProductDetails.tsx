@@ -4,6 +4,7 @@ import axios from 'axios';
 import { ShoppingCart } from 'lucide-react';
 
 interface ProductDetailType {
+  priceDefault: number | undefined;
   _id: string;
   name: string;
   price: number;
@@ -24,6 +25,10 @@ interface VariantType {
   price: number;
   stock_quantity: number;
   image: string;
+  attributes?: {
+    attributeId: { name: string };
+    valueId: { value: string };
+  }[];
 }
 
 interface CommentType {
@@ -36,6 +41,18 @@ interface CommentType {
 interface UserInfoType {
   _id: string;
   username: string;
+}
+
+interface AttributeType {
+  _id: string;
+  name: string;
+  attributeCode: string;
+}
+
+interface AttributeValueType {
+  _id: string;
+  value: string;
+  attributeId: string | null;
 }
 
 const ProductDetails = () => {
@@ -57,8 +74,9 @@ const ProductDetails = () => {
   const [error] = useState<string | null>(null);
   const [addedMessage, setAddedMessage] = useState('');
   const [quantity, setQuantity] = useState(1);
-
-  // ========================= USER INFO =========================
+  const [attributes, setAttributes] = useState<AttributeType[]>([]);
+  const [attributeValues, setAttributeValues] = useState<AttributeValueType[]>([]);
+  
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
@@ -80,7 +98,6 @@ const ProductDetails = () => {
     }
   }, []);
 
-  // ========================= DATA FETCH =========================
   useEffect(() => {
     if (id) {
       fetchProduct();
@@ -89,39 +106,63 @@ const ProductDetails = () => {
   }, [id]);
 
   const fetchProduct = async () => {
-    try {
-      const res = await axios.get(`http://localhost:3000/products/${id}`);
-      setProduct(res.data.data);
-      setMainImg(res.data.data.image);
-      fetchVariants(res.data.data._id);
-      if (res.data.data.categoryId?._id) {
-        fetchRelatedProducts(res.data.data.categoryId._id, res.data.data._id);
-      }
-    } catch {
-      console.error('Lỗi khi tải sản phẩm');
-    } finally {
-      setLoading(false);
+  try {
+    const res = await axios.get(`http://localhost:3000/products/${id}`);
+    const productData = res.data.data;
+
+    setProduct(productData);
+    setMainImg(productData.image);
+    fetchVariants(productData._id);
+
+    if (productData.categoryId?._id) {
+      fetchRelatedProducts(productData.categoryId._id, productData._id);
     }
-  };
+  } catch (error) {
+    console.error('Lỗi khi tải sản phẩm:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const fetchVariants = async (productId: string) => {
-    try {
-      const res = await axios.get(`http://localhost:3000/variant/product/${productId}`);
-      const variantList: VariantType[] = res.data.data;
-      setVariants(variantList);
+  try {
+    const res = await axios.get(`http://localhost:3000/variant/product/${productId}`);
+    const variantList: VariantType[] = res.data.data;
+    setVariants(variantList);
 
-      if (variantList.length > 0) {
-        const firstScent = variantList[0].flavors;
-        const firstByScent = variantList.find((v) => v.flavors === firstScent);
-        setSelectedScent(firstScent);
-        setSelectedVolume(firstByScent?.volume.toString() || '');
-        setSelectedVariant(firstByScent || null);
-        setMainImg(firstByScent?.image || variantList[0].image);
-      }
-    } catch (err) {
-      console.error('Lỗi khi lấy danh sách biến thể:', err);
+    if (variantList.length > 0) {
+      const firstVariant = variantList[0];
+      const scentValue =
+        firstVariant.attributes?.find((a) => a.attributeId.name === 'Mùi hương')?.valueId?.value ||
+        firstVariant.flavors;
+
+      const variantsWithSameScent = variantList.filter((v) => {
+        const scent =
+          v.attributes?.find((a) => a.attributeId.name === 'Mùi hương')?.valueId?.value ||
+          v.flavors;
+        return scent === scentValue;
+      });
+
+      const volumeValue =
+        variantsWithSameScent[0].attributes?.find((a) => a.attributeId.name === 'Dung tích')
+          ?.valueId?.value || variantsWithSameScent[0].volume.toString();
+
+      const matched = variantsWithSameScent.find((v) => {
+        const vol =
+          v.attributes?.find((a) => a.attributeId.name === 'Dung tích')?.valueId?.value ||
+          v.volume.toString();
+        return vol === volumeValue;
+      });
+
+      setSelectedScent(scentValue);
+      setSelectedVolume(volumeValue);
+      setSelectedVariant(matched || null);
     }
-  };
+  } catch (err) {
+    console.error('Lỗi khi lấy danh sách biến thể:', err);
+  }
+};
 
   const fetchRelatedProducts = async (categoryId: string, currentId: string) => {
     try {
@@ -154,6 +195,113 @@ const ProductDetails = () => {
     }
   };
 
+  const fetchAttributes = async () => {
+    try {
+      const res = await axios.get('http://localhost:3000/attribute');
+      setAttributes(res.data.data);
+    } catch (err) {
+      console.error('Lỗi khi lấy attribute:', err);
+    }
+  };
+
+  const fetchAttributeValues = async () => {
+    try {
+      const res = await axios.get('http://localhost:3000/attribute-value');
+      setAttributeValues(res.data.data);
+    } catch (err) {
+      console.error('Lỗi khi lấy attribute values:', err);
+    }
+  };
+
+ useEffect(() => {
+  if (!selectedVolume || !selectedScent || variants.length === 0) {
+    setSelectedVariant(null);
+    return;
+  }
+
+  const matched = variants.find((v) => {
+    if (v.attributes?.length) {
+      const scentAttr = v.attributes.find(a => a.attributeId.name === 'Mùi hương');
+      const volumeAttr = v.attributes.find(a => a.attributeId.name === 'Dung tích');
+      return (
+        scentAttr?.valueId?.value === selectedScent &&
+        volumeAttr?.valueId?.value === selectedVolume
+      );
+    } else {
+      return (
+        v.flavors === selectedScent &&
+        v.volume?.toString() === selectedVolume
+      );
+    }
+  });
+
+  if (matched) {
+    setSelectedVariant(matched);
+    setQuantity(1);
+  } else {
+    setSelectedVariant(null);
+  }
+}, [selectedVolume, selectedScent, variants]);
+
+
+  const scentAttr = attributes.find((a) => a.attributeCode === 'mui-huong');
+  const volumeAttr = attributes.find((a) => a.attributeCode === 'dung-tich');
+
+  const scentLabels = attributeValues
+    .filter((v) => v.attributeId === scentAttr?._id)
+    .map((v) => v.value);
+
+  const volumeLabels = attributeValues
+    .filter((v) => v.attributeId === volumeAttr?._id)
+    .map((v) => v.value);
+
+  const uniqueScents = [
+    ...new Set(
+      variants.map((v) => {
+        if (v.attributes?.length) {
+          const scentAttr = v.attributes.find(
+            (a) => a.attributeId.name === 'Mùi hương'
+          );
+          return scentAttr?.valueId?.value;
+        } else {
+          return v.flavors;
+        }
+      }).filter((scent): scent is string => Boolean(scent))
+    ),
+  ];
+
+  const uniqueVolumes = [
+    ...new Set(
+      variants
+        .filter((v) => {
+          if (v.attributes?.length) {
+            const scentAttr = v.attributes.find(
+              (a) => a.attributeId.name === 'Mùi hương'
+            );
+            return scentAttr?.valueId?.value === selectedScent;
+          } else {
+            return v.flavors === selectedScent;
+          }
+        })
+        .map((v) => {
+          if (v.attributes?.length) {
+            const volumeAttr = v.attributes.find(
+              (a) => a.attributeId.name === 'Dung tích'
+            );
+            return volumeAttr?.valueId?.value;
+          } else {
+            return `${v.volume}ml`;
+          }
+        }).filter((vol): vol is string => Boolean(vol))
+    ),
+  ];
+
+  const getLabelFromAttribute = (value: string | number, type: 'scent' | 'volume') => {
+  const list = type === 'scent' ? scentLabels : volumeLabels;
+  const match = list.find((v) => v.toLowerCase().includes(value.toString().toLowerCase()));
+  return match || value;
+};
+
   const fetchComments = async () => {
     try {
       const res = await axios.get(`http://localhost:3000/comments/product/${id}`);
@@ -163,7 +311,11 @@ const ProductDetails = () => {
     }
   };
 
-  // ========================= VARIANT WATCHER =========================
+  useEffect(() => {
+  fetchAttributes();
+  fetchAttributeValues();
+}, []);
+
   useEffect(() => {
     if (!selectedVolume || !selectedScent || variants.length === 0) {
       setSelectedVariant(null);
@@ -171,7 +323,14 @@ const ProductDetails = () => {
     }
 
     const matched = variants.find(
-      (v) => v.volume.toString() === selectedVolume && v.flavors === selectedScent
+      (v) => {
+        const scent =
+          v.attributes?.find((a) => a.attributeId.name === 'Mùi hương')?.valueId?.value || v.flavors;
+        const volume =
+          v.attributes?.find((a) => a.attributeId.name === 'Dung tích')?.valueId?.value || v.volume.toString();
+
+        return scent === selectedScent && volume === selectedVolume;
+      }
     );
 
     if (matched) {
@@ -182,7 +341,6 @@ const ProductDetails = () => {
     }
   }, [selectedVolume, selectedScent, variants]);
 
-  // ========================= CART & BUY NOW =========================
   const addToCart = (product: ProductDetailType) => {
     if (!selectedVariant) return;
 
@@ -221,10 +379,6 @@ const ProductDetails = () => {
     }
   };
 
-  /**
-   * Lưu sản phẩm "Buy Now" vào localStorage.buyNowItem và chuyển sang trang Checkout
-   * Không ảnh hưởng tới giỏ hàng hiện tại
-   */
   const handleBuyNow = () => {
   if (!selectedScent || !selectedVolume) {
     alert("Vui lòng chọn hương và dung tích!");
@@ -244,17 +398,13 @@ const ProductDetails = () => {
     quantity,
     selectedScent,
     selectedVolume,
-    variantId: selectedVariant._id, // thêm dòng này nếu thiếu
+    variantId: selectedVariant._id,
   };
 
   localStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
-
-  // 🔄 Không chuyển hướng sớm trước khi lưu xong
   navigate("/checkout");
 };
 
-
-  // ========================= COMMENT =========================
   const handleCommentSubmit = async () => {
     if (!user) {
       alert('Vui lòng đăng nhập để bình luận!');
@@ -281,18 +431,17 @@ const ProductDetails = () => {
     }
   };
 
-  // ========================= EARLY RETURNS =========================
   if (!id) return <div className="text-center py-10">Không có ID sản phẩm.</div>;
   if (loading) return <div className="text-center py-10">Đang tải...</div>;
   if (error) return <div className="text-center py-10 text-red-600">{error}</div>;
   if (!product) return <div className="text-center py-10">Không tìm thấy sản phẩm.</div>;
 
-  const thumbnails = [...new Set(variants.map((v) => v.image))];
+  const thumbnails = [
+    ...new Set([product.image, ...variants.map((v) => v.image)].filter(Boolean))
+  ];
 
-  // ========================= UI =========================
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* BREADCRUMB */}
       <div className="flex items-center text-sm mb-5">
         <Link to="/" className="text-gray-500 hover:text-gray-900">
           Trang chủ
@@ -306,9 +455,7 @@ const ProductDetails = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-2 grid grid-cols-12 gap-8">
-        {/* LEFT: IMAGE & INFO */}
         <div className="col-span-12 lg:col-span-8 flex flex-col md:flex-row gap-10">
-          {/* IMAGE */}
           <div className="w-full md:w-[50%] mx-auto">
             <img
               src={mainImg}
@@ -316,11 +463,11 @@ const ProductDetails = () => {
               className="w-full rounded shadow object-contain max-h-[400px]"
             />
             <div className="flex gap-2 mt-4 justify-center">
-              {thumbnails.map((src, i) => (
+              {thumbnails.map((src,index) => (
                 <img
-                  key={i}
+                 key={`${src}-${index}`}
                   src={src}
-                  alt={`thumb-${i}`}
+                  alt={`thumb-${index}`}
                   className={`w-14 h-14 border rounded object-cover cursor-pointer ${
                     mainImg === src ? 'border-purple-600' : ''
                   }`}
@@ -330,12 +477,11 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          {/* INFO */}
           <div className="w-full md:w-1/2">
             <h2 className="text-xl font-semibold">{product.name}</h2>
             <div className="text-yellow-400 mb-2">★★★★★</div>
             <p className="text-red-600 text-2xl font-bold mb-3">
-              {(selectedVariant?.price || product.price || 0).toLocaleString()}
+              {(selectedVariant?.price || product.priceDefault || 0).toLocaleString()}
             </p>
 
             <div className="text-sm text-gray-600 space-y-1">
@@ -364,7 +510,6 @@ const ProductDetails = () => {
                 Lưu ý: Mùi hương thực tế tùy vào sở thích cá nhân.
               </p>
 
-              {/* QUANTITY */}
               <div className="flex items-center gap-4 !mt-4">
                 <div className="flex items-center border border-gray-300 rounded overflow-hidden w-fit">
                   <button
@@ -404,54 +549,70 @@ const ProductDetails = () => {
               </div>
             </div>
 
-            {/* SCENT SELECTION */}
             <div className="mt-3">
-              <p className="text-sm font-medium">Mùi hương:</p>
+              <p className="text-sm font-medium">{scentAttr?.name || 'Mùi hương'}:</p>
               <div className="flex gap-2 mt-1">
-                {[...new Set(variants.map((v) => v.flavors))].map((scent) => (
+                {uniqueScents.map((scent, idx) => (
                   <button
-                    key={scent}
+                    key={`${scent}-${idx}`}
                     onClick={() => {
                       setSelectedScent(scent);
-                      const volumesByScent = variants
-                        .filter((v) => v.flavors === scent)
-                        .map((v) => v.volume);
-                      const minVolume = Math.min(...volumesByScent);
-                      setSelectedVolume(minVolume.toString());
+                      const variantsByScent = variants.filter((v) => {
+                        const scentAttr = v.attributes?.find((a) => a.attributeId.name === 'Mùi hương');
+                        const value = scentAttr?.valueId?.value || v.flavors;
+                        return value === scent;
+                      });
+                      if (variantsByScent.length > 0) {
+                        const firstVolume =
+                          variantsByScent[0].attributes?.find((a) => a.attributeId.name === 'Dung tích')?.valueId?.value ||
+                          variantsByScent[0].volume.toString();
+
+                        setSelectedVolume(firstVolume);
+                      }
                     }}
                     className={`px-3 py-1 border rounded text-sm hover:bg-[#696faa] hover:text-white ${
                       selectedScent === scent ? 'bg-[#5f518e] text-white' : ''
                     }`}
                   >
-                    {scent}
+                    {getLabelFromAttribute(scent ?? '', 'scent')}
                   </button>
                 ))}
               </div>
             </div>
-
-            {/* VOLUME SELECTION */}
             <div className="mt-3">
-              <p className="text-sm font-medium">Dung tích:</p>
+              <p className="text-sm font-medium">{volumeAttr?.name || 'Dung tích'}:</p>
               <div className="flex gap-2 mt-1">
-                {[...new Set(
-                  variants
-                    .filter((v) => v.flavors === selectedScent)
-                    .map((v) => v.volume.toString())
-                )].map((vol) => (
+                {uniqueVolumes.map((vol, idx) => (
                   <button
-                    key={vol}
-                    onClick={() => setSelectedVolume(vol)}
+                    key={`${vol}-${idx}`}
+                    onClick={() => {
+                      const matched = variants.find((v) => {
+                        const scent =
+                          v.attributes?.find((a) => a.attributeId.name === 'Mùi hương')?.valueId?.value || v.flavors;
+                        const volume =
+                          v.attributes?.find((a) => a.attributeId.name === 'Dung tích')?.valueId?.value || v.volume.toString();
+
+                        return scent === selectedScent && volume === String(vol);
+                      });
+
+                      if (matched) {
+                        setSelectedVolume(String(vol));
+                        setSelectedVariant(matched);
+                        setQuantity(1);
+                      } else {
+                        alert('Không tìm thấy biến thể phù hợp với mùi hương đã chọn.');
+                      }
+                    }}
                     className={`px-3 py-1 border rounded text-sm hover:bg-[#696faa] hover:text-white ${
-                      selectedVolume === vol ? 'bg-[#5f518e] text-white' : ''
+                      selectedVolume === String(vol) ? 'bg-[#5f518e] text-white' : ''
                     }`}
                   >
-                    {vol}ml
+                    {getLabelFromAttribute(vol, 'volume')}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* ACTION BUTTONS */}
             <div className="flex gap-2 mt-8">
               <button
                 onClick={handleAddToCart}
@@ -470,7 +631,6 @@ const ProductDetails = () => {
           </div>
         </div>
 
-        {/* RIGHT SIDEBAR */}
         <div className="hidden lg:block col-span-4 space-y-6 w-full max-w-[600px] mx-auto">
           <div className="border p-6 rounded shadow text-center">
             <h3 className="font-semibold mb-5">ƯU ĐIỂM</h3>
@@ -480,8 +640,8 @@ const ProductDetails = () => {
                 { label: 'Hạ', color: 'bg-red-300', icon: '🌂' },
                 { label: 'Thu', color: 'bg-yellow-400', icon: '🍂' },
                 { label: 'Đông', color: 'bg-blue-400', icon: '❄️' },
-              ].map((item, i) => (
-                <div key={i} className="flex flex-col items-center">
+              ].map((item) => (
+                <div key={item.label} className="flex flex-col items-center">
                   <div className="text-xl">{item.icon}</div>
                   <div className="mt-1 font-medium">{item.label}</div>
                   <div className="w-full h-2 rounded bg-gray-200 mt-1">
@@ -520,7 +680,6 @@ const ProductDetails = () => {
           </div>
         </div>
 
-        {/* DESCRIPTION / REVIEW TABS */}
         <div className="col-span-12">
           <div className="flex gap-4 border-b border-gray-300">
             <button
@@ -541,7 +700,6 @@ const ProductDetails = () => {
             </button>
           </div>
 
-          {/* DESCRIPTION TAB */}
           {activeTab === 'description' && (
             <div className="max-w-6xl mt-3 mx-auto px-6 py-6 bg-white text-gray-800 leading-relaxed space-y-6">
               {product.description ? (
@@ -556,7 +714,6 @@ const ProductDetails = () => {
             </div>
           )}
 
-          {/* REVIEW TAB */}
           {activeTab === 'review' && (
             <div className="p-6">
               <div className="mb-4">
@@ -604,7 +761,6 @@ const ProductDetails = () => {
           )}
         </div>
 
-        {/* RELATED PRODUCTS */}
         <div className="col-span-12 mt-10">
           <h3 className="text-xl font-semibold mb-6">SẢN PHẨM LIÊN QUAN</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
@@ -614,7 +770,6 @@ const ProductDetails = () => {
               </p>
             ) : (
               relatedProducts.map((rel) => {
-                const firstVariant = rel.variants?.[0];
                 return (
                   <Link
                     to={`/productdetails/${rel._id}`}
@@ -623,7 +778,7 @@ const ProductDetails = () => {
                   >
                     <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
                       <img
-                        src={firstVariant?.image || rel.image}
+                        src={rel.image}
                         alt={rel.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
@@ -643,7 +798,7 @@ const ProductDetails = () => {
                     </div>
 
                     <div className="text-red-500 font-semibold text-sm text-left">
-                      {firstVariant?.price?.toLocaleString() || 'Liên hệ'}
+                      {(rel.priceDefault)?.toLocaleString() || 'Liên hệ'}
                     </div>
                   </Link>
                 );

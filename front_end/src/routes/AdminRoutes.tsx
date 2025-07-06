@@ -1,7 +1,6 @@
 import AdminLayout from "../layouts/AdminLayout"
 
 import Dashboard from "../pages/Admin/Dashboard"
-import Statistics from "../pages/Admin/Statistics"
 
 import BrandManager from "../pages/Admin/Brand/BrandManager"
 import AddBrand from "../pages/Admin/Brand/AddBrand"
@@ -51,9 +50,7 @@ const AdminRoutes = {
   element: <AdminLayout />,
   children: [
     { path: '', element: <Dashboard /> },
-    { path: 'statistics', element: <Statistics /> },
 
-    // Brand
     { path: 'brands', element: <BrandManager /> },
     { path: 'brands/add', element: <AddBrand /> },
     { path: 'brands/edit/:id', element: <EditBrand /> },
@@ -75,19 +72,16 @@ const AdminRoutes = {
 
     { path: 'users', element: <UserManager /> },
 
-    //Attribute
     { path: 'attributes/add', element: <AddAttribute /> },
     { path: 'attributes', element: <AttributeManager /> },
     { path: 'attributes/trash', element: <TrashAttribute /> },
     { path: 'attributes/edit/:id', element: <EditAttribute /> },
 
-    //Attribute-value attribute-values
     { path: 'attribute-values/add', element: <AddAttributeValue /> },
     { path: 'attribute-values', element: <AttributeValueManager /> },
     { path: 'attribute-values/trash', element: <TrashAttributeValue /> },
     { path: 'attribute-values/edit/:id', element: <EditAttributeValue /> },
 
-    //variant
     { path: 'variants', element: <VariantManager /> },
     { path: 'variants/add', element: <AddVariant /> },
     { path: 'variants/edit/:id', element: <EditVariant /> },

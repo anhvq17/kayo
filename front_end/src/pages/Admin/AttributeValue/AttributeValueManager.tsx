@@ -81,7 +81,7 @@ const AttributeValueManager = () => {
   };
 
   return (
-    <div className="p-1">
+    <div className="p-4">
       {/* Tiêu đề */}
       <div className="flex justify-between items-center mb-2">
         <h1 className="text-2xl font-semibold">Danh sách giá trị thuộc tính</h1>

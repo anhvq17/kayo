@@ -85,8 +85,8 @@ paymentRouter.get("/check_payment", (req, res) => {
         Order.findByIdAndUpdate(
           originalOrderId,
           { 
-            paymentStatus: 'paid',
-            status: 'paid'
+            paymentStatus: 'Đã thanh toán',
+            totalAmount: 0
           },
           { new: true }
         ).then(updatedOrder => {
@@ -95,7 +95,7 @@ paymentRouter.get("/check_payment", (req, res) => {
             console.log('Updated order details:', {
               _id: updatedOrder._id,
               paymentStatus: updatedOrder.paymentStatus,
-              status: updatedOrder.status
+              orderStatus: updatedOrder.orderStatus
             });
           } else {
             console.log('Order not found with ID:', originalOrderId);

@@ -44,18 +44,35 @@ export interface Order {
   fullName: string;
   phone: string;
   address: Address;
-  status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+  orderStatus: 'Chờ xử lý' | 'Đã xử lý' | 'Đang giao hàng' | 'Đã giao hàng' | 'Đã nhận hàng' | 'Đã huỷ đơn hàng';
   totalAmount: number;
   paymentMethod: 'cod' | 'vnpay';
-  paymentStatus: 'pending' | 'paid' | 'failed';
+  paymentStatus: 'Đã thanh toán' | 'Chưa thanh toán';
   createdAt: string;
   updatedAt: string;
 }
 
-export interface OrderItem {
+interface OrderItem {
   _id: string;
-  orderId: string;
-  variantId: string;
+  variantId: {
+    _id: string;
+    image: string;
+    productId: {
+      _id: string;
+      name: string;
+      image: string;
+    };
+    attributes?: {
+      attributeId: {
+        _id: string;
+        name: string;
+      };
+      valueId: {
+        _id: string;
+        value: string;
+      };
+    }[];
+  };
   quantity: number;
   price: number;
 }

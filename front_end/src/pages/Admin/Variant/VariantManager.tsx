@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { Trash } from "lucide-react";
 import axios from "axios";
 
 const VariantManager = () => {
   const [variants, setVariants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 5;
 
   useEffect(() => {
     const fetchVariants = async () => {
@@ -27,26 +26,6 @@ const VariantManager = () => {
     fetchVariants();
   }, []);
 
-  const handleDelete = async (id: string) => {
-    const confirmDelete = window.confirm("Bạn có chắc chắn muốn xóa biến thể này?");
-    if (!confirmDelete) return;
-
-    try {
-      await axios.delete(`http://localhost:3000/variant/${id}`);
-      const updatedVariants = variants.filter((v) => v._id !== id);
-      setVariants(updatedVariants);
-      if ((currentPage - 1) * itemsPerPage >= updatedVariants.length && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error("Lỗi khi xóa biến thể:", error.message);
-      } else {
-        console.error("Lỗi không xác định:", error);
-      }
-    }
-  };
-
   const totalPages = Math.ceil(variants.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -59,8 +38,8 @@ const VariantManager = () => {
   };
 
   return (
-    <div className="">
-      <div className="flex justify-between items-center">
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-2">
         <h1 className="text-2xl font-semibold mb-4">Danh sách biến thể</h1>
       </div>
 
@@ -73,8 +52,7 @@ const VariantManager = () => {
               <tr className="bg-black text-white text-left">
                 <th className="px-4 py-2">STT</th>
                 <th className="px-4 py-2">Tên sản phẩm</th>
-                <th className="px-4 py-2">Dung tích</th>
-                <th className="px-4 py-2">Hương vị</th>
+                <th className="px-4 py-2" colSpan={3}>Thuộc tính</th>
                 <th className="px-4 py-2">Giá</th>
                 <th className="px-4 py-2">Số lượng</th>
                 <th className="px-4 py-2">Ảnh</th>
@@ -85,32 +63,42 @@ const VariantManager = () => {
             <tbody>
               {currentItems.length > 0 ? (
                 currentItems.map((variant, index) => (
-                  <tr key={variant._id} className="hover:bg-gray-50 text-left">
+                  <tr key={variant._id} className="hover:bg-gray-50 text-left align-top">
                     <td className="px-4 py-2">{indexOfFirstItem + index + 1}</td>
                     <td className="px-4 py-2">{variant.productId?.name || "Không rõ"}</td>
-                    <td className="px-4 py-2">{variant.volume}ml</td>
-                    <td className="px-4 py-2">{variant.flavors}</td>
+
+                    <td className="px-4 py-2" colSpan={3}>
+                      {variant.attributes?.length > 0 ? (
+                        variant.attributes.map((attr: any, i: number) => (
+                          <div key={i} className="mb-1">
+                            <strong>{attr.attributeId?.name || "?"}:</strong>{" "}
+                            {attr.valueId?.value || "?"}
+                          </div>
+                        ))
+                      ) : (
+                        <span>Không có thuộc tính</span>
+                      )}
+                    </td>
+
                     <td className="px-4 py-2">{variant.price.toLocaleString()}đ</td>
                     <td className="px-4 py-2">{variant.stock_quantity}</td>
                     <td className="px-4 py-2">
-                      <img src={variant.image} alt="variant" className="h-12 w-12 object-cover rounded" />
+                      <img
+                        src={variant.image}
+                        alt="variant"
+                        className="h-12 w-12 object-cover rounded"
+                      />
                     </td>
                     <td className="px-4 py-2">
                       {new Date(variant.createdAt).toLocaleDateString("vi-VN")}
                     </td>
                     <td className="px-4 py-2">
-                      <button
-                        onClick={() => handleDelete(variant._id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs"
-                      >
-                        <Trash size={14} />
-                      </button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} className="text-center py-4">
+                  <td colSpan={10} className="text-center py-4">
                     Không có biến thể nào.
                   </td>
                 </tr>
@@ -124,7 +112,7 @@ const VariantManager = () => {
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
             >
-              {'<'}
+              {"<"}
             </button>
             {Array.from({ length: totalPages }, (_, i) => (
               <button
@@ -142,7 +130,7 @@ const VariantManager = () => {
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
             >
-              {'>'}
+              {">"}
             </button>
           </div>
         </div>

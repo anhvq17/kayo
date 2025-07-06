@@ -93,6 +93,9 @@ const ClientHeader = () => {
                   <Link to={"/profile"} className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100">
                     <i className="fas fa-user w-4 h-4 mr-2" /> Tài khoản
                   </Link>
+                  <Link to={"/orders"} className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100">
+                    <i className="fas fa-shopping-cart w-4 h-4 mr-2" /> Đơn hàng
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100"

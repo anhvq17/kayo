@@ -13,18 +13,13 @@ interface Brand {
   image: string;
 }
 
-interface Variant {
-  image: string;
-  price: number;
-  volume: number;
-}
-
 interface Product {
   _id: string;
   name: string;
+  image: string;
+  priceDefault: number;
   categoryId: Category;
   brandId: Brand;
-  variants: Variant[];
 }
 
 const categories = ["Nam", "Nữ"];
@@ -66,8 +61,6 @@ const ProductList = () => {
   }, [selectedCategory, selectedBrand, selectedPriceRange]);
 
   const filteredProducts = products.filter((product) => {
-    const firstVariant = product.variants[0];
-
     const matchCategory = selectedCategory
       ? product.categoryId.name === selectedCategory
       : true;
@@ -78,7 +71,8 @@ const ProductList = () => {
 
     const matchPrice = (() => {
       if (!selectedPriceRange) return true;
-      const price = firstVariant.price;
+      const price = product.priceDefault;
+
       switch (selectedPriceRange) {
         case ">-2":
           return price < 2000000;
@@ -130,6 +124,7 @@ const ProductList = () => {
                 </svg>
               </div>
             </div>
+
             <div className="mb-6 relative">
               <select
                 value={selectedBrand}
@@ -147,6 +142,7 @@ const ProductList = () => {
                 </svg>
               </div>
             </div>
+
             <div className="mb-6 relative">
               <select
                 value={selectedPriceRange}
@@ -215,38 +211,35 @@ const ProductList = () => {
 
         <main className="lg:w-3/4">
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {currentProducts.map((product) => {
-              const firstVariant = product.variants[0];
-              return (
-                <Link
-                  to={`/productdetails/${product._id}`}
-                  key={product._id}
-                  className="group p-4 border rounded-lg hover:shadow transition block"
-                >
-                  <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
-                    <img
-                      src={firstVariant.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2 text-left">
-                    {product.name}
-                  </h3>
-                  <div className="flex gap-2 mb-2">
-                    <span className="inline-block px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
-                      {product.categoryId?.name || "Danh mục?"}
-                    </span>
-                    <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                      {product.brandId?.name || "Thương hiệu?"}
-                    </span>
-                  </div>
-                  <div className="text-red-500 font-semibold text-sm text-left">
-                    {firstVariant.price.toLocaleString()}
-                  </div>
-                </Link>
-              );
-            })}
+            {currentProducts.map((product) => (
+              <Link
+                to={`/productdetails/${product._id}`}
+                key={product._id}
+                className="group p-4 border rounded-lg hover:shadow transition block"
+              >
+                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2 text-left">
+                  {product.name}
+                </h3>
+                <div className="flex gap-2 mb-2">
+                  <span className="inline-block px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
+                    {product.categoryId?.name || "Danh mục?"}
+                  </span>
+                  <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+                    {product.brandId?.name || "Thương hiệu?"}
+                  </span>
+                </div>
+                <div className="text-red-500 font-semibold text-sm text-left">
+                  {product.priceDefault.toLocaleString()}
+                </div>
+              </Link>
+            ))}
           </div>
 
           <div className="flex justify-center mt-8">

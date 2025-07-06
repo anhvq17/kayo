@@ -23,6 +23,11 @@ export const getOrdersByUser = async (userId: string) => {
   return res.data;
 };
 
+export const getOrdersByUserWithItems = async (userId: string) => {
+  const res = await axios.get(`${API_URL}/orders/user/${userId}/full`);
+  return res.data;
+};
+
 export const createVNPayUrl = async (amount: number, orderId?: string) => {
   const params: any = { amount };
   if (orderId) {
