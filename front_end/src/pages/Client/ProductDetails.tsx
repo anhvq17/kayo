@@ -71,12 +71,12 @@ const ProductDetails = () => {
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [user, setUserInfo] = useState<UserInfoType | null>(null);
-  const [error] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [addedMessage, setAddedMessage] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [attributes, setAttributes] = useState<AttributeType[]>([]);
   const [attributeValues, setAttributeValues] = useState<AttributeValueType[]>([]);
-  
+
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
@@ -102,67 +102,76 @@ const ProductDetails = () => {
     if (id) {
       fetchProduct();
       fetchComments();
+      fetchAttributes();
+      fetchAttributeValues();
     }
   }, [id]);
 
   const fetchProduct = async () => {
-  try {
-    const res = await axios.get(`http://localhost:3000/products/${id}`);
-    const productData = res.data.data;
+    try {
+      const res = await axios.get(`http://localhost:3000/products/${id}`);
+      const productData = res.data.data;
+      setProduct(productData);
+      setMainImg(productData.image);
+      fetchVariants(productData._id);
 
-    setProduct(productData);
-    setMainImg(productData.image);
-    fetchVariants(productData._id);
-
-    if (productData.categoryId?._id) {
-      fetchRelatedProducts(productData.categoryId._id, productData._id);
+      if (productData.categoryId?._id) {
+        fetchRelatedProducts(productData.categoryId._id, productData._id);
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải sản phẩm:', error);
+      setError('Không thể tải thông tin sản phẩm.');
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('Lỗi khi tải sản phẩm:', error);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const fetchVariants = async (productId: string) => {
-  try {
-    const res = await axios.get(`http://localhost:3000/variant/product/${productId}`);
-    const variantList: VariantType[] = res.data.data;
-    setVariants(variantList);
+    try {
+      const res = await axios.get(`http://localhost:3000/variant/product/${productId}`);
+      const variantList: VariantType[] = res.data.data;
 
-    if (variantList.length > 0) {
-      const firstVariant = variantList[0];
-      const scentValue =
-        firstVariant.attributes?.find((a) => a.attributeId.name === 'Mùi hương')?.valueId?.value ||
-        firstVariant.flavors;
+      if (!variantList.every((v) => v._id)) {
+        console.error('Dữ liệu biến thể thiếu _id:', variantList);
+        setError('Dữ liệu biến thể không hợp lệ.');
+        return;
+      }
 
-      const variantsWithSameScent = variantList.filter((v) => {
-        const scent =
-          v.attributes?.find((a) => a.attributeId.name === 'Mùi hương')?.valueId?.value ||
-          v.flavors;
-        return scent === scentValue;
-      });
+      setVariants(variantList);
 
-      const volumeValue =
-        variantsWithSameScent[0].attributes?.find((a) => a.attributeId.name === 'Dung tích')
-          ?.valueId?.value || variantsWithSameScent[0].volume.toString();
+      if (variantList.length > 0) {
+        const firstVariant = variantList[0];
+        const scentValue =
+          firstVariant.attributes?.find((a) => a.attributeId.name === 'Mùi hương')?.valueId?.value ||
+          firstVariant.flavors;
 
-      const matched = variantsWithSameScent.find((v) => {
-        const vol =
-          v.attributes?.find((a) => a.attributeId.name === 'Dung tích')?.valueId?.value ||
-          v.volume.toString();
-        return vol === volumeValue;
-      });
+        const variantsWithSameScent = variantList.filter((v) => {
+          const scent =
+            v.attributes?.find((a) => a.attributeId.name === 'Mùi hương')?.valueId?.value ||
+            v.flavors;
+          return scent === scentValue;
+        });
 
-      setSelectedScent(scentValue);
-      setSelectedVolume(volumeValue);
-      setSelectedVariant(matched || null);
+        const volumeValue =
+          variantsWithSameScent[0].attributes?.find((a) => a.attributeId.name === 'Dung tích')?.valueId?.value ||
+          variantsWithSameScent[0].volume.toString();
+
+        const matched = variantsWithSameScent.find((v) => {
+          const vol =
+            v.attributes?.find((a) => a.attributeId.name === 'Dung tích')?.valueId?.value ||
+            v.volume.toString();
+          return vol === volumeValue;
+        });
+
+        setSelectedScent(scentValue);
+        setSelectedVolume(volumeValue);
+        setSelectedVariant(matched || null);
+      }
+    } catch (err) {
+      console.error('Lỗi khi lấy danh sách biến thể:', err);
+      setError('Không thể tải biến thể sản phẩm.');
     }
-  } catch (err) {
-    console.error('Lỗi khi lấy danh sách biến thể:', err);
-  }
-};
+  };
 
   const fetchRelatedProducts = async (categoryId: string, currentId: string) => {
     try {
@@ -213,36 +222,27 @@ const ProductDetails = () => {
     }
   };
 
- useEffect(() => {
-  if (!selectedVolume || !selectedScent || variants.length === 0) {
-    setSelectedVariant(null);
-    return;
-  }
-
-  const matched = variants.find((v) => {
-    if (v.attributes?.length) {
-      const scentAttr = v.attributes.find(a => a.attributeId.name === 'Mùi hương');
-      const volumeAttr = v.attributes.find(a => a.attributeId.name === 'Dung tích');
-      return (
-        scentAttr?.valueId?.value === selectedScent &&
-        volumeAttr?.valueId?.value === selectedVolume
-      );
-    } else {
-      return (
-        v.flavors === selectedScent &&
-        v.volume?.toString() === selectedVolume
-      );
+  useEffect(() => {
+    if (!selectedVolume || !selectedScent || variants.length === 0) {
+      setSelectedVariant(null);
+      return;
     }
-  });
 
-  if (matched) {
-    setSelectedVariant(matched);
-    setQuantity(1);
-  } else {
-    setSelectedVariant(null);
-  }
-}, [selectedVolume, selectedScent, variants]);
+    const matched = variants.find((v) => {
+      const scent =
+        v.attributes?.find((a) => a.attributeId.name === 'Mùi hương')?.valueId?.value || v.flavors;
+      const volume =
+        v.attributes?.find((a) => a.attributeId.name === 'Dung tích')?.valueId?.value || v.volume.toString();
+      return scent === selectedScent && volume === selectedVolume;
+    });
 
+    if (matched) {
+      setSelectedVariant(matched);
+      setQuantity(1);
+    } else {
+      setSelectedVariant(null);
+    }
+  }, [selectedVolume, selectedScent, variants]);
 
   const scentAttr = attributes.find((a) => a.attributeCode === 'mui-huong');
   const volumeAttr = attributes.find((a) => a.attributeCode === 'dung-tich');
@@ -297,10 +297,10 @@ const ProductDetails = () => {
   ];
 
   const getLabelFromAttribute = (value: string | number, type: 'scent' | 'volume') => {
-  const list = type === 'scent' ? scentLabels : volumeLabels;
-  const match = list.find((v) => v.toLowerCase().includes(value.toString().toLowerCase()));
-  return match || value;
-};
+    const list = type === 'scent' ? scentLabels : volumeLabels;
+    const match = list.find((v) => v.toLowerCase().includes(value.toString().toLowerCase()));
+    return match || value;
+  };
 
   const fetchComments = async () => {
     try {
@@ -311,38 +311,11 @@ const ProductDetails = () => {
     }
   };
 
-  useEffect(() => {
-  fetchAttributes();
-  fetchAttributeValues();
-}, []);
-
-  useEffect(() => {
-    if (!selectedVolume || !selectedScent || variants.length === 0) {
-      setSelectedVariant(null);
+  const addToCart = (product: ProductDetailType) => {
+    if (!selectedVariant) {
+      alert('Vui lòng chọn biến thể sản phẩm!');
       return;
     }
-
-    const matched = variants.find(
-      (v) => {
-        const scent =
-          v.attributes?.find((a) => a.attributeId.name === 'Mùi hương')?.valueId?.value || v.flavors;
-        const volume =
-          v.attributes?.find((a) => a.attributeId.name === 'Dung tích')?.valueId?.value || v.volume.toString();
-
-        return scent === selectedScent && volume === selectedVolume;
-      }
-    );
-
-    if (matched) {
-      setSelectedVariant(matched);
-      setQuantity(1);
-    } else {
-      setSelectedVariant(null);
-    }
-  }, [selectedVolume, selectedScent, variants]);
-
-  const addToCart = (product: ProductDetailType) => {
-    if (!selectedVariant) return;
 
     const cart = JSON.parse(localStorage.getItem('cart') || '[]') as any[];
     const existing = cart.find((item) => item.variantId === selectedVariant._id);
@@ -363,6 +336,7 @@ const ProductDetails = () => {
     }
 
     localStorage.setItem('cart', JSON.stringify(cart));
+    console.log('Cart updated:', JSON.parse(localStorage.getItem('cart') || '[]')); // Debug
   };
 
   const handleAddToCart = () => {
@@ -371,39 +345,43 @@ const ProductDetails = () => {
       return;
     }
 
-    if (product) {
-      addToCart(product);
-      setAddedMessage('Đã thêm vào giỏ hàng!');
-      setQuantity(1);
-      setTimeout(() => setAddedMessage(''), 2000);
+    if (!product || !selectedVariant) {
+      alert('Không tìm thấy sản phẩm hoặc biến thể phù hợp!');
+      return;
     }
+
+    addToCart(product);
+    setAddedMessage('Đã thêm vào giỏ hàng!');
+    setQuantity(1);
+    setTimeout(() => setAddedMessage(''), 2000);
   };
 
   const handleBuyNow = () => {
-  if (!selectedScent || !selectedVolume) {
-    alert("Vui lòng chọn hương và dung tích!");
-    return;
-  }
+    if (!selectedScent || !selectedVolume) {
+      alert('Vui lòng chọn hương và dung tích!');
+      return;
+    }
 
-  if (!selectedVariant || !product) {
-    alert("Không tìm thấy biến thể phù hợp!");
-    return;
-  }
+    if (!selectedVariant || !product) {
+      alert('Không tìm thấy biến thể phù hợp!');
+      return;
+    }
 
-  const buyNowItem = {
-    _id: product._id,
-    name: product.name,
-    image: selectedVariant.image,
-    price: selectedVariant.price,
-    quantity,
-    selectedScent,
-    selectedVolume,
-    variantId: selectedVariant._id,
+    const buyNowItem = {
+      _id: product._id,
+      name: product.name,
+      image: selectedVariant.image,
+      price: selectedVariant.price,
+      quantity,
+      selectedScent,
+      selectedVolume,
+      variantId: selectedVariant._id,
+    };
+
+    localStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
+    console.log('Buy now item:', buyNowItem); // Debug
+    navigate('/checkout');
   };
-
-  localStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
-  navigate("/checkout");
-};
 
   const handleCommentSubmit = async () => {
     if (!user) {
@@ -463,9 +441,9 @@ const ProductDetails = () => {
               className="w-full rounded shadow object-contain max-h-[400px]"
             />
             <div className="flex gap-2 mt-4 justify-center">
-              {thumbnails.map((src,index) => (
+              {thumbnails.map((src, index) => (
                 <img
-                 key={`${src}-${index}`}
+                  key={`${src}-${index}`}
                   src={src}
                   alt={`thumb-${index}`}
                   className={`w-14 h-14 border rounded object-cover cursor-pointer ${
@@ -566,7 +544,6 @@ const ProductDetails = () => {
                         const firstVolume =
                           variantsByScent[0].attributes?.find((a) => a.attributeId.name === 'Dung tích')?.valueId?.value ||
                           variantsByScent[0].volume.toString();
-
                         setSelectedVolume(firstVolume);
                       }
                     }}
@@ -591,7 +568,6 @@ const ProductDetails = () => {
                           v.attributes?.find((a) => a.attributeId.name === 'Mùi hương')?.valueId?.value || v.flavors;
                         const volume =
                           v.attributes?.find((a) => a.attributeId.name === 'Dung tích')?.valueId?.value || v.volume.toString();
-
                         return scent === selectedScent && volume === String(vol);
                       });
 
@@ -618,7 +594,7 @@ const ProductDetails = () => {
                 onClick={handleAddToCart}
                 className="bg-[#5f518e] text-white px-6 py-2 rounded hover:bg-[#696faa] flex items-center gap-2"
               >
-                <ShoppingCart className="w-5 h-5" />THÊM VÀO GIỎ HÀNG
+                <ShoppingCart className="w-5 h-5" /> THÊM VÀO GIỎ HÀNG
               </button>
               <button
                 onClick={handleBuyNow}
@@ -769,40 +745,38 @@ const ProductDetails = () => {
                 Không có sản phẩm liên quan.
               </p>
             ) : (
-              relatedProducts.map((rel) => {
-                return (
-                  <Link
-                    to={`/productdetails/${rel._id}`}
-                    key={rel._id}
-                    className="group p-4 border rounded-lg hover:shadow transition block"
-                  >
-                    <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
-                      <img
-                        src={rel.image}
-                        alt={rel.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
+              relatedProducts.map((rel) => (
+                <Link
+                  to={`/productdetails/${rel._id}`}
+                  key={rel._id}
+                  className="group p-4 border rounded-lg hover:shadow transition block"
+                >
+                  <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
+                    <img
+                      src={rel.image}
+                      alt={rel.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
 
-                    <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2 text-left">
-                      {rel.name}
-                    </h3>
+                  <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2 text-left">
+                    {rel.name}
+                  </h3>
 
-                    <div className="flex gap-2 mb-2">
-                      <span className="inline-block px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
-                        {rel.categoryId?.name || 'Danh mục?'}
-                      </span>
-                      <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                        {rel.brandId?.name || 'Thương hiệu?'}
-                      </span>
-                    </div>
+                  <div className="flex gap-2 mb-2">
+                    <span className="inline-block px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
+                      {rel.categoryId?.name || 'Danh mục?'}
+                    </span>
+                    <span className="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+                      {rel.brandId?.name || 'Thương hiệu?'}
+                    </span>
+                  </div>
 
-                    <div className="text-red-500 font-semibold text-sm text-left">
-                      {(rel.priceDefault)?.toLocaleString() || 'Liên hệ'}
-                    </div>
-                  </Link>
-                );
-              })
+                  <div className="text-red-500 font-semibold text-sm text-left">
+                    {(rel.priceDefault)?.toLocaleString() || 'Liên hệ'}
+                  </div>
+                </Link>
+              ))
             )}
           </div>
         </div>

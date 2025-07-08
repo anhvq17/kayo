@@ -10,6 +10,7 @@ interface CartItem {
   quantity: number;
   volume: string;
   fragrance: string;
+  variantId: string; // Thêm variantId
   image: {
     src: string;
     width?: number;
@@ -47,6 +48,7 @@ const Cart = () => {
             quantity: item.quantity,
             volume: item.selectedVolume,
             fragrance: item.selectedScent,
+            variantId: item.variantId, // Lấy variantId
             image:
               typeof item.image === "string"
                 ? { src: item.image, width: 100, height: 100 }
@@ -56,6 +58,12 @@ const Cart = () => {
                     height: 100,
                   },
           }));
+
+        // Kiểm tra nếu thiếu variantId
+        if (!items.every((item) => item.variantId)) {
+          console.error('Một số mục trong giỏ hàng thiếu variantId:', items);
+          alert('Có lỗi với dữ liệu giỏ hàng, vui lòng kiểm tra lại.');
+        }
 
         setCartItems(items);
       } catch (error) {
@@ -72,9 +80,11 @@ const Cart = () => {
       quantity: item.quantity,
       selectedVolume: item.volume,
       selectedScent: item.fragrance,
+      variantId: item.variantId, // Lưu variantId
       image: item.image.src,
     }));
     localStorage.setItem("cart", JSON.stringify(formatted));
+    console.log('Cart saved:', formatted); // Debug
   };
 
   const updateQuantity = (id: string, newQuantity: number) => {
@@ -117,9 +127,18 @@ const Cart = () => {
   const allSelected = selectedItems.length === cartItems.length && cartItems.length > 0;
 
   const handleCheckout = () => {
-    if (selectedItems.length === 0) return;
+    if (selectedItems.length === 0) {
+      alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán!');
+      return;
+    }
     const selected = cartItems.filter((item) => selectedItems.includes(item.id));
+    // Kiểm tra variantId trước khi chuyển sang Checkout
+    if (!selected.every((item) => item.variantId)) {
+      alert('Một số sản phẩm trong giỏ hàng thiếu thông tin biến thể, vui lòng kiểm tra lại.');
+      return;
+    }
     localStorage.setItem("checkoutItems", JSON.stringify(selected));
+    console.log('Checkout items:', selected); // Debug
     navigate("/checkout");
   };
 

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getOrdersByUserWithItems, updateOrder } from '../../services/Order';
-import type { Order } from '../../types/Order';
 
 // Thêm type cho OrderItem
 interface OrderItem {
@@ -389,7 +388,7 @@ const OrderList = () => {
                 {item.items && item.items.length > 0 ? (
                   item.items.map((prod: OrderItem) => (
                     <div key={prod._id} className="flex items-center gap-4 py-2 border-b last:border-b-0">
-                      <img src={prod.variantId?.productId?.image || prod.variantId?.image} alt={prod.variantId?.productId?.name} className="w-20 h-20 object-cover rounded border" />
+                      <img src={ prod.variantId?.image} alt={prod.variantId?.productId?.name} className="w-20 h-20 object-cover rounded border" />
                       <div className="flex-1">
                         <div className="text-xl font-medium text-gray-900">{prod.variantId?.productId?.name || 'Sản phẩm'}</div>
                         <div className="text-xs text-gray-500">
