@@ -1,93 +1,152 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Minus, X } from "lucide-react";
+import axios from "axios";
 
 interface CartItem {
   _id: string;
-  id: string;
+  productId: string;
   name: string;
   price: number;
   quantity: number;
   volume: string;
-  fragrance: string;
-  variantId: string; // Thêm variantId
+  fragrance?: string;
+  variantId?: string;
+  selectedScent?: string;
+  selectedVolume?: string;
   image: {
-    src: string;
+    src: string | any;
     width?: number;
     height?: number;
   };
+  id: string;
 }
+
+interface UserInfoType {
+  _id: string;
+  username: string;
+}
+
+const mergeCarts = (localCart: any[], serverCart: any[]): any[] => {
+  const merged: { [key: string]: any } = {};
+  for (const item of serverCart) {
+    if (item.variantId) merged[item.variantId] = { ...item };
+  }
+  for (const item of localCart) {
+    if (!item.variantId) continue;
+    if (merged[item.variantId]) {
+      merged[item.variantId].quantity += item.quantity;
+    } else {
+      merged[item.variantId] = { ...item };
+    }
+  }
+  return Object.values(merged);
+};
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [user, setUserInfo] = useState<UserInfoType | null>(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const raw = localStorage.getItem("cart");
-    const buyNowRaw = localStorage.getItem("buyNowItem");
-
-    if (raw) {
-      try {
-        const cartData = JSON.parse(raw);
-        const buyNow = buyNowRaw ? JSON.parse(buyNowRaw) : null;
-
-        const items: CartItem[] = cartData
-          .filter((item: any) => {
-            return !buyNow || !(
-              (item.productId || item._id) === buyNow.productId &&
-              item.selectedScent === buyNow.selectedScent &&
-              item.selectedVolume === buyNow.selectedVolume
-            );
-          })
-          .map((item: any) => ({
-            _id: item._id || item.productId,
-            id: `${item._id || item.productId}-${item.selectedScent}-${item.selectedVolume}`,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            volume: item.selectedVolume,
-            fragrance: item.selectedScent,
-            variantId: item.variantId, // Lấy variantId
-            image:
-              typeof item.image === "string"
-                ? { src: item.image, width: 100, height: 100 }
-                : {
-                    src: item.image?.src || "/img/default.jpg",
-                    width: 100,
-                    height: 100,
-                  },
-          }));
-
-        // Kiểm tra nếu thiếu variantId
-        if (!items.every((item) => item.variantId)) {
-          console.error('Một số mục trong giỏ hàng thiếu variantId:', items);
-          alert('Có lỗi với dữ liệu giỏ hàng, vui lòng kiểm tra lại.');
-        }
-
-        setCartItems(items);
-      } catch (error) {
-        console.error("Lỗi khi parse localStorage:", error);
-      }
-    }
-  }, []);
 
   const saveToLocalStorage = (items: CartItem[]) => {
     const formatted = items.map((item) => ({
       _id: item._id,
+      productId: item.productId,
       name: item.name,
       price: item.price,
       quantity: item.quantity,
       selectedVolume: item.volume,
       selectedScent: item.fragrance,
-      variantId: item.variantId, // Lưu variantId
+      variantId: item.variantId,
       image: item.image.src,
     }));
     localStorage.setItem("cart", JSON.stringify(formatted));
-    console.log('Cart saved:', formatted); // Debug
   };
 
-  const updateQuantity = (id: string, newQuantity: number) => {
+  const syncCartAfterLogin = async (userId: string) => {
+  try {
+    // Lấy local cart nếu cần debug, nhưng không dùng trong merge
+    // const localCart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+    const res = await axios.get(`http://localhost:3000/cart/user/${userId}`);
+    const serverCart = res.data.cart;
+
+    // Xoá localStorage cart (không dùng nữa)
+    localStorage.setItem("cart", JSON.stringify(serverCart));
+
+    setCartItems(
+      serverCart.map((item: any) => ({
+        ...item,
+        id: item.variantId,
+        volume: item.selectedVolume || item.volume,
+        fragrance: item.selectedScent || item.fragrance,
+        image:
+          typeof item.image === "string"
+            ? { src: item.image, width: 100, height: 100 }
+            : {
+                src: item.image?.src || "/img/default.jpg",
+                width: 100,
+                height: 100,
+              },
+      }))
+    );
+  } catch (err) {
+    console.error("❌ Lỗi khi đồng bộ giỏ hàng:", err);
+  }
+};
+
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        setUserInfo(parsed);
+        if (parsed._id) {
+          syncCartAfterLogin(parsed._id);
+        }
+      } catch (err) {
+        console.error("Lỗi parse user:", err);
+      }
+    } else {
+      const raw = localStorage.getItem("cart");
+      if (raw) {
+        try {
+          const cartData = JSON.parse(raw);
+          const items: CartItem[] = cartData.map((item: any) => {
+            const variantId =
+              item.variantId ||
+              `${item.productId}-${item.selectedScent}-${item.selectedVolume}`;
+            return {
+              _id: item._id || item.productId,
+              productId: item.productId || item._id,
+              id: variantId,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              volume: item.selectedVolume,
+              fragrance: item.selectedScent,
+              variantId: variantId,
+              image:
+                typeof item.image === "string"
+                  ? { src: item.image, width: 100, height: 100 }
+                  : {
+                      src: item.image?.src || "/img/default.jpg",
+                      width: 100,
+                      height: 100,
+                    },
+            };
+          });
+          setCartItems(items);
+        } catch (error) {
+          console.error("Lỗi khi parse localStorage:", error);
+        }
+      }
+    }
+  }, []);
+
+  const updateQuantity = async (id: string, newQuantity: number) => {
     const targetItem = cartItems.find((item) => item.id === id);
     if (!targetItem) return;
 
@@ -97,6 +156,15 @@ const Cart = () => {
         setCartItems(updated);
         saveToLocalStorage(updated);
         setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+
+        if (user?._id && targetItem.variantId) {
+          await axios.delete("http://localhost:3000/cart", {
+            data: {
+              userId: user._id,
+              variantId: targetItem.variantId,
+            },
+          });
+        }
       }
     } else {
       const updated = cartItems.map((item) =>
@@ -104,16 +172,52 @@ const Cart = () => {
       );
       setCartItems(updated);
       saveToLocalStorage(updated);
+
+      if (user?._id && targetItem.variantId) {
+        await axios.post("http://localhost:3000/cart", {
+          ...targetItem,
+          userId: user._id,
+          quantity: newQuantity,
+        });
+      }
     }
   };
 
-  const removeItem = (id: string) => {
+  const removeItem = async (id: string) => {
+    const target = cartItems.find((item) => item.id === id);
+    if (!target) return;
+
     if (window.confirm("Xác nhận xoá sản phẩm này khỏi giỏ hàng?")) {
       const updated = cartItems.filter((item) => item.id !== id);
       setCartItems(updated);
       saveToLocalStorage(updated);
       setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+
+      if (user?._id && target.variantId) {
+        await axios.delete("http://localhost:3000/cart", {
+          data: {
+            userId: user._id,
+            variantId: target.variantId,
+          },
+        });
+      }
     }
+  };
+
+  const handleCheckout = () => {
+    if (selectedItems.length === 0) {
+      alert("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
+      return;
+    }
+    const selected = cartItems.filter((item) =>
+      selectedItems.includes(item.id)
+    );
+    if (!selected.every((item) => item.variantId)) {
+      alert("Một số sản phẩm trong giỏ hàng thiếu thông tin biến thể.");
+      return;
+    }
+    localStorage.setItem("checkoutItems", JSON.stringify(selected));
+    navigate("/checkout");
   };
 
   const subtotal = cartItems.reduce(
@@ -123,29 +227,17 @@ const Cart = () => {
         : total,
     0
   );
-  const total = subtotal;
-  const allSelected = selectedItems.length === cartItems.length && cartItems.length > 0;
 
-  const handleCheckout = () => {
-    if (selectedItems.length === 0) {
-      alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán!');
-      return;
-    }
-    const selected = cartItems.filter((item) => selectedItems.includes(item.id));
-    // Kiểm tra variantId trước khi chuyển sang Checkout
-    if (!selected.every((item) => item.variantId)) {
-      alert('Một số sản phẩm trong giỏ hàng thiếu thông tin biến thể, vui lòng kiểm tra lại.');
-      return;
-    }
-    localStorage.setItem("checkoutItems", JSON.stringify(selected));
-    console.log('Checkout items:', selected); // Debug
-    navigate("/checkout");
-  };
+  const total = subtotal;
+  const allSelected =
+    selectedItems.length === cartItems.length && cartItems.length > 0;
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center text-sm mb-5">
-        <Link to="/" className="text-gray-500 hover:text-gray-900">Trang chủ</Link>
+        <Link to="/" className="text-gray-500 hover:text-gray-900">
+          Trang chủ
+        </Link>
         <span className="mx-2 text-gray-400">/</span>
         <span className="font-medium text-black">Giỏ hàng</span>
       </div>
@@ -179,7 +271,10 @@ const Cart = () => {
 
               <div className="space-y-6">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="flex border rounded-lg p-4 items-start">
+                  <div
+                    key={item.id}
+                    className="flex border rounded-lg p-4 items-start"
+                  >
                     <input
                       type="checkbox"
                       checked={selectedItems.includes(item.id)}
@@ -187,7 +282,9 @@ const Cart = () => {
                         const checked = e.target.checked;
                         setSelectedItems((prev) =>
                           checked
-                            ? prev.includes(item.id) ? prev : [...prev, item.id]
+                            ? prev.includes(item.id)
+                              ? prev
+                              : [...prev, item.id]
                             : prev.filter((id) => id !== item.id)
                         );
                       }}
@@ -196,7 +293,7 @@ const Cart = () => {
                     <div className="w-24 h-24 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
                       <Link to={`/productdetails/${item._id}`}>
                         <img
-                          src={item.image.src}
+                          src={item.image?.src || item.image}
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />
@@ -210,8 +307,12 @@ const Cart = () => {
                               {item.name}
                             </h3>
                           </Link>
-                          <p className="text-sm text-gray-500 mt-1">Hương vị: {item.fragrance}</p>
-                          <p className="text-sm text-gray-500 mt-1">Dung tích: {item.volume}</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Hương vị: {item.fragrance}
+                          </p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Dung tích: {item.volume}
+                          </p>
                         </div>
                         <button
                           onClick={() => removeItem(item.id)}
@@ -224,7 +325,9 @@ const Cart = () => {
                       <div className="flex justify-between items-center mt-4">
                         <div className="flex items-center border rounded overflow-hidden">
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity - 1)
+                            }
                             className="px-3 py-1 text-black hover:bg-gray-200"
                           >
                             <Minus className="w-4 h-4" />
@@ -233,7 +336,9 @@ const Cart = () => {
                             {item.quantity}
                           </div>
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity + 1)
+                            }
                             className="px-3 py-1 text-black hover:bg-gray-200"
                           >
                             <Plus className="w-4 h-4" />
@@ -253,7 +358,9 @@ const Cart = () => {
 
         <div className="lg:w-1/3">
           <div className="border rounded-lg p-6 shadow-sm">
-            <h2 className="text-lg font-semibold mb-4 text-black">Tóm tắt đơn hàng</h2>
+            <h2 className="text-lg font-semibold mb-4 text-black">
+              Tóm tắt đơn hàng
+            </h2>
             <div className="space-y-4 mb-6">
               <div className="border-t pt-4 flex justify-between font-semibold">
                 <span className="font-bold text-red-600">Thành tiền</span>

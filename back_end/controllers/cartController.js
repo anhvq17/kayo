@@ -121,3 +121,4 @@ export const isCartEmpty = async (req, res) => {
     res.status(500).json({ message: 'Error checking cart', error: err.message });
   }
 };
+
