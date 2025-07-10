@@ -34,6 +34,7 @@ const ClientHeader = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("user");
+    localStorage.removeItem("cart");
     setIsLoggedIn(false);
     setIsMenuOpen(false);
 
