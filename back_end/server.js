@@ -22,6 +22,7 @@ import User from './models/UserModel.js';
 
 import http from "http";
 import { Server } from "socket.io";
+import voucherRouter from "./routes/voucherRoutes.js";
 
 dotenv.config();
 connectMongoDB(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/DATN");
@@ -68,6 +69,7 @@ app.use('/attribute', attributeRouter);
 app.use('/attribute-value', attributeValueRouter);
 app.use('/variant', variantRouter);
 app.use('/users', userRoutes);
+app.use('/voucher',voucherRouter)
 app.use('/', authRouter);
 
 // ✅ Khởi chạy HTTP server (không dùng app.listen)
