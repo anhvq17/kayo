@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import type { Province, District, Ward } from "sub-vn";
+import { type Province, type District, type Ward } from "sub-vn";
 import AddressSelector from "../../components/AddressSelector";
 
 interface CartItem {
@@ -15,6 +15,7 @@ interface CartItem {
     width?: number;
     height?: number;
   };
+  variantId?: string;
 }
 
 const Checkout = () => {
@@ -27,34 +28,37 @@ const Checkout = () => {
   const [detailAddress, setDetailAddress] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [userInfo, setUserInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
+  const parseCartItem = (item: any): CartItem => ({
+    id: `${item._id || item.variantId}-${item.selectedScent}-${item.selectedVolume}`,
+    name: item.name,
+    price: item.price,
+    quantity: item.quantity,
+    volume: item.selectedVolume || item.volume || "",
+    fragrance: item.selectedScent || item.fragrance || "",
+    image: typeof item.image === "string"
+      ? { src: item.image, width: 100, height: 100 }
+      : item.image,
+    variantId: item.variantId || item._id,
+  });
+
   useEffect(() => {
-    const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
-    if (userInfo) {
-      setFullName(userInfo.username || "");
-      setPhone(userInfo.phone || "");
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUserInfo(parsedUser);
+      setFullName(parsedUser.username || "");
+      setPhone(parsedUser.phone || "");
     }
 
-    // Ưu tiên buyNowItem
     const buyNowRaw = localStorage.getItem("buyNowItem");
     if (buyNowRaw) {
       try {
         const item = JSON.parse(buyNowRaw);
-        const buyNowCartItem: CartItem = {
-          id: `${item._id || item.variantId}-${item.selectedScent}-${item.selectedVolume}`,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          volume: item.selectedVolume,
-          fragrance: item.selectedScent,
-          image:
-            typeof item.image === "string"
-              ? { src: item.image, width: 100, height: 100 }
-              : item.image,
-        };
-        setCartItems([buyNowCartItem]);
+        setCartItems([parseCartItem(item)]);
         localStorage.removeItem("buyNowItem");
         return;
       } catch (error) {
@@ -62,23 +66,11 @@ const Checkout = () => {
       }
     }
 
-    // Nếu không có buyNowItem → lấy checkoutItems
     const checkoutRaw = localStorage.getItem("checkoutItems");
     if (checkoutRaw) {
       try {
         const data = JSON.parse(checkoutRaw);
-        const items: CartItem[] = data.map((item: any) => ({
-          id: `${item._id || item.variantId}-${item.selectedScent}-${item.selectedVolume}`,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          volume: item.selectedVolume,
-          fragrance: item.selectedScent,
-          image:
-            typeof item.image === "string"
-              ? { src: item.image, width: 100, height: 100 }
-              : item.image,
-        }));
+        const items: CartItem[] = data.map(parseCartItem);
         setCartItems(items);
         localStorage.removeItem("checkoutItems");
       } catch (error) {
@@ -90,15 +82,7 @@ const Checkout = () => {
   const { province: selectedProvince, district: selectedDistrict, ward: selectedWard } = address;
 
   const isFormValid = () => {
-    return (
-      fullName &&
-      phone &&
-      selectedProvince &&
-      selectedDistrict &&
-      selectedWard &&
-      detailAddress &&
-      cartItems.length > 0
-    );
+    return fullName && phone && selectedProvince && selectedDistrict && selectedWard && detailAddress && cartItems.length > 0;
   };
 
   const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
@@ -112,10 +96,16 @@ const Checkout = () => {
       return;
     }
 
+    if (!userInfo || !userInfo._id) {
+      alert("Không tìm thấy thông tin người dùng.");
+      return;
+    }
+
     setIsLoading(true);
 
-    setTimeout(() => {
-      console.log("Thông tin giao hàng:", {
+    try {
+      const orderPayload = {
+        userId: userInfo._id,
         fullName,
         phone,
         address: {
@@ -124,13 +114,46 @@ const Checkout = () => {
           ward: selectedWard?.name,
           detail: detailAddress,
         },
+        items: cartItems.map((item) => ({
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          variantId: item.variantId,
+        })),
+        totalAmount: total,
         paymentMethod,
-        items: cartItems,
-        total,
+      };
+
+      const response = await fetch("http://localhost:3000/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderPayload),
       });
+
+      if (!response.ok) {
+        throw new Error("Tạo đơn hàng thất bại");
+      }
+
+      const orderResult = await response.json();
+      const orderId = orderResult.orderId;
+
+      if (paymentMethod === "vnpay") {
+        const paymentRes = await fetch(`http://localhost:3000/payment/create_payment?amount=${total}&orderId=${orderId}`);
+        const paymentData = await paymentRes.json();
+        window.location.href = paymentData.paymentUrl;
+      } else {
+        localStorage.removeItem("cart");
+        localStorage.removeItem("buyNowItem");
+        window.location.href = `ordersuccessfully?orderId=${orderId}`;
+      }
+    } catch (error) {
+      console.error("Lỗi khi đặt hàng:", error);
+      alert("Có lỗi xảy ra khi đặt hàng.");
+    } finally {
       setIsLoading(false);
-      window.location.href = "/ordersuccessfully";
-    }, 1000);
+    }
   };
 
   return (
@@ -279,7 +302,7 @@ const Checkout = () => {
                       </div>
                       <div className="text-right text-sm">
                         <p className="font-semibold text-gray-800">
-                          {(item.price * item.quantity).toLocaleString()}
+                          {(item.price * item.quantity).toLocaleString("vi-VN")}₫
                         </p>
                         <p className="text-sm text-gray-500">x{item.quantity}</p>
                       </div>
@@ -289,7 +312,7 @@ const Checkout = () => {
                   <div className="border-t border-gray-200 pt-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Tạm tính</span>
-                      <span className="text-gray-800 font-medium">{subtotal.toLocaleString()}</span>
+                      <span className="text-gray-800 font-medium">{subtotal.toLocaleString("vi-VN")}₫</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Phí vận chuyển</span>
@@ -297,14 +320,14 @@ const Checkout = () => {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Giảm giá</span>
-                      <span className="text-gray-800 font-medium">{discount.toLocaleString()}</span>
+                      <span className="text-gray-800 font-medium">{discount.toLocaleString("vi-VN")}₫</span>
                     </div>
                   </div>
 
                   <div className="border-t border-gray-200 pt-4">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-bold text-red-500">Tổng tiền</span>
-                      <span className="text-lg font-bold text-red-500">{total.toLocaleString()}</span>
+                      <span className="text-lg font-bold text-red-500">{total.toLocaleString("vi-VN")}₫</span>
                     </div>
                   </div>
 

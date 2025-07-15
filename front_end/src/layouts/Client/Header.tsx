@@ -34,6 +34,7 @@ const ClientHeader = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("user");
+    localStorage.removeItem("cart");
     setIsLoggedIn(false);
     setIsMenuOpen(false);
 
@@ -92,6 +93,9 @@ const ClientHeader = () => {
                 <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-50">
                   <Link to={"/profile"} className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100">
                     <i className="fas fa-user w-4 h-4 mr-2" /> Tài khoản
+                  </Link>
+                  <Link to={"/orders"} className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100">
+                    <i className="fas fa-shopping-cart w-4 h-4 mr-2" /> Đơn hàng
                   </Link>
                   <button
                     onClick={handleLogout}

@@ -15,5 +15,17 @@ export default defineConfig({
       swcOptions: {},
     }),
   ],
-  optimizeDeps: {},
+  optimizeDeps: {
+    exclude: ['crypto', 'querystring']
+  },
+  define: {
+    global: 'globalThis',
+  },
+  resolve: {
+    alias: {
+      crypto: 'crypto-browserify',
+      stream: 'stream-browserify',
+      buffer: 'buffer',
+    },
+  },
 });
