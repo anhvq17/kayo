@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { Edit, Trash, Plus, Eye } from "lucide-react"
+import { Link } from "react-router-dom"
 import axios from "axios"
 
 type Product = {
@@ -51,7 +52,9 @@ const ProductManager = () => {
   }
 
   const handleSelect = (id: string) => {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    )
   }
 
   const handleSoftDeleteMany = async () => {
@@ -85,26 +88,35 @@ const ProductManager = () => {
           <button
             onClick={handleSoftDeleteMany}
             disabled={selectedIds.length === 0}
-            className={`px-3 h-8 rounded text-sm text-white transition ${selectedIds.length === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"
-              }`}
+            className={`px-3 h-8 rounded text-sm text-white transition ${
+              selectedIds.length === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-red-600 hover:bg-red-700"
+            }`}
           >
             Xóa đã chọn ({selectedIds.length})
           </button>
-          <a href="/admin/products/add">
+          <Link to="/admin/products/add">
             <button className="w-8 h-8 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center">
               <Plus size={14} />
             </button>
-          </a>
+          </Link>
         </div>
       </div>
 
       <div className="flex gap-6 border-b my-4 text-base font-medium text-gray-500">
-        <a href="/admin/products" className="pb-2 border-b-2 border-blue-500 text-blue-600">
+        <Link
+          to="/admin/products"
+          className="pb-2 border-b-2 border-blue-500 text-blue-600"
+        >
           Sản phẩm đang hoạt động
-        </a>
-        <a href="/admin/products/trash" className="pb-2 hover:text-blue-500 hover:border-b-2 hover:border-blue-300">
+        </Link>
+        <Link
+          to="/admin/products/trash"
+          className="pb-2 hover:text-blue-500 hover:border-b-2 hover:border-blue-300"
+        >
           Thùng rác
-        </a>
+        </Link>
       </div>
 
       <table className="min-w-full bg-white border text-sm">
@@ -143,7 +155,9 @@ const ProductManager = () => {
                 <div className="font-medium truncate">{item.name}</div>
                 <div className="text-xs text-gray-500 truncate max-w-xs">{item.description}</div>
               </td>
-              <td className="px-4 py-2 font-medium text-red-600">{formatPrice(item.priceDefault)}</td>
+              <td className="px-4 py-2 font-medium text-red-600">
+                {formatPrice(item.priceDefault)}
+              </td>
               <td className="px-4 py-2">
                 <span className="px-2 py-1 font-semibold bg-orange-100 text-orange-700 rounded-full text-xs">
                   {item.categoryId?.name || "Không xác định"}
@@ -156,16 +170,16 @@ const ProductManager = () => {
               </td>
               <td className="px-4 py-2">
                 <div className="flex gap-1">
-                  <a href={`/admin/products/${item._id}`}>
+                  <Link to={`/admin/products/${item._id}`}>
                     <button className="w-8 h-8 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center justify-center">
                       <Eye size={14} />
                     </button>
-                  </a>
-                  <a href={`/admin/products/edit/${item._id}`}>
+                  </Link>
+                  <Link to={`/admin/products/edit/${item._id}`}>
                     <button className="w-8 h-8 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center">
                       <Edit size={14} />
                     </button>
-                  </a>
+                  </Link>
                   <button
                     onClick={() => handleSoftDelete(item._id)}
                     className="w-8 h-8 bg-red-600 text-white rounded hover:bg-red-700 flex items-center justify-center"
