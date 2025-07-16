@@ -1,7 +1,6 @@
-"use client"
-
 import { useEffect, useState } from "react"
 import { RotateCcw, Trash2 } from "lucide-react"
+import { Link } from "react-router-dom"
 import axios from "axios"
 
 type Product = {
@@ -68,7 +67,9 @@ const TrashProduct = () => {
   }
 
   const handleSelect = (id: string) => {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    )
   }
 
   const handleRestoreMany = async () => {
@@ -120,7 +121,9 @@ const TrashProduct = () => {
             onClick={handleRestoreMany}
             disabled={selectedIds.length === 0}
             className={`px-3 h-8 rounded text-sm text-white transition ${
-              selectedIds.length === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+              selectedIds.length === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700"
             }`}
           >
             Khôi phục đã chọn ({selectedIds.length})
@@ -129,7 +132,9 @@ const TrashProduct = () => {
             onClick={handleHardDeleteMany}
             disabled={selectedIds.length === 0}
             className={`px-3 h-8 rounded text-sm text-white transition ${
-              selectedIds.length === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"
+              selectedIds.length === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-red-600 hover:bg-red-700"
             }`}
           >
             Xóa vĩnh viễn ({selectedIds.length})
@@ -138,12 +143,18 @@ const TrashProduct = () => {
       </div>
 
       <div className="flex gap-6 border-b my-4 text-base font-medium text-gray-500">
-        <a href="/admin/products" className="pb-2 hover:text-blue-500 hover:border-b-2 hover:border-blue-300">
+        <Link
+          to="/admin/products"
+          className="pb-2 hover:text-blue-500 hover:border-b-2 hover:border-blue-300"
+        >
           Sản phẩm đang hoạt động
-        </a>
-        <a href="/admin/products/trash" className="pb-2 border-b-2 border-blue-500 text-blue-600">
+        </Link>
+        <Link
+          to="/admin/products/trash"
+          className="pb-2 border-b-2 border-blue-500 text-blue-600"
+        >
           Thùng rác
-        </a>
+        </Link>
       </div>
 
       <table className="min-w-full bg-white border text-sm">

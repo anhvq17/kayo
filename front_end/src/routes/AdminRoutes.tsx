@@ -44,6 +44,8 @@ import AttributeValueManager from "../pages/Admin/AttributeValue/AttributeValueM
 import TrashAttributeValue from "../pages/Admin/AttributeValue/TrashAttributeValue"
 import EditAttributeValue from "../pages/Admin/AttributeValue/EditAttributeValue"
 import DetailProduct from "../pages/Admin/Product/DetailProduct"
+import TrashVoucher from "../pages/Admin/Voucher/TrashVourcher"
+import DetailVoucher from "../pages/Admin/Voucher/DetailVourcher"
 
 
 
@@ -91,8 +93,10 @@ const AdminRoutes = {
     { path: 'variants/edit/:id', element: <EditVariant /> },
 
     { path: 'vouchers', element: <VoucherManager /> },
+    { path: 'vouchers/trash', element: <TrashVoucher /> },
     { path: 'vouchers/add', element: <AddVoucher /> },
     { path: 'vouchers/edit/:id', element: <EditVoucher /> },
+    { path: 'vouchers/:id', element: <DetailVoucher /> },
 
     // Khi đường dẫn sai hoặc không tồn tại, dẫn đến trang NotFound
     { path: '*', element: <NotFound homePath="/admin" /> },
