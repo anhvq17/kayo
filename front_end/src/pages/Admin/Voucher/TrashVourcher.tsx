@@ -165,7 +165,7 @@ const TrashVoucher = () => {
                             <td className="px-4 py-2">
                                 {voucher.discountType === "percent"
                                     ? `${voucher.discountValue}%`
-                                    : `${voucher.discountValue.toLocaleString()}đ`}
+                                    : `${voucher.discountValue.toLocaleString()}`}
                             </td>
                             <td className="px-4 py-2">
                                 {new Date(voucher.startDate).toLocaleDateString()} -{" "}

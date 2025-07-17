@@ -32,7 +32,6 @@ export default function Dashboard() {
     }
   };
 
-  // Tính toán thống kê
   const today = new Date();
   const todayOrders = orders.filter(order => {
     const orderDate = new Date(order.createdAt);
@@ -45,9 +44,7 @@ export default function Dashboard() {
   const completedOrders = orders.filter(order => 
     order.orderStatus === 'Đã giao hàng' || order.orderStatus === 'Đã nhận hàng'
   ).length;
-  const cancelledOrders = orders.filter(order => order.orderStatus === 'Đã huỷ đơn hàng').length;
 
-  // Thống kê theo trạng thái
   const statusStats = {
     'Chờ xử lý': orders.filter(o => o.orderStatus === 'Chờ xử lý').length,
     'Đã xử lý': orders.filter(o => o.orderStatus === 'Đã xử lý').length,
@@ -87,28 +84,23 @@ export default function Dashboard() {
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-3xl font-bold">Bảng điều khiển</h1>
-
-      {/* Tổng quan */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Doanh thu hôm nay */}
         <div className="rounded-xl border bg-white shadow p-4 flex items-center justify-between">
           <div>
-            <p className="text-gray-500">Doanh thu hôm nay</p>
-            <p className="text-xl font-semibold">₫{todayRevenue.toLocaleString()}</p>
+            <p className="text-gray-500">Ngày hôm nay</p>
+            <p className="text-xl font-semibold">{todayRevenue.toLocaleString()}</p>
           </div>
           <LineChart className="w-6 h-6 text-blue-500" />
         </div>
 
-        {/* Tổng doanh thu */}
         <div className="rounded-xl border bg-white shadow p-4 flex items-center justify-between">
           <div>
             <p className="text-gray-500">Tổng doanh thu</p>
-            <p className="text-xl font-semibold">₫{totalRevenue.toLocaleString()}</p>
+            <p className="text-xl font-semibold">{totalRevenue.toLocaleString()}</p>
           </div>
           <LineChart className="w-6 h-6 text-indigo-500" />
         </div>
 
-        {/* Đơn hàng mới */}
         <div className="rounded-xl border bg-white shadow p-4 flex items-center justify-between">
           <div>
             <p className="text-gray-500">Đơn hàng mới</p>
@@ -117,7 +109,6 @@ export default function Dashboard() {
           <ShoppingCart className="w-6 h-6 text-green-500" />
         </div>
 
-        {/* Tổng đơn hàng */}
         <div className="rounded-xl border bg-white shadow p-4 flex items-center justify-between">
           <div>
             <p className="text-gray-500">Tổng đơn hàng</p>
@@ -126,7 +117,6 @@ export default function Dashboard() {
           <Package className="w-6 h-6 text-yellow-500" />
         </div>
 
-        {/* Đơn hàng hoàn thành */}
         <div className="rounded-xl border bg-white shadow p-4 flex items-center justify-between">
           <div>
             <p className="text-gray-500">Đã giao hàng</p>
@@ -136,9 +126,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Biểu đồ và đơn hàng */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Biểu đồ doanh thu */}
         <div className="rounded-xl border bg-white shadow p-4">
           <p className="text-lg font-semibold mb-2">Thống kê đơn hàng</p>
           <div className="h-56 bg-gray-100 flex items-center justify-center rounded-md">
@@ -147,7 +135,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Tình trạng đơn hàng */}
         <div className="rounded-xl border bg-white shadow p-4">
           <p className="text-lg font-semibold mb-4">Tình trạng đơn hàng</p>
           <ul className="space-y-3">
@@ -179,7 +166,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Đơn hàng gần đây */}
       <div className="rounded-xl border bg-white shadow p-4">
         <p className="text-lg font-semibold mb-4">Đơn hàng gần đây</p>
         <div className="overflow-x-auto">
@@ -198,7 +184,7 @@ export default function Dashboard() {
                 <tr key={order._id} className="border-b hover:bg-gray-50">
                   <td className="py-2 font-medium">{order._id}</td>
                   <td className="py-2">{order.fullName}</td>
-                  <td className="py-2 text-red-600 font-semibold">₫{order.totalAmount.toLocaleString()}</td>
+                  <td className="py-2 text-red-600 font-semibold">{order.totalAmount.toLocaleString()}</td>
                   <td className="py-2">
                     <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
                       order.orderStatus === 'Đã giao hàng' || order.orderStatus === 'Đã nhận hàng' ? 'bg-green-100 text-green-800' :

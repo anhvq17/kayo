@@ -232,7 +232,7 @@ const OrderDetail = () => {
               <div className="space-y-2 text-gray-700 text-sm">
                 <p><strong>Trạng thái đơn hàng:</strong> {getStatusText(order.orderStatus)}</p>
                 <p><strong>Trạng thái thanh toán:</strong> {getPaymentStatusText(order.paymentStatus)}</p>
-                <p><strong>Tổng tiền:</strong> <span className="text-red-500 font-bold text-2xl">{order.totalAmount.toLocaleString()}₫</span></p>
+                <p><strong>Tổng tiền:</strong> <span className="text-red-500 font-bold text-xl">{order.totalAmount.toLocaleString()}</span></p>
               </div>
             </div>
             
@@ -301,8 +301,8 @@ const OrderDetail = () => {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-900">{item.quantity}</td>
-                  <td className="px-4 py-3 text-gray-900">{item.price.toLocaleString()}₫</td>
-                  <td className="px-4 py-3 font-semibold text-gray-900">{(item.price * item.quantity).toLocaleString()}₫</td>
+                  <td className="px-4 py-3 text-gray-900">{item.price.toLocaleString()}</td>
+                  <td className="px-4 py-3 font-semibold text-gray-900">{(item.price * item.quantity).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>

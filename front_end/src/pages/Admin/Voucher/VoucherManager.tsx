@@ -67,7 +67,6 @@ const VoucherManager = () => {
 
   return (
     <div className="p-4">
-      {/* Header */}
       <div className="flex justify-between items-center mb-2">
         <h1 className="text-2xl font-semibold">Danh sách mã giảm giá</h1>
         <div className="flex items-center gap-2">
@@ -89,7 +88,6 @@ const VoucherManager = () => {
         </div>
       </div>
 
-      {/* Menu */}
       <div className="flex gap-6 border-b my-4 text-base font-medium text-gray-500">
         <Link
           to="/admin/vouchers"
@@ -105,7 +103,6 @@ const VoucherManager = () => {
         </Link>
       </div>
 
-      {/* Table */}
       <table className="min-w-full bg-white border text-sm">
         <thead>
           <tr className="bg-black text-white text-left">
@@ -138,7 +135,7 @@ const VoucherManager = () => {
               <td className="px-4 py-2">
                 {voucher.discountType === "percent"
                   ? `${voucher.discountValue}%`
-                  : `${voucher.discountValue.toLocaleString()}đ`}
+                  : `${voucher.discountValue.toLocaleString()}`}
               </td>
               <td className="px-4 py-2">
                 {new Date(voucher.startDate).toLocaleDateString()} -{" "}
