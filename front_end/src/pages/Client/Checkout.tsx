@@ -302,7 +302,7 @@ const Checkout = () => {
                       </div>
                       <div className="text-right text-sm">
                         <p className="font-semibold text-gray-800">
-                          {(item.price * item.quantity).toLocaleString("vi-VN")}₫
+                          {(item.price * item.quantity).toLocaleString("vi-VN")}
                         </p>
                         <p className="text-sm text-gray-500">x{item.quantity}</p>
                       </div>
@@ -312,7 +312,7 @@ const Checkout = () => {
                   <div className="border-t border-gray-200 pt-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Tạm tính</span>
-                      <span className="text-gray-800 font-medium">{subtotal.toLocaleString("vi-VN")}₫</span>
+                      <span className="text-gray-800 font-medium">{subtotal.toLocaleString("vi-VN")}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Phí vận chuyển</span>
@@ -320,14 +320,14 @@ const Checkout = () => {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Giảm giá</span>
-                      <span className="text-gray-800 font-medium">{discount.toLocaleString("vi-VN")}₫</span>
+                      <span className="text-gray-800 font-medium">{discount.toLocaleString("vi-VN")}</span>
                     </div>
                   </div>
 
                   <div className="border-t border-gray-200 pt-4">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-bold text-red-500">Tổng tiền</span>
-                      <span className="text-lg font-bold text-red-500">{total.toLocaleString("vi-VN")}₫</span>
+                      <span className="text-lg font-bold text-red-500">{total.toLocaleString("vi-VN")}</span>
                     </div>
                   </div>
 

@@ -53,11 +53,10 @@ const VariantManager = () => {
                 <th className="px-4 py-2">STT</th>
                 <th className="px-4 py-2">Tên sản phẩm</th>
                 <th className="px-4 py-2" colSpan={3}>Thuộc tính</th>
-                <th className="px-4 py-2">Giá</th>
+                <th className="px-4 py-2">Giá tiền</th>
                 <th className="px-4 py-2">Số lượng</th>
                 <th className="px-4 py-2">Ảnh</th>
                 <th className="px-4 py-2">Ngày tạo</th>
-                <th className="px-4 py-2">Hành động</th>
               </tr>
             </thead>
             <tbody>
@@ -80,7 +79,7 @@ const VariantManager = () => {
                       )}
                     </td>
 
-                    <td className="px-4 py-2">{variant.price.toLocaleString()}đ</td>
+                    <td className="px-4 py-2 font-semibold text-red-600">{variant.price.toLocaleString()}</td>
                     <td className="px-4 py-2">{variant.stock_quantity}</td>
                     <td className="px-4 py-2">
                       <img

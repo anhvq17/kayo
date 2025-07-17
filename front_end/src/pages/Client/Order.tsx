@@ -276,12 +276,12 @@ const OrderList = () => {
       <div className="flex items-center text-sm mb-6">
         <Link to="/" className="text-gray-500 hover:text-gray-900">Trang chủ</Link>
         <span className="mx-2 text-gray-400">/</span>
-        <span className="font-medium text-black">Danh sách đơn hàng</span>
+        <span className="font-medium text-black">Đơn hàng</span>
       </div>
 
       <div className="mx-auto mt-10 text-center">
         <h1 className="text-3xl font-bold flex items-center gap-2 justify-center">
-          <span role="img" aria-label="order-list">📋</span> DANH SÁCH ĐƠN HÀNG
+          <span role="img" aria-label="order-list"></span> DANH SÁCH ĐƠN HÀNG
         </h1>
       </div>
 
@@ -341,7 +341,7 @@ const OrderList = () => {
                   </div>
                   <div className="flex flex-col md:flex-row md:items-center md:gap-6 gap-2 mt-4">
                     <p className="text-lg text-gray-500 flex items-center gap-1">
-                      <span role="img" aria-label="money">💵</span> Tổng tiền thanh toán: <span className="text-red-500 font-bold">{item.totalAmount.toLocaleString()}₫</span>
+                      <span role="img" aria-label="money">💵</span> Tổng tiền thanh toán: <span className="text-red-500 font-bold">{item.totalAmount.toLocaleString()}</span>
                     </p>
                     <p className="text-lg text-gray-500 flex items-center gap-1">
                       <span role="img" aria-label="paymethod">💳</span> {getPaymentMethodText(item.paymentMethod)}
@@ -399,7 +399,7 @@ const OrderList = () => {
                         <div className="text-xs text-gray-500">Số lượng: {prod.quantity}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-xl text-red-500">{prod.price.toLocaleString()}₫</div>
+                        <div className="text-lg font-bold text-red-500">{prod.price.toLocaleString()}</div>
                        
                       </div>
                     </div>
