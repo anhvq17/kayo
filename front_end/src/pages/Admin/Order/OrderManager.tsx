@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { getAllOrders, updateOrder } from "../../../services/Order";
 import type { Order } from "../../../types/Order";
@@ -80,9 +80,20 @@ const OrderManager = () => {
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [processingReturnId, setProcessingReturnId] = useState<string | null>(null);
   const [returnAction, setReturnAction] = useState<'approve' | 'reject'>('approve');
+  const didMountRef = useRef(false);
 
   useEffect(() => {
     fetchOrders();
+    didMountRef.current = true;
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && didMountRef.current) {
+        fetchOrders();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   const fetchOrders = async () => {

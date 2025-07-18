@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getOrdersByUserWithItems, updateOrder } from '../../services/Order';
 
@@ -52,21 +52,35 @@ const OrderList = () => {
   const [requestingReturnId, setRequestingReturnId] = useState<string | null>(null);
   const [confirmingReceivedId, setConfirmingReceivedId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const didMountRef = useRef(false);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const data = await getOrdersByUserWithItems(user._id);
+      if (Array.isArray(data)) {
+        setOrderList(data);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Đã xảy ra lỗi khi tải dữ liệu.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    (async () => {
-      try {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-        const data = await getOrdersByUserWithItems(user._id);
-        if (Array.isArray(data)) {
-          setOrderList(data);
-        }
-      } catch (err: any) {
-        setError(err.message || 'Đã xảy ra lỗi khi tải dữ liệu.');
-      } finally {
-        setLoading(false);
+    fetchOrders();
+    didMountRef.current = true;
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && didMountRef.current) {
+        fetchOrders();
       }
-    })();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
   console.log(orderList);
  
