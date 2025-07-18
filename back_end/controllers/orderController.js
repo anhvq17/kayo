@@ -9,7 +9,8 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    let totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    let originalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    let totalAmount = originalAmount;
     let discount = 0;
     let discountType = undefined;
     let discountValue = undefined;
@@ -50,6 +51,7 @@ export const createOrder = async (req, res) => {
       address,
       paymentMethod,
       totalAmount,
+      originalAmount,
       orderStatus: 'Chờ xử lý',
       paymentStatus: 'Chưa thanh toán',
       voucherCode: appliedVoucher ? appliedVoucher.code : undefined,

@@ -38,8 +38,8 @@ export default function Dashboard() {
     return orderDate.toDateString() === today.toDateString();
   });
 
-  const todayRevenue = todayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-  const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.originalAmount ?? order.totalAmount), 0);
+  const totalRevenue = orders.reduce((sum, order) => sum + (order.originalAmount ?? order.totalAmount), 0);
   const newOrders = orders.filter(order => order.orderStatus === 'Chờ xử lý').length;
   const completedOrders = orders.filter(order => 
     order.orderStatus === 'Đã giao hàng' || order.orderStatus === 'Đã nhận hàng'
@@ -176,6 +176,7 @@ export default function Dashboard() {
                 <th className="text-left py-2">Khách hàng</th>
                 <th className="text-left py-2">Tổng tiền</th>
                 <th className="text-left py-2">Trạng thái</th>
+                <th className="text-left py-2">Phương thức thanh toán</th>
                 <th className="text-left py-2">Ngày tạo</th>
               </tr>
             </thead>
@@ -184,7 +185,7 @@ export default function Dashboard() {
                 <tr key={order._id} className="border-b hover:bg-gray-50">
                   <td className="py-2 font-medium">{order._id}</td>
                   <td className="py-2">{order.fullName}</td>
-                  <td className="py-2 text-red-600 font-semibold">{order.totalAmount.toLocaleString()}</td>
+                  <td className="py-2 text-red-600 font-semibold">{(order.originalAmount ?? order.totalAmount).toLocaleString()}</td>
                   <td className="py-2">
                     <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
                       order.orderStatus === 'Đã giao hàng' || order.orderStatus === 'Đã nhận hàng' ? 'bg-green-100 text-green-800' :
@@ -194,6 +195,9 @@ export default function Dashboard() {
                     }`}>
                       {order.orderStatus}
                     </span>
+                  </td>
+                  <td className="py-2">
+                    {order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán qua VNPay'}
                   </td>
                   <td className="py-2 text-gray-500">{new Date(order.createdAt).toLocaleDateString("vi-VN")}</td>
                 </tr>
