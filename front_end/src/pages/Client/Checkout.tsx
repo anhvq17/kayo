@@ -206,12 +206,35 @@ const Checkout = () => {
       const orderId = orderResult.orderId;
 
       if (paymentMethod === "vnpay") {
+        // Lưu lại danh sách sản phẩm đã đặt để xử lý sau khi thanh toán VNPAY thành công
+        localStorage.setItem("lastOrderedItems", JSON.stringify(cartItems));
         const paymentRes = await fetch(`http://localhost:3000/payment/create_payment?amount=${total}&orderId=${orderId}`);
         const paymentData = await paymentRes.json();
         window.location.href = paymentData.paymentUrl;
       } else {
-        localStorage.removeItem("cart");
+        // Lấy cart hiện tại
+        const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+        // Lọc ra các sản phẩm chưa được đặt
+        const updatedCart = cart.filter(
+          (cartItem: any) => !cartItems.some((ordered) => ordered.id === cartItem.id)
+        );
+        // Ghi lại vào localStorage
+        localStorage.setItem("cart", JSON.stringify(updatedCart));
         localStorage.removeItem("buyNowItem");
+
+        // Nếu có user đăng nhập, xóa từng sản phẩm đã đặt khỏi giỏ hàng server
+        if (userInfo && userInfo._id) {
+          for (const item of cartItems) {
+            if (item.variantId) {
+              await axios.delete("http://localhost:3000/cart", {
+                data: {
+                  userId: userInfo._id,
+                  variantId: item.variantId,
+                },
+              });
+            }
+          }
+        }
         window.location.href = `ordersuccessfully?orderId=${orderId}`;
       }
     } catch (error) {

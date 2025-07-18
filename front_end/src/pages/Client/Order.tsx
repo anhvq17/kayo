@@ -217,13 +217,6 @@ const OrderList = () => {
       if (Array.isArray(data)) {
         setOrderList(data);
       }
-      
-      setSuccessMessage('Đã xác nhận nhận hàng thành công! Trạng thái thanh toán đã được cập nhật.');
-      
-      // Tự động ẩn thông báo sau 3 giây
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 3000);
     } catch (err: any) {
       setError(err.message || 'Đã xảy ra lỗi khi xác nhận nhận hàng.');
     } finally {
