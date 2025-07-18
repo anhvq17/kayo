@@ -340,14 +340,26 @@ const OrderList = () => {
                     </div>
                   </div>
                   <div className="flex flex-col md:flex-row md:items-center md:gap-6 gap-2 mt-4">
+                    {item.voucherCode && item.discount > 0 && (
+                      <p className="text-lg text-gray-500 flex items-center gap-1">
+                        <span role="img" aria-label="voucher">🏷️</span> 
+                        Giảm giá:
+                        <span className="text-red-500">-{item.discount.toLocaleString()}đ</span>
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-col md:flex-row md:items-center md:gap-6 gap-2 mt-4">
+                    
                     <p className="text-lg text-gray-500 flex items-center gap-1">
                       <span role="img" aria-label="money">💵</span> Tổng tiền thanh toán: <span className="text-red-500 font-bold">{item.totalAmount.toLocaleString()}</span>
                     </p>
+                    
                     <p className="text-lg text-gray-500 flex items-center gap-1">
                       <span role="img" aria-label="paymethod">💳</span> {getPaymentMethodText(item.paymentMethod)}
                     </p>
                   </div>
                 </div>
+                
                 <div className="flex justify-end md:justify-center mt-4 md:mt-0 gap-2">
                   <Link to={`/orders/${item._id}`}
                     className="inline-flex items-center gap-2 bg-[#5f518e] text-white px-5 py-2 rounded-lg font-semibold shadow hover:opacity-90 transition text-sm">

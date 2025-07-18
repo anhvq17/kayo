@@ -37,6 +37,8 @@ const orderSchema = new mongoose.Schema({
     default: 'Chờ xử lý',
   },
   totalAmount: { type: Number, required: true },
+  voucherCode: { type: String }, // Mã giảm giá đã áp dụng
+  discount: { type: Number, default: 0 }, // Số tiền giảm giá
   cancelReason: { type: String }, // Lý do hủy đơn hàng
   returnReason: { type: String }, // Lý do hoàn hàng
 }, { timestamps: true });

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { type Province, type District, type Ward } from "sub-vn";
 import AddressSelector from "../../components/AddressSelector";
+import axios from "axios";
 
 interface CartItem {
   id: string;
@@ -31,6 +32,15 @@ const Checkout = () => {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [vouchers, setVouchers] = useState<any[]>([]);
+  const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
+  const [voucherError, setVoucherError] = useState<string>("");
+  const [discount, setDiscount] = useState(0);
+
+  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+  const shippingFee = 0;
+  const total = subtotal + shippingFee - discount;
 
   const parseCartItem = (item: any): CartItem => ({
     id: `${item._id || item.variantId}-${item.selectedScent}-${item.selectedVolume}`,
@@ -79,16 +89,70 @@ const Checkout = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!selectedVoucher) {
+      setVoucherError("");
+      setDiscount(0);
+      return;
+    }
+    const now = new Date();
+    const start = new Date(selectedVoucher.startDate);
+    const end = new Date(selectedVoucher.endDate);
+
+    if (selectedVoucher.status !== "activated") {
+      setVoucherError("Mã giảm giá không hoạt động");
+      setDiscount(0);
+      return;
+    }
+    if (now < start) {
+      setVoucherError("Mã giảm giá chưa đến ngày sử dụng");
+      setDiscount(0);
+      return;
+    }
+    if (now > end) {
+      setVoucherError("Mã giảm giá đã hết hạn");
+      setDiscount(0);
+      return;
+    }
+    if (selectedVoucher.usageLimit && selectedVoucher.usedCount >= selectedVoucher.usageLimit) {
+      setVoucherError("Mã giảm giá đã hết lượt sử dụng");
+      setDiscount(0);
+      return;
+    }
+    if (subtotal < (selectedVoucher.minOrderValue || 0)) {
+      setVoucherError(`Đơn hàng phải từ ${(selectedVoucher.minOrderValue || 0).toLocaleString()}đ để dùng mã này`);
+      setDiscount(0);
+      return;
+    }
+    // Nếu hợp lệ
+    setVoucherError("");
+    let d = 0;
+    if (selectedVoucher.discountType === "percent") {
+      d = Math.round(subtotal * (selectedVoucher.discountValue / 100));
+      if (selectedVoucher.maxDiscountValue) {
+        d = Math.min(d, selectedVoucher.maxDiscountValue);
+      }
+    } else if (selectedVoucher.discountType === "fixed") {
+      d = Math.min(selectedVoucher.discountValue, subtotal);
+    }
+    setDiscount(d);
+  }, [selectedVoucher, subtotal]);
+
   const { province: selectedProvince, district: selectedDistrict, ward: selectedWard } = address;
 
   const isFormValid = () => {
     return fullName && phone && selectedProvince && selectedDistrict && selectedWard && detailAddress && cartItems.length > 0;
   };
 
-  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
-  const shippingFee = 0;
-  const discount = 0;
-  const total = subtotal + shippingFee - discount;
+  // Lấy voucher khi mở modal
+  const fetchVouchers = async () => {
+    try {
+      const res = await axios.get("http://localhost:3000/voucher");
+      setVouchers(res.data.data);
+    } catch (error) {
+      setVouchers([]);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!isFormValid()) {
@@ -122,6 +186,8 @@ const Checkout = () => {
         })),
         totalAmount: total,
         paymentMethod,
+        voucherCode: selectedVoucher ? selectedVoucher.code : undefined,
+        discount: discount,
       };
 
       const response = await fetch("http://localhost:3000/orders", {
@@ -276,8 +342,39 @@ const Checkout = () => {
         <div className="lg:w-1/3">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 sticky top-6">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800">Đơn hàng của bạn</h2>
-            </div>
+          <h2 className="text-lg font-semibold text-gray-800">Đơn hàng của bạn</h2>
+
+          <div className="flex justify-between text-sm items-center mt-2">
+            <span className="text-gray-600">Mã giảm giá</span>
+            {selectedVoucher ? (
+              <span className="text-green-600 font-semibold flex items-center gap-1">
+                {selectedVoucher.code}
+                {!voucherError && discount > 0 && (
+                  <span className="ml-1 text-xs text-green-700">(-{discount.toLocaleString("vi-VN")}đ)</span>
+                )}
+              </span>
+            ) : (
+              <button
+                className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium"
+                onClick={() => {
+                  setShowVoucherModal(true);
+                  fetchVouchers();
+                }}
+              >
+                Chọn mã giảm giá
+              </button>
+            )}
+            {selectedVoucher && (
+              <button
+                className="ml-2 text-xs text-red-500 underline"
+                onClick={() => setSelectedVoucher(null)}
+              >
+                Bỏ chọn
+              </button>
+            )}
+          </div>
+          </div>
+
             <div className="p-6 space-y-4">
               {cartItems.length === 0 ? (
                 <div className="text-center py-8">
@@ -287,6 +384,7 @@ const Checkout = () => {
                   </Link>
                 </div>
               ) : (
+                
                 <>
                   {cartItems.map((item) => (
                     <div key={item.id} className="flex items-center space-x-4">
@@ -308,21 +406,72 @@ const Checkout = () => {
                       </div>
                     </div>
                   ))}
+                  
 
                   <div className="border-t border-gray-200 pt-4 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Tạm tính</span>
+                    <div className="flex justify-between text-sm items-center">
+                      <span className="text-gray-600">Tổng tiền hàng</span>
                       <span className="text-gray-800 font-medium">{subtotal.toLocaleString("vi-VN")}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-sm items-center">
                       <span className="text-gray-600">Phí vận chuyển</span>
                       <span className="text-gray-800 font-medium">Miễn phí</span>
                     </div>
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-sm items-center">
                       <span className="text-gray-600">Giảm giá</span>
-                      <span className="text-gray-800 font-medium">{discount.toLocaleString("vi-VN")}</span>
+                      <span className="text-red-500 font-medium">-{discount.toLocaleString("vi-VN")}</span>
                     </div>
+                    {selectedVoucher && voucherError && (
+                      <div className="text-xs text-red-500 mt-1">{voucherError}</div>
+                    )}
+                    {selectedVoucher && !voucherError && (
+                      <div className="text-xs text-green-600 mt-1">Đã áp dụng mã giảm giá!</div>
+                    )}
                   </div>
+
+                  {showVoucherModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                      <div className="bg-white w-full max-w-md rounded-lg shadow-lg p-6 relative">
+                        <h2 className="text-lg font-semibold mb-4">Chọn mã giảm giá</h2>
+                        
+                        <button
+                          onClick={() => setShowVoucherModal(false)}
+                          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl"
+                        >
+                          &times;
+                        </button>
+
+                        <div className="space-y-2 max-h-80 overflow-y-auto">
+                          {vouchers.length === 0 ? (
+                            <div className="text-gray-500 text-center">Không có mã giảm giá khả dụng</div>
+                          ) : (
+                            vouchers.map((voucher) => (
+                              <div
+                                key={voucher._id}
+                                className="border rounded p-3 flex flex-col gap-1 hover:bg-gray-50 cursor-pointer"
+                                onClick={() => {
+                                  setSelectedVoucher(voucher);
+                                  setShowVoucherModal(false);
+                                }}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <span className="font-semibold text-[#5f518e]">{voucher.code}</span>
+                                  <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                                    {voucher.status === "activated" ? "Kích hoạt" : "Tạm dừng"}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-gray-600">{voucher.description}</div>
+                                <div className="text-xs text-gray-500">
+                                  HSD: {new Date(voucher.startDate).toLocaleDateString()} -{" "}
+                                  {new Date(voucher.endDate).toLocaleDateString()}
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="border-t border-gray-200 pt-4">
                     <div className="flex justify-between items-center">

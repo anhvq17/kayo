@@ -232,11 +232,18 @@ const OrderDetail = () => {
               <div className="space-y-2 text-gray-700 text-sm">
                 <p><strong>Trạng thái đơn hàng:</strong> {getStatusText(order.orderStatus)}</p>
                 <p><strong>Trạng thái thanh toán:</strong> {getPaymentStatusText(order.paymentStatus)}</p>
+                {order.voucherCode && (order.discount ?? 0) > 0 && (
+                  <p>
+                    <strong>Mã giảm giá:</strong>
+                    <span className="text-green-700 font-semibold">{order.voucherCode}</span>
+                    <span className="text-red-500">(-{(order.discount ?? 0).toLocaleString()}đ)</span>
+                  </p>
+                )}
                 <p><strong>Tổng tiền:</strong> <span className="text-red-500 font-bold text-xl">{order.totalAmount.toLocaleString()}</span></p>
               </div>
             </div>
             
-            {/* Hiển thị lý do hủy đơn hàng nếu có */}
+            {/* Hiển thị lý do hủy đơn hàng nếu có */}  
             {order.orderStatus === 'Đã huỷ đơn hàng' && order.cancelReason && (
               <div className="bg-red-50 rounded-lg p-6 border border-red-200">
                 <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-red-800">

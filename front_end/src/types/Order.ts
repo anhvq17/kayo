@@ -52,6 +52,8 @@ export interface Order {
   returnReason?: string; // Lý do hoàn hàng
   createdAt: string;
   updatedAt: string;
+  voucherCode?: string;
+  discount?: number;
 }
 
 interface OrderItem {

@@ -3,13 +3,41 @@ import OrderItem from '../models/OrderItemModel.js';
 
 export const createOrder = async (req, res) => {
   try {
-    const { userId, fullName, phone, address, paymentMethod, items } = req.body;
+    const { userId, fullName, phone, address, paymentMethod, items, voucherCode } = req.body;
 
     if (!userId || !fullName || !phone || !address || !items?.length) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    let totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    let discount = 0;
+    let appliedVoucher = null;
+
+    if (voucherCode) {
+      // Tìm voucher hợp lệ
+      const voucher = await import('../models/VoucherModel.js').then(m => m.default.findOne({ code: voucherCode.trim().toUpperCase(), deletedAt: null }));
+      const now = new Date();
+      if (voucher && voucher.status === 'activated' &&
+        (!voucher.startDate || now >= voucher.startDate) &&
+        (!voucher.endDate || now <= voucher.endDate) &&
+        (!voucher.usageLimit || voucher.usedCount < voucher.usageLimit) &&
+        (totalAmount >= (voucher.minOrderValue || 0))
+      ) {
+        // Tính discount
+        if (voucher.discountType === 'percent') {
+          discount = Math.round(totalAmount * (voucher.discountValue / 100));
+          if (voucher.maxDiscountValue) {
+            discount = Math.min(discount, voucher.maxDiscountValue);
+          }
+        } else if (voucher.discountType === 'fixed') {
+          discount = Math.min(voucher.discountValue, totalAmount);
+        }
+        appliedVoucher = voucher;
+        // Tăng usedCount
+        await voucher.updateOne({ $inc: { usedCount: 1 } });
+      }
+    }
+    totalAmount = totalAmount - discount;
 
     const order = await Order.create({
       userId,
@@ -19,7 +47,9 @@ export const createOrder = async (req, res) => {
       paymentMethod,
       totalAmount,
       orderStatus: 'Chờ xử lý',
-      paymentStatus: 'Chưa thanh toán'
+      paymentStatus: 'Chưa thanh toán',
+      voucherCode: appliedVoucher ? appliedVoucher.code : undefined,
+      discount,
     });
 
     await Promise.all(items.map(item => OrderItem.create({
