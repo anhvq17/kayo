@@ -344,15 +344,26 @@ const Checkout = () => {
             <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800">Đơn hàng của bạn</h2>
 
-          <div className="flex justify-between text-sm items-center mt-2">
-            <span className="text-gray-600">Mã giảm giá</span>
+          <div className="flex justify-between mt-2">
+            <div className="text-gray-600 flex items-center">
+              <span>Mã giảm giá:</span>
+              {selectedVoucher && !voucherError && (
+                <span className="text-[#5f518e] ml-1 flex items-center gap-1">
+                  {selectedVoucher.code}
+                  {selectedVoucher.discountType === 'percent'
+                    ? `(-${selectedVoucher.discountValue}%)`
+                    : `(-${discount.toLocaleString("vi-VN")}đ)`}
+                </span>
+              )}
+            </div>
             {selectedVoucher ? (
-              <span className="text-green-600 font-semibold flex items-center gap-1">
-                {selectedVoucher.code}
-                {!voucherError && discount > 0 && (
-                  <span className="ml-1 text-xs text-green-700">(-{discount.toLocaleString("vi-VN")}đ)</span>
-                )}
-              </span>
+              <button
+              className="px-2 py-1 text-xs text-red-600 hover:text-white border border-red-400 rounded hover:bg-red-500 transition duration-200"
+              onClick={() => setSelectedVoucher(null)}
+            >
+              Bỏ chọn
+            </button>
+
             ) : (
               <button
                 className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium"
@@ -364,15 +375,8 @@ const Checkout = () => {
                 Chọn mã giảm giá
               </button>
             )}
-            {selectedVoucher && (
-              <button
-                className="ml-2 text-xs text-red-500 underline"
-                onClick={() => setSelectedVoucher(null)}
-              >
-                Bỏ chọn
-              </button>
-            )}
           </div>
+
           </div>
 
             <div className="p-6 space-y-4">
@@ -419,13 +423,17 @@ const Checkout = () => {
                     </div>
                     <div className="flex justify-between text-sm items-center">
                       <span className="text-gray-600">Giảm giá</span>
-                      <span className="text-red-500 font-medium">-{discount.toLocaleString("vi-VN")}</span>
+                      <span className="text-red-500 font-medium">
+                        {selectedVoucher && selectedVoucher.discountType === 'percent'
+                          ? `-${selectedVoucher.discountValue}%`
+                          : `-${discount.toLocaleString("vi-VN")}đ`}
+                      </span>
                     </div>
                     {selectedVoucher && voucherError && (
-                      <div className="text-xs text-red-500 mt-1">{voucherError}</div>
+                      <div className="text-sm text-red-500 mt-1">{voucherError}</div>
                     )}
                     {selectedVoucher && !voucherError && (
-                      <div className="text-xs text-green-600 mt-1">Đã áp dụng mã giảm giá!</div>
+                      <div className="text-sm text-[#5f518e] mt-1">Đã áp dụng mã giảm giá!</div>
                     )}
                   </div>
 
@@ -447,22 +455,38 @@ const Checkout = () => {
                           ) : (
                             vouchers.map((voucher) => {
                               const isOutOfUsage = voucher.usageLimit && voucher.usedCount >= voucher.usageLimit;
+                              const isInactive = voucher.status === "inactivated";
+                              const disabled = isOutOfUsage || isInactive;
+                              let statusText = "Kích hoạt";
+                              let statusClass = "bg-green-100 text-green-700";
+                              if (isOutOfUsage) {
+                                statusText = "Hết lượt";
+                                statusClass = "bg-gray-200 text-gray-500";
+                              } else if (isInactive) {
+                                statusText = "Tạm dừng";
+                                statusClass = "bg-yellow-100 text-yellow-700";
+                              }
                               return (
                                 <div
                                   key={voucher._id}
-                                  className={`border rounded p-3 flex flex-col gap-1 ${isOutOfUsage ? 'bg-gray-100 cursor-not-allowed opacity-60' : 'hover:bg-gray-50 cursor-pointer'}`}
+                                  className={`border rounded p-3 flex flex-col gap-1 ${disabled ? 'bg-gray-100 cursor-not-allowed opacity-60' : 'hover:bg-gray-50 cursor-pointer'}`}
                                   onClick={() => {
-                                    if (!isOutOfUsage) {
+                                    if (!disabled) {
                                       setSelectedVoucher(voucher);
                                       setShowVoucherModal(false);
                                     }
                                   }}
                                 >
                                   <div className="flex justify-between items-center">
-                                    <span className="font-semibold text-[#5f518e]">{voucher.code}</span>
-                                    <span className={`text-xs px-2 py-1 rounded-full ${isOutOfUsage ? 'bg-gray-200 text-gray-500' : 'bg-green-100 text-green-700'}`}>
-                                      {isOutOfUsage ? 'Hết lượt' : 'Kích hoạt'}
-                                    </span>
+                                    <div>
+                                      <span className="font-semibold text-[#5f518e]">{voucher.code}</span>
+                                      <span className="ml-2 text-xs text-red-500 font-semibold">
+                                        {voucher.discountType === 'percent'
+                                          ? `-${voucher.discountValue}%${voucher.maxDiscountValue ? ` (tối đa ${voucher.maxDiscountValue.toLocaleString()}đ)` : ''}`
+                                          : `-${voucher.discountValue.toLocaleString()}đ`}
+                                      </span>
+                                    </div>
+                                    <span className={`text-xs px-2 py-1 rounded-full ${statusClass}`}>{statusText}</span>
                                   </div>
                                   <div className="text-xs text-gray-600">HSD: {new Date(voucher.startDate).toLocaleDateString()} - {new Date(voucher.endDate).toLocaleDateString()}</div>
                                 </div>

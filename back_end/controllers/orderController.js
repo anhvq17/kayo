@@ -11,6 +11,8 @@ export const createOrder = async (req, res) => {
 
     let totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     let discount = 0;
+    let discountType = undefined;
+    let discountValue = undefined;
     let appliedVoucher = null;
 
     if (voucherCode) {
@@ -24,6 +26,8 @@ export const createOrder = async (req, res) => {
         (totalAmount >= (voucher.minOrderValue || 0))
       ) {
         // Tính discount
+        discountType = voucher.discountType;
+        discountValue = voucher.discountValue;
         if (voucher.discountType === 'percent') {
           discount = Math.round(totalAmount * (voucher.discountValue / 100));
           if (voucher.maxDiscountValue) {
@@ -50,6 +54,8 @@ export const createOrder = async (req, res) => {
       paymentStatus: 'Chưa thanh toán',
       voucherCode: appliedVoucher ? appliedVoucher.code : undefined,
       discount,
+      discountType,
+      discountValue,
     });
 
     await Promise.all(items.map(item => OrderItem.create({

@@ -54,6 +54,8 @@ export interface Order {
   updatedAt: string;
   voucherCode?: string;
   discount?: number;
+  discountType?: 'percent' | 'fixed';
+  discountValue?: number;
 }
 
 interface OrderItem {

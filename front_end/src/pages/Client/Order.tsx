@@ -344,7 +344,11 @@ const OrderList = () => {
                       <p className="text-lg text-gray-500 flex items-center gap-1">
                         <span role="img" aria-label="voucher">🏷️</span> 
                         Giảm giá:
-                        <span className="text-red-500">-{item.discount.toLocaleString()}đ</span>
+                        <span className="text-red-500">
+                          {item.discountType === 'percent' && typeof item.discountValue === 'number'
+                            ? `-${item.discountValue}%`
+                            : `-${item.discount?.toLocaleString()}đ`}
+                        </span>
                       </p>
                     )}
                   </div>
