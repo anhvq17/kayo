@@ -78,6 +78,10 @@ const DetailOrder = () => {
 
   const handleUpdateStatus = async () => {
     if (!newStatus || !orderData || !id) return;
+    if (orderData.order.orderStatus === 'Đã huỷ đơn hàng') {
+      setStatusError('Đơn hàng đã bị huỷ, không thể cập nhật trạng thái.');
+      return;
+    }
 
     if (!validateStatusTransition(orderData.order.orderStatus, newStatus)) {
       setStatusError('Không thể chuyển từ trạng thái hiện tại sang trạng thái này. Vui lòng cập nhật theo thứ tự: Chờ xử lý → Đã xử lý → Đang giao hàng → Đã giao hàng → Đã nhận hàng');
@@ -364,8 +368,11 @@ const DetailOrder = () => {
             </button>
           )}
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm transition duration-200"
+            onClick={() => {
+              if (order.orderStatus !== 'Đã huỷ đơn hàng') setIsModalOpen(true);
+            }}
+            className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm transition duration-200${order.orderStatus === 'Đã huỷ đơn hàng' ? ' opacity-50 cursor-not-allowed' : ''}`}
+            disabled={order.orderStatus === 'Đã huỷ đơn hàng'}
           >
             Cập nhật trạng thái
           </button>
@@ -492,7 +499,7 @@ const DetailOrder = () => {
           <div className="flex justify-end">
             <div className="text-right">
               <div className="text-lg font-semibold text-gray-900">
-                Tổng tiền: <span className="text-red-600">{order.totalAmount.toLocaleString()}</span>
+                Tổng tiền thanh toán: <span className="text-red-600">{order.totalAmount.toLocaleString()}</span>
               </div>
             </div>
           </div>
