@@ -183,7 +183,7 @@ const Checkout = () => {
       return;
     }
     if (subtotal < (selectedVoucher.minOrderValue || 0)) {
-      setVoucherError(`Đơn hàng phải từ ${(selectedVoucher.minOrderValue || 0).toLocaleString()}đ để dùng mã này`);
+      setVoucherError(`Đơn hàng phải từ ${(selectedVoucher.minOrderValue || 0).toLocaleString()} để dùng mã này`);
       setDiscount(0);
       return;
     }
@@ -538,8 +538,8 @@ const Checkout = () => {
                 <span className="text-[#5f518e] ml-1 flex items-center gap-1">
                   {selectedVoucher.code}
                   {selectedVoucher.discountType === 'percent'
-                    ? `(-${selectedVoucher.discountValue}%)`
-                    : `(-${discount.toLocaleString("vi-VN")}đ)`}
+                    ? ` (-${selectedVoucher.discountValue}%)`
+                    : ` (-${discount.toLocaleString("vi-VN")})`}
                 </span>
               )}
             </div>
@@ -612,8 +612,8 @@ const Checkout = () => {
                       <span className="text-gray-600">Giảm giá</span>
                       <span className="text-red-500 font-medium">
                         {selectedVoucher && selectedVoucher.discountType === 'percent'
-                          ? `-${selectedVoucher.discountValue}%`
-                          : `-${discount.toLocaleString("vi-VN")}đ`}
+                          ? `${selectedVoucher.discountValue}%`
+                          : `${discount.toLocaleString("vi-VN")}`}
                       </span>
                     </div>
                     {selectedVoucher && voucherError && (
@@ -669,8 +669,8 @@ const Checkout = () => {
                                       <span className="font-semibold text-[#5f518e]">{voucher.code}</span>
                                       <span className="ml-2 text-xs text-red-500 font-semibold">
                                         {voucher.discountType === 'percent'
-                                          ? `-${voucher.discountValue}%${voucher.maxDiscountValue ? ` (tối đa ${voucher.maxDiscountValue.toLocaleString()}đ)` : ''}`
-                                          : `-${voucher.discountValue.toLocaleString()}đ`}
+                                          ? `-${voucher.discountValue}%${voucher.maxDiscountValue ? ` (tối đa ${voucher.maxDiscountValue.toLocaleString()})` : ''}`
+                                          : `-${voucher.discountValue.toLocaleString()}`}
                                       </span>
                                     </div>
                                     <span className={`text-xs px-2 py-1 rounded-full ${statusClass}`}>{statusText}</span>

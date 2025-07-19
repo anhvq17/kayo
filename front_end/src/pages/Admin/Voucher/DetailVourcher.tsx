@@ -81,7 +81,7 @@ const DetailVoucher = () => {
                         <p className="text-lg font-semibold text-black">Giảm tối đa:</p>
                         <p className="text-[16px] text-gray-500 font-medium">
                             {voucher.maxDiscountValue
-                                ? `${voucher.maxDiscountValue.toLocaleString("vi-VN")}đ`
+                                ? `${voucher.maxDiscountValue.toLocaleString("vi-VN")}`
                                 : "Không giới hạn"}
                         </p>
                     </div>

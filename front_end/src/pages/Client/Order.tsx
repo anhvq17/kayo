@@ -354,7 +354,7 @@ const OrderList = () => {
                         <span className="text-red-500">
                           {item.discountType === 'percent' && typeof item.discountValue === 'number'
                             ? `-${item.discountValue}%`
-                            : `-${item.discount?.toLocaleString()}đ`}
+                            : `-${item.discount?.toLocaleString()}`}
                         </span>
                       </p>
                     )}

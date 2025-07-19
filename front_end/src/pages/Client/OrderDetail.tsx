@@ -238,9 +238,9 @@ const OrderDetail = () => {
                 <p><strong>Trạng thái thanh toán:</strong> {getPaymentStatusText(order.paymentStatus)}</p>
                 {order.voucherCode && (order.discount ?? 0) > 0 && (
                   <p>
-                    <strong>Mã giảm giá:</strong>
-                    <span className="text-green-700 font-semibold">{order.voucherCode}</span>
-                    <span className="text-red-500">(-{(order.discount ?? 0).toLocaleString()}đ)</span>
+                    <strong>Mã giảm giá: </strong>
+                    <span className="text-green-700 font-semibold">{order.voucherCode} </span>
+                    <span className="text-red-500">(-{(order.discount ?? 0).toLocaleString()})</span>
                   </p>
                 )}
                 <p><strong>Tổng tiền:</strong> <span className="text-red-500 font-bold text-xl">{order.totalAmount.toLocaleString()}</span></p>
