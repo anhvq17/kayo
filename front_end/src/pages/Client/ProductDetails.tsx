@@ -487,11 +487,25 @@ const ProductDetails = () => {
   if (!product)
     return <div className="text-center py-10">Không tìm thấy sản phẩm.</div>;
 
-  const thumbnails = [
-    ...new Set(
-      [product.image, ...variants.map((v) => v.image)].filter(Boolean)
-    ),
-  ];
+  const imageMap = new Map<string, string>();
+
+variants.forEach((v) => {
+  const scent =
+    v.attributes?.find((a) => a.attributeId.name === "Mùi hương")?.valueId?.value || v.flavors;
+  const volume =
+    v.attributes?.find((a) => a.attributeId.name === "Dung tích")?.valueId?.value || v.volume.toString();
+
+  const key = `${scent}-${volume}`;
+  if (!imageMap.has(key)) {
+    imageMap.set(key, v.image);
+  }
+});
+
+const thumbnails = [product.image, ...Array.from(imageMap.values())].filter(Boolean);
+
+console.log("Thumbnails:", thumbnails);
+
+
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -516,18 +530,20 @@ const ProductDetails = () => {
               className="w-full rounded shadow object-contain max-h-[400px]"
             />
             <div className="flex gap-2 mt-4 justify-center">
-              {thumbnails.map((src, index) => (
-                <img
-                  key={`${src}-${index}`}
-                  src={src}
-                  alt={`thumb-${index}`}
-                  className={`w-14 h-14 border rounded object-cover cursor-pointer ${
-                    mainImg === src ? "border-purple-600" : ""
-                  }`}
-                  onClick={() => setMainImg(src)}
-                />
-              ))}
-            </div>
+            {thumbnails.slice(0, 5).map((src, index) => (
+              <img
+                key={`${src}-${index}`}
+                src={src}
+                alt={`thumb-${index}`}
+                className={`w-14 h-14 border rounded object-cover cursor-pointer ${
+                  mainImg === src ? "border-purple-600" : ""
+                }`}
+                onClick={() => setMainImg(src)}
+              />
+            ))}
+          </div>
+
+
           </div>
 
           <div className="w-full md:w-1/2">
