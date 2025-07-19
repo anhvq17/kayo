@@ -20,7 +20,29 @@ function CheckPayment() {
         if (data.data.vnp_ResponseCode == "00") {
           setStatus("success");
           setTitle("Thanh toán thành công!");
-          localStorage.removeItem('cart');
+          const lastOrdered = JSON.parse(localStorage.getItem("lastOrderedItems") || "[]");
+          if (lastOrdered.length > 0) {
+            const cart: any[] = JSON.parse(localStorage.getItem("cart") || "[]");
+            const updatedCart = cart.filter(
+              (cartItem: any) => !lastOrdered.some((ordered: any) => ordered.id === cartItem.id)
+            );
+            localStorage.setItem("cart", JSON.stringify(updatedCart));
+            localStorage.removeItem("lastOrderedItems");
+
+            const user = JSON.parse(localStorage.getItem("user") || "null");
+            if (user && user._id) {
+              lastOrdered.forEach(async (item: any) => {
+                if (item.variantId) {
+                  await axios.delete("http://localhost:3000/cart", {
+                    data: {
+                      userId: user._id,
+                      variantId: item.variantId,
+                    },
+                  });
+                }
+              });
+            }
+          }
           if (data.data.vnp_TxnRef) {
             setOrderId(data.data.vnp_TxnRef);
           }

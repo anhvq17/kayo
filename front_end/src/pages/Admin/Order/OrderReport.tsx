@@ -48,7 +48,7 @@ const OrderReport = () => {
     return matchesDate && matchesStatus;
   });
 
-  const totalRevenue = filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const totalRevenue = filteredOrders.reduce((sum, order) => sum + (order.originalAmount ?? order.totalAmount), 0);
   const totalOrders = filteredOrders.length;
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
@@ -79,7 +79,7 @@ const OrderReport = () => {
       order.fullName,
       order.phone,
       `${order.address.detail}, ${order.address.ward}, ${order.address.district}, ${order.address.province}`,
-      order.totalAmount,
+      order.originalAmount ?? order.totalAmount,
       order.orderStatus,
       order.paymentStatus,
       order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán qua VNPay',
@@ -234,6 +234,7 @@ const OrderReport = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thanh toán</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phương thức thanh toán</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
               </tr>
             </thead>
@@ -249,7 +250,7 @@ const OrderReport = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600">
-                      {order.totalAmount.toLocaleString()}
+                      {(order.originalAmount ?? order.totalAmount).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
@@ -268,6 +269,9 @@ const OrderReport = () => {
                         {order.paymentStatus}
                       </span>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán qua VNPay'}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(order.createdAt).toLocaleString("vi-VN")}
                     </td>
@@ -275,7 +279,7 @@ const OrderReport = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     Không có dữ liệu phù hợp với bộ lọc
                   </td>
                 </tr>
