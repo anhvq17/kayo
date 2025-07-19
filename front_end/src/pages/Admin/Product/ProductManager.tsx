@@ -22,6 +22,8 @@ type Product = {
 const ProductManager = () => {
   const [products, setProducts] = useState<Product[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const productsPerPage = 5
 
   useEffect(() => {
     fetchProducts()
@@ -32,6 +34,7 @@ const ProductManager = () => {
       const res = await axios.get("http://localhost:3000/products")
       setProducts(res.data.data)
       setSelectedIds([])
+      setCurrentPage(1)
     } catch (error) {
       console.error("Lỗi khi lấy danh sách sản phẩm:", error)
     }
@@ -78,6 +81,16 @@ const ProductManager = () => {
     return new Intl.NumberFormat("vi-VN", {
       currency: "VND",
     }).format(price)
+  }
+
+  const indexOfLastProduct = currentPage * productsPerPage
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage
+  const currentProducts = products.slice(indexOfFirstProduct, indexOfLastProduct)
+  const totalPages = Math.ceil(products.length / productsPerPage)
+
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return
+    setCurrentPage(page)
   }
 
   return (
@@ -133,7 +146,7 @@ const ProductManager = () => {
           </tr>
         </thead>
         <tbody>
-          {products.map((item, index) => (
+          {currentProducts.map((item, index) => (
             <tr key={item._id} className="hover:bg-gray-50 border-b">
               <td className="px-4 py-2">
                 <input
@@ -143,7 +156,7 @@ const ProductManager = () => {
                   className="w-5 h-5 accent-blue-600"
                 />
               </td>
-              <td className="px-4 py-2">{index + 1}</td>
+              <td className="px-4 py-2">{indexOfFirstProduct + index + 1}</td>
               <td className="px-4 py-2">
                 <img
                   src={item.image || "/placeholder.svg?height=60&width=60"}
@@ -153,7 +166,9 @@ const ProductManager = () => {
               </td>
               <td className="px-4 py-2 max-w-[220px]">
                 <div className="font-medium truncate">{item.name}</div>
-                <div className="text-xs text-gray-500 truncate max-w-xs">{item.description}</div>
+                <div className="text-xs text-gray-500 truncate max-w-xs">
+                  {item.description}
+                </div>
               </td>
               <td className="px-4 py-2 font-medium text-red-600">
                 {formatPrice(item.priceDefault)}
@@ -192,6 +207,37 @@ const ProductManager = () => {
           ))}
         </tbody>
       </table>
+
+      {/* Pagination */}
+      <div className="flex justify-center mt-4 gap-2">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-3 py-1 border rounded disabled:opacity-50"
+        >
+          &lt;
+        </button>
+
+        {Array.from({ length: totalPages }, (_, i) => (
+          <button
+            key={i}
+            onClick={() => handlePageChange(i + 1)}
+            className={`px-3 py-1 border rounded ${
+              currentPage === i + 1 ? "bg-blue-600 text-white" : "bg-white"
+            }`}
+          >
+            {i + 1}
+          </button>
+        ))}
+
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1 border rounded disabled:opacity-50"
+        >
+          &gt;
+        </button>
+      </div>
     </div>
   )
 }
