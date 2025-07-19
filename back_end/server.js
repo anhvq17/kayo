@@ -18,10 +18,9 @@ import attributeRouter from "./routes/attributeRoutes.js";
 import attributeValueRouter from "./routes/attributeValueRouter.js";
 import variantRouter from "./routes/variantRoutes.js";
 
-import User from './models/UserModel.js';
-
 import http from "http";
 import { Server } from "socket.io";
+import voucherRouter from "./routes/voucherRoutes.js";
 
 dotenv.config();
 connectMongoDB(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/DATN");
@@ -29,7 +28,7 @@ connectMongoDB(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/DATN");
 const app = express();
 const server = http.createServer(app); // Tạo HTTP server từ Express
 
-// ✅ Tạo socket.io server
+//  Tạo socket.io server
 export const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173", // Cho phép kết nối từ FE
@@ -37,16 +36,16 @@ export const io = new Server(server, {
   },
 });
 
-// ✅ Lắng nghe kết nối từ client
+//  Lắng nghe kết nối từ client
 io.on("connection", (socket) => {
   console.log("🔌 Client connected:", socket.id);
 
   socket.on("disconnect", () => {
-    console.log("❌ Client disconnected:", socket.id);
+    console.log(" Client disconnected:", socket.id);
   });
 });
 
-// ✅ Hàm gọi từ controller khi cập nhật đơn hàng
+//  Hàm gọi từ controller khi cập nhật đơn hàng
 export const notifyOrderStatus = (orderId, status) => {
   io.emit("orderStatusChanged", { orderId, status });
 };
@@ -68,15 +67,16 @@ app.use('/attribute', attributeRouter);
 app.use('/attribute-value', attributeValueRouter);
 app.use('/variant', variantRouter);
 app.use('/users', userRoutes);
+app.use('/voucher',voucherRouter)
 app.use('/', authRouter);
 
-// ✅ Khởi chạy HTTP server (không dùng app.listen)
+//  Khởi chạy HTTP server (không dùng app.listen)
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
+  console.log(` Server is running on http://localhost:${PORT}`);
 });
 
-// 👇 Nếu bạn dùng vite-node cho testing
+//  Nếu bạn dùng vite-node cho testing
 export const viteNodeApp = app;
 
 app.use((req, res, next) => {

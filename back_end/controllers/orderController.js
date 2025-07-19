@@ -3,13 +3,51 @@ import OrderItem from '../models/OrderItemModel.js';
 
 export const createOrder = async (req, res) => {
   try {
-    const { userId, fullName, phone, address, paymentMethod, items } = req.body;
+    const { userId, fullName, phone, address, paymentMethod, items, voucherCode } = req.body;
 
     if (!userId || !fullName || !phone || !address || !items?.length) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    // Validate address format
+    if (!address.fullAddress && (!address.province || !address.district || !address.ward || !address.detail)) {
+      return res.status(400).json({ message: "Invalid address format" });
+    }
+
+    let originalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    let totalAmount = originalAmount;
+    let discount = 0;
+    let discountType = undefined;
+    let discountValue = undefined;
+    let appliedVoucher = null;
+
+    if (voucherCode) {
+      // Tìm voucher hợp lệ
+      const voucher = await import('../models/VoucherModel.js').then(m => m.default.findOne({ code: voucherCode.trim().toUpperCase(), deletedAt: null }));
+      const now = new Date();
+      if (voucher && voucher.status === 'activated' &&
+        (!voucher.startDate || now >= voucher.startDate) &&
+        (!voucher.endDate || now <= voucher.endDate) &&
+        (!voucher.usageLimit || voucher.usedCount < voucher.usageLimit) &&
+        (totalAmount >= (voucher.minOrderValue || 0))
+      ) {
+        // Tính discount
+        discountType = voucher.discountType;
+        discountValue = voucher.discountValue;
+        if (voucher.discountType === 'percent') {
+          discount = Math.round(totalAmount * (voucher.discountValue / 100));
+          if (voucher.maxDiscountValue) {
+            discount = Math.min(discount, voucher.maxDiscountValue);
+          }
+        } else if (voucher.discountType === 'fixed') {
+          discount = Math.min(voucher.discountValue, totalAmount);
+        }
+        appliedVoucher = voucher;
+        // Tăng usedCount
+        await voucher.updateOne({ $inc: { usedCount: 1 } });
+      }
+    }
+    totalAmount = totalAmount - discount;
 
     const order = await Order.create({
       userId,
@@ -18,8 +56,13 @@ export const createOrder = async (req, res) => {
       address,
       paymentMethod,
       totalAmount,
+      originalAmount,
       orderStatus: 'Chờ xử lý',
-      paymentStatus: 'Chưa thanh toán'
+      paymentStatus: 'Chưa thanh toán',
+      voucherCode: appliedVoucher ? appliedVoucher.code : undefined,
+      discount,
+      discountType,
+      discountValue,
     });
 
     await Promise.all(items.map(item => OrderItem.create({
@@ -178,23 +221,20 @@ export const updateOrder = async (req, res) => {
       updateData.paymentStatus = 'Đã thanh toán';
     }
     
-          // Nếu trạng thái đơn hàng được cập nhật thành "Đã hoàn hàng" 
-      // và phương thức thanh toán là VNPAY thì tự động cập nhật trạng thái thanh toán thành "Đã hoàn tiền"
-      if (req.body.orderStatus === 'Đã hoàn hàng') {
-        const order = await Order.findById(req.params.id);
-        if (order && order.paymentMethod === 'vnpay') {
-          updateData.paymentStatus = 'Đã hoàn tiền';
-        }
-      }
+    // Nếu trạng thái đơn hàng được cập nhật thành "Đã hoàn hàng" 
+    // thì tự động cập nhật trạng thái thanh toán thành "Đã hoàn tiền" cho cả COD và VNPAY
+    if (req.body.orderStatus === 'Đã hoàn hàng') {
+      updateData.paymentStatus = 'Đã hoàn tiền';
+    }
 
-      // Nếu trạng thái đơn hàng được cập nhật thành "Đã huỷ đơn hàng" 
-      // và phương thức thanh toán là VNPAY thì tự động cập nhật trạng thái thanh toán thành "Đã hoàn tiền"
-      if (req.body.orderStatus === 'Đã huỷ đơn hàng') {
-        const order = await Order.findById(req.params.id);
-        if (order && order.paymentMethod === 'vnpay') {
-          updateData.paymentStatus = 'Đã hoàn tiền';
-        }
+    // Nếu trạng thái đơn hàng được cập nhật thành "Đã huỷ đơn hàng" 
+    // và phương thức thanh toán là VNPAY thì tự động cập nhật trạng thái thanh toán thành "Đã hoàn tiền"
+    if (req.body.orderStatus === 'Đã huỷ đơn hàng') {
+      const order = await Order.findById(req.params.id);
+      if (order && order.paymentMethod === 'vnpay') {
+        updateData.paymentStatus = 'Đã hoàn tiền';
       }
+    }
     
     const updated = await Order.findByIdAndUpdate(req.params.id, updateData, { new: true });
     return res.status(200).json(updated);

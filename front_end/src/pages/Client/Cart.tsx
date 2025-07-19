@@ -15,7 +15,7 @@ interface CartItem {
   selectedScent?: string;
   selectedVolume?: string;
   image: {
-    src: string | any;
+    src: string;
     width?: number;
     height?: number;
   };
@@ -26,22 +26,6 @@ interface UserInfoType {
   _id: string;
   username: string;
 }
-
-const mergeCarts = (localCart: any[], serverCart: any[]): any[] => {
-  const merged: { [key: string]: any } = {};
-  for (const item of serverCart) {
-    if (item.variantId) merged[item.variantId] = { ...item };
-  }
-  for (const item of localCart) {
-    if (!item.variantId) continue;
-    if (merged[item.variantId]) {
-      merged[item.variantId].quantity += item.quantity;
-    } else {
-      merged[item.variantId] = { ...item };
-    }
-  }
-  return Object.values(merged);
-};
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -66,30 +50,33 @@ const Cart = () => {
 
   const syncCartAfterLogin = async (userId: string) => {
     try {
-      // Lấy local cart nếu cần debug, nhưng không dùng trong merge
-      // const localCart = JSON.parse(localStorage.getItem("cart") || "[]");
-
       const res = await axios.get(`http://localhost:3000/cart/user/${userId}`);
       const serverCart = res.data.cart;
 
-      // Xoá localStorage cart (không dùng nữa)
+      // Ghi đè giỏ hàng local bằng giỏ hàng từ server
       localStorage.setItem("cart", JSON.stringify(serverCart));
 
       setCartItems(
-        serverCart.map((item: any) => ({
-          ...item,
-          id: item.variantId,
-          volume: item.selectedVolume || item.volume,
-          fragrance: item.selectedScent || item.fragrance,
-          image:
+        serverCart.map((item: any) => {
+          const imageSrc =
             typeof item.image === "string"
-              ? { src: item.image, width: 100, height: 100 }
-              : {
-                  src: item.image?.src || "/img/default.jpg",
-                  width: 100,
-                  height: 100,
-                },
-        }))
+              ? item.image
+              : item.image?.src || "/img/default.jpg";
+
+          return {
+            ...item,
+            id:
+              item.variantId ||
+              `${item.productId}-${item.selectedScent}-${item.selectedVolume}`,
+            volume: item.selectedVolume || item.volume,
+            fragrance: item.selectedScent || item.fragrance,
+            image: {
+              src: imageSrc,
+              width: 100,
+              height: 100,
+            },
+          };
+        })
       );
     } catch (err) {
       console.error("❌ Lỗi khi đồng bộ giỏ hàng:", err);
@@ -117,6 +104,10 @@ const Cart = () => {
             const variantId =
               item.variantId ||
               `${item.productId}-${item.selectedScent}-${item.selectedVolume}`;
+            const imageSrc =
+              typeof item.image === "string"
+                ? item.image
+                : item.image?.src || "/img/default.jpg";
             return {
               _id: item._id || item.productId,
               productId: item.productId || item._id,
@@ -127,14 +118,11 @@ const Cart = () => {
               volume: item.selectedVolume,
               fragrance: item.selectedScent,
               variantId: variantId,
-              image:
-                typeof item.image === "string"
-                  ? { src: item.image, width: 100, height: 100 }
-                  : {
-                      src: item.image?.src || "/img/default.jpg",
-                      width: 100,
-                      height: 100,
-                    },
+              image: {
+                src: imageSrc,
+                width: 100,
+                height: 100,
+              },
             };
           });
           setCartItems(items);
@@ -271,7 +259,9 @@ const Cart = () => {
               <div className="space-y-6">
                 {cartItems.map((item) => (
                   <div
-                    key={item.id}
+                    key={`${item.productId}-${item.variantId || ""}-${
+                      item.volume
+                    }-${item.fragrance || ""}`}
                     className="flex border rounded-lg p-4 items-start"
                   >
                     <input
@@ -281,18 +271,16 @@ const Cart = () => {
                         const checked = e.target.checked;
                         setSelectedItems((prev) =>
                           checked
-                            ? prev.includes(item.id)
-                              ? prev
-                              : [...prev, item.id]
+                            ? [...prev, item.id]
                             : prev.filter((id) => id !== item.id)
                         );
                       }}
                       className="mr-4 mt-2"
                     />
-                    <div className="w-24 h-24 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
-                      <Link to={`/productdetails/${item._id}`}>
+                    <div className="w-24 h-24 bg-gray-100 rounded overflow-hidden">
+                      <Link to={`/productdetails/${item.productId}`}>
                         <img
-                          src={item.image?.src || item.image}
+                          src={item.image.src}
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />
@@ -301,7 +289,7 @@ const Cart = () => {
                     <div className="ml-4 flex-grow">
                       <div className="flex justify-between items-start">
                         <div>
-                          <Link to={`/productdetails/${item._id}`}>
+                          <Link to={`/productdetails/${item.productId}`}>
                             <h3 className="font-semibold text-lg text-black hover:underline">
                               {item.name}
                             </h3>

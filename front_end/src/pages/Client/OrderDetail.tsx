@@ -221,7 +221,11 @@ const OrderDetail = () => {
             <div className="space-y-2 text-gray-700 text-sm">
               <p><strong>Họ và tên:</strong> {order.fullName}</p>
               <p><strong>Số điện thoại:</strong> {order.phone}</p>
-              <p><strong>Địa chỉ:</strong> {order.address.detail}, {order.address.ward}, {order.address.district}, {order.address.province}</p>
+              <p><strong>Địa chỉ:</strong> {
+                order.address.fullAddress 
+                  ? order.address.fullAddress 
+                  : `${order.address.detail}, ${order.address.ward}, ${order.address.district}, ${order.address.province}`
+              }</p>
               <p><strong>Phương thức thanh toán:</strong> {getPaymentMethodText(order.paymentMethod)}</p>
             </div>
           </div>
@@ -232,11 +236,18 @@ const OrderDetail = () => {
               <div className="space-y-2 text-gray-700 text-sm">
                 <p><strong>Trạng thái đơn hàng:</strong> {getStatusText(order.orderStatus)}</p>
                 <p><strong>Trạng thái thanh toán:</strong> {getPaymentStatusText(order.paymentStatus)}</p>
-                <p><strong>Tổng tiền:</strong> <span className="text-red-500 font-bold text-2xl">{order.totalAmount.toLocaleString()}₫</span></p>
+                {order.voucherCode && (order.discount ?? 0) > 0 && (
+                  <p>
+                    <strong>Mã giảm giá: </strong>
+                    <span className="text-green-700 font-semibold">{order.voucherCode} </span>
+                    <span className="text-red-500">(-{(order.discount ?? 0).toLocaleString()})</span>
+                  </p>
+                )}
+                <p><strong>Tổng tiền:</strong> <span className="text-red-500 font-bold text-xl">{order.totalAmount.toLocaleString()}</span></p>
               </div>
             </div>
             
-            {/* Hiển thị lý do hủy đơn hàng nếu có */}
+            {/* Hiển thị lý do hủy đơn hàng nếu có */}  
             {order.orderStatus === 'Đã huỷ đơn hàng' && order.cancelReason && (
               <div className="bg-red-50 rounded-lg p-6 border border-red-200">
                 <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-red-800">
@@ -301,8 +312,8 @@ const OrderDetail = () => {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-900">{item.quantity}</td>
-                  <td className="px-4 py-3 text-gray-900">{item.price.toLocaleString()}₫</td>
-                  <td className="px-4 py-3 font-semibold text-gray-900">{(item.price * item.quantity).toLocaleString()}₫</td>
+                  <td className="px-4 py-3 text-gray-900">{item.price.toLocaleString()}</td>
+                  <td className="px-4 py-3 font-semibold text-gray-900">{(item.price * item.quantity).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>

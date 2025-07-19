@@ -54,7 +54,6 @@ const DetailOrder = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [showReturnModal, setShowReturnModal] = useState(false);
-  const [processingReturnId, setProcessingReturnId] = useState<string | null>(null);
   const [returnAction, setReturnAction] = useState<'approve' | 'reject'>('approve');
 
   useEffect(() => {
@@ -69,7 +68,7 @@ const DetailOrder = () => {
       const data = await getOrderById(id!);
       setOrderData(data);
       setNewStatus(data.order.orderStatus);
-      setStatusError(''); // Reset error khi load dữ liệu mới
+      setStatusError('');
     } catch (err: any) {
       setError(err.message || 'Đã xảy ra lỗi khi tải dữ liệu.');
     } finally {
@@ -79,36 +78,35 @@ const DetailOrder = () => {
 
   const handleUpdateStatus = async () => {
     if (!newStatus || !orderData || !id) return;
+    if (orderData.order.orderStatus === 'Đã huỷ đơn hàng') {
+      setStatusError('Đơn hàng đã bị huỷ, không thể cập nhật trạng thái.');
+      return;
+    }
 
-    // Kiểm tra quy tắc cập nhật trạng thái
     if (!validateStatusTransition(orderData.order.orderStatus, newStatus)) {
-      setStatusError('Không thể chuyển từ trạng thái hiện tại sang trạng thái này. Vui lòng cập nhật theo thứ tự: Chờ xử lý → Đã xử lý → Đang giao hàng → Đã giao hàng → Đã nhận hàng');
+      setStatusError('Không thể chuyển từ trạng thái hiện tại sang trạng thái này. Chỉ có thể chuyển lên trạng thái tiếp theo hoặc hủy đơn hàng.');
       return;
     }
 
     try {
       setUpdating(true);
-      setStatusError(''); // Reset error
+      setStatusError('');
       
-      // Chuẩn bị dữ liệu cập nhật
       const updateData: Partial<Order> = { orderStatus: newStatus as Order['orderStatus'] };
       
-      // Nếu trạng thái mới là "Đã nhận hàng" thì tự động cập nhật trạng thái thanh toán thành "Đã thanh toán"
       if (newStatus === 'Đã nhận hàng') {
         updateData.paymentStatus = 'Đã thanh toán';
       }
       
-      // Nếu trạng thái mới là "Đã huỷ đơn hàng" và phương thức thanh toán là VNPAY thì tự động cập nhật trạng thái thanh toán thành "Đã hoàn tiền"
       if (newStatus === 'Đã huỷ đơn hàng' && orderData.order.paymentMethod === 'vnpay') {
         updateData.paymentStatus = 'Đã hoàn tiền';
       }
       
       await updateOrder(id, updateData);
-      // Cập nhật lại dữ liệu
+
       await fetchOrderDetails();
       setIsModalOpen(false);
       
-      // Hiển thị thông báo thành công với thông tin phù hợp
       if (newStatus === 'Đã nhận hàng') {
         setSuccessMessage('Cập nhật trạng thái đơn hàng và thanh toán thành công!');
       } else if (newStatus === 'Đã huỷ đơn hàng' && orderData.order.paymentMethod === 'vnpay') {
@@ -129,32 +127,27 @@ const DetailOrder = () => {
     }
   };
 
-  // Xử lý hủy đơn hàng
   const handleCancelOrder = async () => {
     if (!orderData || !id || !cancelReason.trim()) return;
 
     try {
       setUpdating(true);
       
-      // Chuẩn bị dữ liệu cập nhật
       const updateData: Partial<Order> = { 
         orderStatus: 'Đã huỷ đơn hàng',
         cancelReason: cancelReason.trim()
       };
       
-      // Nếu phương thức thanh toán là VNPAY thì tự động cập nhật trạng thái thanh toán thành "Đã hoàn tiền"
       if (orderData.order.paymentMethod === 'vnpay') {
         updateData.paymentStatus = 'Đã hoàn tiền';
       }
       
       await updateOrder(id, updateData);
       
-      // Cập nhật lại dữ liệu
       await fetchOrderDetails();
       setShowCancelModal(false);
-      setCancelReason(''); // Reset lý do
+      setCancelReason('');
       
-      // Hiển thị thông báo phù hợp
       if (orderData.order.paymentMethod === 'vnpay') {
         setSuccessMessage('Hủy đơn hàng thành công! Trạng thái thanh toán đã được cập nhật thành "Đã hoàn tiền".');
       } else {
@@ -173,7 +166,6 @@ const DetailOrder = () => {
     }
   };
 
-  // Xử lý hoàn hàng
   const handleProcessReturn = async () => {
     if (!orderData || !id) return;
 
@@ -185,7 +177,6 @@ const DetailOrder = () => {
         orderStatus: newStatus
       });
       
-      // Cập nhật lại dữ liệu
       await fetchOrderDetails();
       setShowReturnModal(false);
       
@@ -257,7 +248,6 @@ const DetailOrder = () => {
     );
   };
 
-  // Kiểm tra quy tắc cập nhật trạng thái tuần tự
   const validateStatusTransition = (currentStatus: string, newStatus: string): boolean => {
     const statusOrder = [
       'Chờ xử lý',
@@ -270,32 +260,26 @@ const DetailOrder = () => {
     const currentIndex = statusOrder.indexOf(currentStatus);
     const newIndex = statusOrder.indexOf(newStatus);
 
-    // Cho phép cập nhật cùng trạng thái
+    // Cho phép giữ nguyên trạng thái hiện tại
     if (currentIndex === newIndex) return true;
 
-    // Cho phép cập nhật lên trạng thái tiếp theo
+    // Chỉ cho phép chuyển lên trạng thái tiếp theo
     if (newIndex === currentIndex + 1) return true;
 
-    // Cho phép cập nhật xuống trạng thái trước đó (để sửa lỗi)
-    if (newIndex === currentIndex - 1) return true;
-
-    // Cho phép hủy đơn hàng từ bất kỳ trạng thái nào
+    // Cho phép hủy đơn hàng
     if (newStatus === 'Đã huỷ đơn hàng') return true;
 
     return false;
   };
 
-  // Kiểm tra xem đơn hàng có thể hủy không (chỉ khi ở trạng thái Chờ xử lý hoặc Đã xử lý)
   const canCancelOrder = (orderStatus: string) => {
     return orderStatus === 'Chờ xử lý' || orderStatus === 'Đã xử lý';
   };
 
-  // Kiểm tra xem đơn hàng có thể xử lý hoàn hàng không (chỉ khi ở trạng thái Yêu cầu hoàn hàng)
   const canProcessReturn = (orderStatus: string) => {
     return orderStatus === 'Yêu cầu hoàn hàng';
   };
 
-  // Lấy danh sách trạng thái có thể chuyển đổi từ trạng thái hiện tại
   const getAvailableStatuses = (currentStatus: string): string[] => {
     const statusOrder = [
       'Chờ xử lý',
@@ -308,25 +292,18 @@ const DetailOrder = () => {
     const currentIndex = statusOrder.indexOf(currentStatus);
     const availableStatuses = [];
 
-    // Thêm trạng thái hiện tại
+    // Chỉ hiển thị trạng thái hiện tại và trạng thái tiếp theo
     availableStatuses.push(currentStatus);
 
-    // Thêm trạng thái tiếp theo (nếu có)
     if (currentIndex < statusOrder.length - 1) {
       availableStatuses.push(statusOrder[currentIndex + 1]);
     }
 
-    // Thêm trạng thái trước đó (để sửa lỗi, nếu có)
-    if (currentIndex > 0) {
-      availableStatuses.push(statusOrder[currentIndex - 1]);
-    }
-
-    // Thêm trạng thái hủy (chỉ khi có thể hủy)
+    // Thêm các trạng thái đặc biệt
     if (canCancelOrder(currentStatus)) {
       availableStatuses.push('Đã huỷ đơn hàng');
     }
 
-    // Thêm trạng thái hoàn hàng (chỉ khi ở trạng thái Đã nhận hàng)
     if (currentStatus === 'Đã nhận hàng') {
       availableStatuses.push('Yêu cầu hoàn hàng');
     }
@@ -371,7 +348,7 @@ const DetailOrder = () => {
             <button
               onClick={() => {
                 setShowCancelModal(true);
-                setCancelReason(''); // Reset lý do khi mở modal
+                setCancelReason('');
               }}
               className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm transition duration-200"
             >
@@ -382,7 +359,7 @@ const DetailOrder = () => {
             <button
               onClick={() => {
                 setShowReturnModal(true);
-                setReturnAction('approve'); // Reset action khi mở modal
+                setReturnAction('approve');
               }}
               className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md text-sm transition duration-200"
             >
@@ -390,15 +367,17 @@ const DetailOrder = () => {
             </button>
           )}
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm transition duration-200"
+            onClick={() => {
+              if (order.orderStatus !== 'Đã huỷ đơn hàng') setIsModalOpen(true);
+            }}
+            className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm transition duration-200${order.orderStatus === 'Đã huỷ đơn hàng' ? ' opacity-50 cursor-not-allowed' : ''}`}
+            disabled={order.orderStatus === 'Đã huỷ đơn hàng'}
           >
             Cập nhật trạng thái
           </button>
         </div>
       </div>
 
-      {/* Progress Bar */}
       <div className="bg-white p-6 rounded-lg border shadow-sm mb-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <span role="img" aria-label="progress">📊</span>Tiến trình đơn hàng
@@ -406,7 +385,6 @@ const DetailOrder = () => {
         <OrderProgressBar currentStatus={order.orderStatus} />
       </div>
 
-      {/* Thông tin đơn hàng */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div className="bg-white p-6 rounded-lg border shadow-sm">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -429,7 +407,6 @@ const DetailOrder = () => {
             <div><strong>Thanh toán:</strong> {getPaymentBadge(order.paymentStatus)}</div>
             <div><strong>Phương thức:</strong> {getPaymentMethodText(order.paymentMethod)}</div>
             
-            {/* Hiển thị lý do hủy đơn hàng nếu có */}
             {order.orderStatus === 'Đã huỷ đơn hàng' && order.cancelReason && (
               <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
                 <div className="flex items-start">
@@ -442,7 +419,6 @@ const DetailOrder = () => {
               </div>
             )}
             
-            {/* Hiển thị lý do hoàn hàng nếu có */}
             {(order.orderStatus === 'Yêu cầu hoàn hàng' || order.orderStatus === 'Đã hoàn hàng' || order.orderStatus === 'Từ chối hoàn hàng') && order.returnReason && (
               <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-md">
                 <div className="flex items-start">
@@ -458,17 +434,18 @@ const DetailOrder = () => {
         </div>
       </div>
 
-      {/* Địa chỉ giao hàng */}
       <div className="bg-white p-6 rounded-lg border shadow-sm mb-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <span role="img" aria-label="address">📍</span> Địa chỉ giao hàng
         </h3>
         <div className="text-gray-700">
-          {order.address.detail}, {order.address.ward}, {order.address.district}, {order.address.province}
+          {order.address.fullAddress 
+            ? order.address.fullAddress 
+            : `${order.address.detail}, ${order.address.ward}, ${order.address.district}, ${order.address.province}`
+          }
         </div>
       </div>
 
-      {/* Danh sách sản phẩm */}
       <div className="bg-white rounded-lg border shadow-sm">
         <div className="p-6 border-b">
           <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -511,9 +488,9 @@ const DetailOrder = () => {
                     ))}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.price.toLocaleString()}₫</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.price.toLocaleString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
-                    {(item.price * item.quantity).toLocaleString()}₫
+                    {(item.price * item.quantity).toLocaleString()}
                   </td>
                 </tr>
               ))}
@@ -524,14 +501,13 @@ const DetailOrder = () => {
           <div className="flex justify-end">
             <div className="text-right">
               <div className="text-lg font-semibold text-gray-900">
-                Tổng tiền: <span className="text-red-600">{order.totalAmount.toLocaleString()}₫</span>
+                Tổng tiền thanh toán: <span className="text-red-600">{order.totalAmount.toLocaleString()}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Nút quay lại */}
       <div className="flex justify-end mt-6">
         <Link to="/admin/orders">
           <button className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm transition duration-200">
@@ -540,7 +516,6 @@ const DetailOrder = () => {
         </Link>
       </div>
 
-      {/* Thông báo thành công */}
       {showSuccess && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
           <div className="flex items-center gap-2">
@@ -550,7 +525,6 @@ const DetailOrder = () => {
         </div>
       )}
 
-      {/* Modal cập nhật trạng thái */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-[400px] shadow-lg relative">
@@ -563,7 +537,7 @@ const DetailOrder = () => {
                 Trạng thái mới
               </label>
               <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-                <span role="img" aria-label="info">ℹ️</span> Quy tắc: Chờ xử lý → Đã xử lý → Đang giao hàng → Đã giao hàng → Đã nhận hàng
+                <span role="img" aria-label="info">ℹ️</span> Quy tắc: Chỉ có thể chuyển lên trạng thái tiếp theo. Không thể quay lại trạng thái trước đó.
               </div>
               {orderData?.order.paymentMethod === 'vnpay' && (
                 <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
@@ -574,7 +548,7 @@ const DetailOrder = () => {
                 value={newStatus}
                 onChange={(e) => {
                   setNewStatus(e.target.value);
-                  setStatusError(''); // Reset error khi thay đổi selection
+                  setStatusError('');
                 }}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
@@ -612,7 +586,6 @@ const DetailOrder = () => {
         </div>
       )}
 
-      {/* Modal xác nhận hủy đơn hàng */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-[500px] shadow-lg relative">
@@ -622,7 +595,6 @@ const DetailOrder = () => {
                 Bạn có chắc chắn muốn hủy đơn hàng <strong>{orderData?.order._id}</strong> không?
               </p>
               
-              {/* Form nhập lý do hủy đơn hàng */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Lý do hủy đơn hàng <span className="text-red-500">*</span>
@@ -669,7 +641,6 @@ const DetailOrder = () => {
         </div>
       )}
 
-      {/* Modal xử lý hoàn hàng */}
       {showReturnModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-[500px] shadow-lg relative">
@@ -679,7 +650,6 @@ const DetailOrder = () => {
                 Bạn muốn xử lý yêu cầu hoàn hàng này như thế nào?
               </p>
               
-              {/* Chọn hành động */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Hành động <span className="text-red-500">*</span>

@@ -1,9 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { getAllOrders, updateOrder } from "../../../services/Order";
 import type { Order } from "../../../types/Order";
-import OrderProgressBar from "../../../components/OrderProgressBar";
-import OrderProgressBarCompact from "../../../components/OrderProgressBarCompact";
 
 interface OrderWithUser extends Omit<Order, 'userId'> {
   userId: {
@@ -82,9 +80,20 @@ const OrderManager = () => {
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [processingReturnId, setProcessingReturnId] = useState<string | null>(null);
   const [returnAction, setReturnAction] = useState<'approve' | 'reject'>('approve');
+  const didMountRef = useRef(false);
 
   useEffect(() => {
     fetchOrders();
+    didMountRef.current = true;
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && didMountRef.current) {
+        fetchOrders();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   const fetchOrders = async () => {
@@ -110,59 +119,45 @@ const OrderManager = () => {
     return matchesSearch && matchesStatus;
   });
 
-  // Sắp xếp đơn hàng mới nhất lên đầu
   const sortedOrders = [...filteredOrders].sort((a, b) => 
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
-  // Kiểm tra xem đơn hàng có thể hủy không (chỉ khi ở trạng thái Chờ xử lý hoặc Đã xử lý)
   const canCancelOrder = (orderStatus: string) => {
     return orderStatus === 'Chờ xử lý' || orderStatus === 'Đã xử lý';
   };
 
-  // Kiểm tra xem đơn hàng có thể xử lý hoàn hàng không (chỉ khi ở trạng thái Yêu cầu hoàn hàng)
   const canProcessReturn = (orderStatus: string) => {
     return orderStatus === 'Yêu cầu hoàn hàng';
   };
 
-  // Xử lý hủy đơn hàng
   const handleCancelOrder = async () => {
     if (!selectedOrderId || !cancelReason.trim()) return;
 
     try {
       setCancellingOrderId(selectedOrderId);
-      
-      // Tìm đơn hàng để kiểm tra phương thức thanh toán
       const order = orders.find(o => o._id === selectedOrderId);
-      
-      // Chuẩn bị dữ liệu cập nhật
       const updateData: any = { 
         orderStatus: 'Đã huỷ đơn hàng',
         cancelReason: cancelReason.trim()
       };
-      
-      // Nếu phương thức thanh toán là VNPAY thì tự động cập nhật trạng thái thanh toán thành "Đã hoàn tiền"
       if (order && order.paymentMethod === 'vnpay') {
         updateData.paymentStatus = 'Đã hoàn tiền';
       }
-      
       await updateOrder(selectedOrderId, updateData);
-      
-      // Cập nhật lại danh sách đơn hàng
+
       await fetchOrders();
       
       setShowCancelModal(false);
       setSelectedOrderId(null);
-      setCancelReason(''); // Reset lý do
+      setCancelReason('');
       
-      // Hiển thị thông báo phù hợp
       if (order && order.paymentMethod === 'vnpay') {
         setSuccessMessage('Hủy đơn hàng thành công! Trạng thái thanh toán đã được cập nhật thành "Đã hoàn tiền".');
       } else {
         setSuccessMessage('Hủy đơn hàng thành công!');
       }
       
-      // Tự động ẩn thông báo sau 3 giây
       setTimeout(() => {
         setSuccessMessage(null);
       }, 3000);
@@ -173,7 +168,6 @@ const OrderManager = () => {
     }
   };
 
-  // Xử lý hoàn hàng
   const handleProcessReturn = async () => {
     if (!selectedOrderId) return;
 
@@ -185,7 +179,6 @@ const OrderManager = () => {
         orderStatus: newStatus
       });
       
-      // Cập nhật lại danh sách đơn hàng
       await fetchOrders();
       
       setShowReturnModal(false);
@@ -197,17 +190,15 @@ const OrderManager = () => {
     }
   };
 
-  // Mở modal hủy đơn hàng
   const openCancelModal = (orderId: string) => {
     setSelectedOrderId(orderId);
-    setCancelReason(''); // Reset lý do khi mở modal
+    setCancelReason('');
     setShowCancelModal(true);
   };
 
-  // Mở modal xử lý hoàn hàng
   const openReturnModal = (orderId: string) => {
     setSelectedOrderId(orderId);
-    setReturnAction('approve'); // Reset action khi mở modal
+    setReturnAction('approve');
     setShowReturnModal(true);
   };
 
@@ -253,7 +244,6 @@ const OrderManager = () => {
 
   return (
     <div className="p-4">
-      {/* Thông báo lỗi */}
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
           <div className="flex items-center gap-2">
@@ -263,7 +253,6 @@ const OrderManager = () => {
         </div>
       )}
 
-      {/* Thông báo thành công */}
       {successMessage && (
         <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
           <div className="flex items-center gap-2">
@@ -274,10 +263,8 @@ const OrderManager = () => {
       )}
 
       <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-        <span role="img" aria-label="order">📦</span> Quản lý đơn hàng
+        <span role="img" aria-label="order"></span> Quản lý đơn hàng
       </h2>
-
-      {/* Bộ lọc và tìm kiếm */}
       <div className="mb-6 flex flex-col md:flex-row gap-4">
         <div className="flex-1">
           <input
@@ -303,7 +290,6 @@ const OrderManager = () => {
         </div>
       </div>
 
-      {/* Thống kê */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-blue-50 p-4 rounded-lg border">
           <div className="text-2xl font-bold text-blue-600">{orders.length}</div>
@@ -333,10 +319,9 @@ const OrderManager = () => {
         <table className="min-w-full bg-white border text-sm rounded-xl shadow-lg">
           <thead>
             <tr className="bg-black text-white text-left">
-              <th className="px-4 py-2">Mã đơn hàng</th>
               <th className="px-4 py-2">Khách hàng</th>
               <th className="px-4 py-2">Trạng thái đơn hàng</th>
-              <th className="px-4 py-2">Tiến trình</th>
+
               <th className="px-4 py-2">Trạng thái thanh toán</th>
               <th className="px-4 py-2">Tổng tiền</th>
               <th className="px-4 py-2">Phương thức thanh toán</th>
@@ -349,7 +334,6 @@ const OrderManager = () => {
             {sortedOrders.length > 0 ? (
               sortedOrders.map((order) => (
                 <tr key={order._id} className="hover:bg-gray-50 transition">
-                  <td className="px-4 py-2 font-semibold">{order._id}</td>
                   <td className="px-4 py-2">
                     <div>
                       <div className="font-medium">{order.fullName}</div>
@@ -357,14 +341,9 @@ const OrderManager = () => {
                     </div>
                   </td>
                   <td className="px-4 py-2">{getStatusBadge(order.orderStatus)}</td>
-                  <td className="px-4 py-2">
-                    <div className="w-24">
-                      <OrderProgressBarCompact currentStatus={order.orderStatus} />
-                    </div>
-                  </td>
                   <td className="px-4 py-2">{getPaymentBadge(order.paymentStatus)}</td>
                   <td className="px-4 py-2 text-red-600 font-semibold">
-                    {order.totalAmount.toLocaleString()}₫
+                    {order.totalAmount.toLocaleString()}
                   </td>
                   <td className="px-4 py-2 text-xs">
                     {getPaymentMethodText(order.paymentMethod)}
@@ -392,14 +371,14 @@ const OrderManager = () => {
                         to={`/admin/orderDetails/${order._id}`} 
                         className="inline-flex items-center gap-2 border bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs font-semibold shadow transition duration-200"
                       >
-                        <span role="img" aria-label="detail">🔎</span> Xem chi tiết
+                        <span role="img" aria-label="detail"></span>Chi tiết
                       </Link>
                       {canCancelOrder(order.orderStatus) && (
                         <button
                           onClick={() => openCancelModal(order._id)}
                           className="inline-flex items-center gap-2 border bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs font-semibold shadow transition duration-200"
                         >
-                          <span role="img" aria-label="cancel">❌</span> Hủy
+                          <span role="img" aria-label="cancel"></span>Huỷ
                         </button>
                       )}
                       {canProcessReturn(order.orderStatus) && (
@@ -425,7 +404,6 @@ const OrderManager = () => {
         </table>
       </div>
 
-      {/* Modal xác nhận hủy đơn hàng */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-[500px] shadow-lg relative">
@@ -434,8 +412,6 @@ const OrderManager = () => {
               <p className="text-gray-700 mb-4">
                 Bạn có chắc chắn muốn hủy đơn hàng này không?
               </p>
-              
-              {/* Form nhập lý do hủy đơn hàng */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Lý do hủy đơn hàng <span className="text-red-500">*</span>
@@ -482,8 +458,6 @@ const OrderManager = () => {
           </div>
         </div>
       )}
-
-      {/* Modal xử lý hoàn hàng */}
       {showReturnModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-[500px] shadow-lg relative">
@@ -493,7 +467,6 @@ const OrderManager = () => {
                 Bạn muốn xử lý yêu cầu hoàn hàng này như thế nào?
               </p>
               
-              {/* Chọn hành động */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Hành động <span className="text-red-500">*</span>

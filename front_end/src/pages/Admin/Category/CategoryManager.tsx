@@ -78,8 +78,8 @@ const CategoryManager = () => {
                   <button
                     onClick={() => toggleStatus(category)}
                     className={`px-3 py-1 rounded-md text-xs font-semibold ${category.status === "activated"
-                        ? "bg-green-600 text-white hover:bg-green-700"
-                        : "bg-gray-400 text-gray-800 hover:bg-gray-500"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-yellow-100 text-yellow-700"
                       }`}
                     title="Nhấn để đổi trạng thái"
                   >

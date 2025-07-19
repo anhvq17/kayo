@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getOrdersByUserWithItems, updateOrder } from '../../services/Order';
 
@@ -52,21 +52,35 @@ const OrderList = () => {
   const [requestingReturnId, setRequestingReturnId] = useState<string | null>(null);
   const [confirmingReceivedId, setConfirmingReceivedId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const didMountRef = useRef(false);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const data = await getOrdersByUserWithItems(user._id);
+      if (Array.isArray(data)) {
+        setOrderList(data);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Đã xảy ra lỗi khi tải dữ liệu.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    (async () => {
-      try {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-        const data = await getOrdersByUserWithItems(user._id);
-        if (Array.isArray(data)) {
-          setOrderList(data);
-        }
-      } catch (err: any) {
-        setError(err.message || 'Đã xảy ra lỗi khi tải dữ liệu.');
-      } finally {
-        setLoading(false);
+    fetchOrders();
+    didMountRef.current = true;
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && didMountRef.current) {
+        fetchOrders();
       }
-    })();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
   console.log(orderList);
  
@@ -217,13 +231,6 @@ const OrderList = () => {
       if (Array.isArray(data)) {
         setOrderList(data);
       }
-      
-      setSuccessMessage('Đã xác nhận nhận hàng thành công! Trạng thái thanh toán đã được cập nhật.');
-      
-      // Tự động ẩn thông báo sau 3 giây
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 3000);
     } catch (err: any) {
       setError(err.message || 'Đã xảy ra lỗi khi xác nhận nhận hàng.');
     } finally {
@@ -276,12 +283,12 @@ const OrderList = () => {
       <div className="flex items-center text-sm mb-6">
         <Link to="/" className="text-gray-500 hover:text-gray-900">Trang chủ</Link>
         <span className="mx-2 text-gray-400">/</span>
-        <span className="font-medium text-black">Danh sách đơn hàng</span>
+        <span className="font-medium text-black">Đơn hàng</span>
       </div>
 
       <div className="mx-auto mt-10 text-center">
         <h1 className="text-3xl font-bold flex items-center gap-2 justify-center">
-          <span role="img" aria-label="order-list">📋</span> DANH SÁCH ĐƠN HÀNG
+          <span role="img" aria-label="order-list"></span> DANH SÁCH ĐƠN HÀNG
         </h1>
       </div>
 
@@ -340,14 +347,30 @@ const OrderList = () => {
                     </div>
                   </div>
                   <div className="flex flex-col md:flex-row md:items-center md:gap-6 gap-2 mt-4">
+                    {item.voucherCode && item.discount > 0 && (
+                      <p className="text-lg text-gray-500 flex items-center gap-1">
+                        <span role="img" aria-label="voucher">🏷️</span> 
+                        Giảm giá:
+                        <span className="text-red-500">
+                          {item.discountType === 'percent' && typeof item.discountValue === 'number'
+                            ? `-${item.discountValue}%`
+                            : `-${item.discount?.toLocaleString()}`}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-col md:flex-row md:items-center md:gap-6 gap-2 mt-4">
+                    
                     <p className="text-lg text-gray-500 flex items-center gap-1">
-                      <span role="img" aria-label="money">💵</span> Tổng tiền thanh toán: <span className="text-red-500 font-bold">{item.totalAmount.toLocaleString()}₫</span>
+                      <span role="img" aria-label="money">💵</span> Tổng tiền thanh toán: <span className="text-red-500 font-bold">{item.totalAmount.toLocaleString()}</span>
                     </p>
+                    
                     <p className="text-lg text-gray-500 flex items-center gap-1">
                       <span role="img" aria-label="paymethod">💳</span> {getPaymentMethodText(item.paymentMethod)}
                     </p>
                   </div>
                 </div>
+                
                 <div className="flex justify-end md:justify-center mt-4 md:mt-0 gap-2">
                   <Link to={`/orders/${item._id}`}
                     className="inline-flex items-center gap-2 bg-[#5f518e] text-white px-5 py-2 rounded-lg font-semibold shadow hover:opacity-90 transition text-sm">
@@ -399,7 +422,7 @@ const OrderList = () => {
                         <div className="text-xs text-gray-500">Số lượng: {prod.quantity}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-xl text-red-500">{prod.price.toLocaleString()}₫</div>
+                        <div className="text-lg font-bold text-red-500">{prod.price.toLocaleString()}</div>
                        
                       </div>
                     </div>

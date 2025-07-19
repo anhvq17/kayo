@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import axios from "axios"
 import { useParams } from "react-router-dom"
 import type { AttributeValue, GroupedAttribute } from "../../../types/Product"
@@ -26,12 +26,9 @@ const DetailProduct = () => {
     const fetchProductDetails = async () => {
         try {
             setLoading(true)
-
-            // Lấy thông tin sản phẩm
             const productRes = await axios.get(`http://localhost:3000/products/${productId}`)
             setProduct(productRes.data.data)
 
-            // Lấy danh sách biến thể
             const variantRes = await axios.get(`http://localhost:3000/variant/product/${productId}`)
             const fetchedVariants = variantRes.data.data.map((variant: any) => ({
                 _id: variant._id,
@@ -45,7 +42,6 @@ const DetailProduct = () => {
             }))
             setVariants(fetchedVariants)
 
-            // Lấy danh sách thuộc tính
             const attrRes = await axios.get("http://localhost:3000/attribute-value")
             const values: AttributeValue[] = attrRes.data.data
 
@@ -88,8 +84,6 @@ const DetailProduct = () => {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4 tracking-tight">
                 Chi tiết sản phẩm
             </h2>
-
-            {/* Thông tin sản phẩm */}
             <div className="grid lg:grid-cols-2 gap-8">
                 <div className="w-full">
                     <img
@@ -103,7 +97,7 @@ const DetailProduct = () => {
                     <p className="flex items-center gap-3">
                         <span className="font-medium text-gray-600">Giá mặc định:</span>
                         <span className="text-red-600 font-semibold text-lg">
-                            {Number(product.priceDefault).toLocaleString()}₫
+                            {Number(product.priceDefault).toLocaleString()}
                         </span>
                     </p>
                     <p className="flex items-center gap-3">
@@ -121,7 +115,6 @@ const DetailProduct = () => {
                 </div>
             </div>
 
-            {/* Danh sách biến thể */}
             <div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4 tracking-tight">Danh sách biến thể</h3>
                 {variants.length === 0 ? (
@@ -137,7 +130,7 @@ const DetailProduct = () => {
                                             {attr.name}
                                         </th>
                                     ))}
-                                    <th className="border-b border-gray-200 px-6 py-3 text-left">Giá</th>
+                                    <th className="border-b border-gray-200 px-6 py-3 text-left">Giá tiền</th>
                                     <th className="border-b border-gray-200 px-6 py-3 text-left">Tồn kho</th>
                                     <th className="border-b border-gray-200 px-6 py-3 text-left">Ảnh</th>
                                 </tr>
@@ -155,7 +148,7 @@ const DetailProduct = () => {
                                             );
                                         })}
                                         <td className="border-b border-gray-200 px-6 py-4 text-red-600 font-medium">
-                                            {Number(variant.price).toLocaleString()}₫
+                                            {Number(variant.price).toLocaleString()}
                                         </td>
                                         <td className="border-b border-gray-200 px-6 py-4">{variant.stock}</td>
                                         <td className="border-b border-gray-200 px-6 py-4 text-center">

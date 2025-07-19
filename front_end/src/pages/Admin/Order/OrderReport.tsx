@@ -36,7 +36,6 @@ const OrderReport = () => {
     }
   };
 
-  // Lọc đơn hàng theo ngày và trạng thái
   const filteredOrders = orders.filter(order => {
     const orderDate = new Date(order.createdAt);
     const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
@@ -49,8 +48,7 @@ const OrderReport = () => {
     return matchesDate && matchesStatus;
   });
 
-  // Tính toán thống kê
-  const totalRevenue = filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const totalRevenue = filteredOrders.reduce((sum, order) => sum + (order.originalAmount ?? order.totalAmount), 0);
   const totalOrders = filteredOrders.length;
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
@@ -81,7 +79,7 @@ const OrderReport = () => {
       order.fullName,
       order.phone,
       `${order.address.detail}, ${order.address.ward}, ${order.address.district}, ${order.address.province}`,
-      order.totalAmount,
+      order.originalAmount ?? order.totalAmount,
       order.orderStatus,
       order.paymentStatus,
       order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán qua VNPay',
@@ -134,17 +132,16 @@ const OrderReport = () => {
     <div className="p-4">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-semibold flex items-center gap-2">
-          <span role="img" aria-label="report">📊</span> Báo cáo đơn hàng
+          <span role="img" aria-label="report"></span> Báo cáo đơn hàng
         </h2>
         <button
           onClick={exportToCSV}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm transition duration-200"
+          className="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm transition duration-200"
         >
           Xuất CSV
         </button>
       </div>
 
-      {/* Bộ lọc */}
       <div className="bg-white p-6 rounded-lg border shadow-sm mb-6">
         <h3 className="text-lg font-semibold mb-4">Bộ lọc</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -191,18 +188,17 @@ const OrderReport = () => {
         </div>
       </div>
 
-      {/* Thống kê tổng quan */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-blue-50 p-4 rounded-lg border">
           <div className="text-2xl font-bold text-blue-600">{totalOrders}</div>
           <div className="text-sm text-gray-600">Tổng đơn hàng</div>
         </div>
         <div className="bg-green-50 p-4 rounded-lg border">
-          <div className="text-2xl font-bold text-green-600">₫{totalRevenue.toLocaleString()}</div>
+          <div className="text-2xl font-bold text-green-600">{totalRevenue.toLocaleString()}</div>
           <div className="text-sm text-gray-600">Tổng doanh thu</div>
         </div>
         <div className="bg-purple-50 p-4 rounded-lg border">
-          <div className="text-2xl font-bold text-purple-600">₫{averageOrderValue.toLocaleString()}</div>
+          <div className="text-2xl font-bold text-purple-600">{averageOrderValue.toLocaleString()}</div>
           <div className="text-sm text-gray-600">Giá trị trung bình</div>
         </div>
         <div className="bg-orange-50 p-4 rounded-lg border">
@@ -213,7 +209,6 @@ const OrderReport = () => {
         </div>
       </div>
 
-      {/* Thống kê theo trạng thái */}
       <div className="bg-white p-6 rounded-lg border shadow-sm mb-6">
         <h3 className="text-lg font-semibold mb-4">Thống kê theo trạng thái</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -226,7 +221,6 @@ const OrderReport = () => {
         </div>
       </div>
 
-      {/* Bảng dữ liệu */}
       <div className="bg-white rounded-lg border shadow-sm">
         <div className="p-6 border-b">
           <h3 className="text-lg font-semibold">Danh sách đơn hàng ({filteredOrders.length})</h3>
@@ -240,6 +234,7 @@ const OrderReport = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thanh toán</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phương thức thanh toán</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
               </tr>
             </thead>
@@ -255,7 +250,7 @@ const OrderReport = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600">
-                      ₫{order.totalAmount.toLocaleString()}
+                      {(order.originalAmount ?? order.totalAmount).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
@@ -274,6 +269,9 @@ const OrderReport = () => {
                         {order.paymentStatus}
                       </span>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán qua VNPay'}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(order.createdAt).toLocaleString("vi-VN")}
                     </td>
@@ -281,7 +279,7 @@ const OrderReport = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     Không có dữ liệu phù hợp với bộ lọc
                   </td>
                 </tr>
