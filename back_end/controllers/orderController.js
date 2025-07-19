@@ -9,6 +9,11 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+    // Validate address format
+    if (!address.fullAddress && (!address.province || !address.district || !address.ward || !address.detail)) {
+      return res.status(400).json({ message: "Invalid address format" });
+    }
+
     let originalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     let totalAmount = originalAmount;
     let discount = 0;

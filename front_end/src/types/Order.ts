@@ -10,10 +10,11 @@ export interface CartItem {
 }
 
 export interface Address {
-  province: string;
-  district: string;
-  ward: string;
-  detail: string;
+  fullAddress?: string; // Địa chỉ đầy đủ từ user
+  province?: string;
+  district?: string;
+  ward?: string;
+  detail?: string;
 }
 
 export interface ShippingInfo {

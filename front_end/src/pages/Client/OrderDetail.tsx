@@ -221,7 +221,11 @@ const OrderDetail = () => {
             <div className="space-y-2 text-gray-700 text-sm">
               <p><strong>Họ và tên:</strong> {order.fullName}</p>
               <p><strong>Số điện thoại:</strong> {order.phone}</p>
-              <p><strong>Địa chỉ:</strong> {order.address.detail}, {order.address.ward}, {order.address.district}, {order.address.province}</p>
+              <p><strong>Địa chỉ:</strong> {
+                order.address.fullAddress 
+                  ? order.address.fullAddress 
+                  : `${order.address.detail}, ${order.address.ward}, ${order.address.district}, ${order.address.province}`
+              }</p>
               <p><strong>Phương thức thanh toán:</strong> {getPaymentMethodText(order.paymentMethod)}</p>
             </div>
           </div>

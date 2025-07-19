@@ -5,10 +5,11 @@ const orderSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
   phone: { type: String, required: true },
   address: {
-    province: { type: String, required: true },
-    district: { type: String, required: true },
-    ward: { type: String, required: true },
-    detail: { type: String, required: true },
+    fullAddress: { type: String }, // Địa chỉ đầy đủ từ user
+    province: { type: String }, // Tỉnh/Thành phố
+    district: { type: String }, // Quận/Huyện
+    ward: { type: String }, // Phường/Xã
+    detail: { type: String }, // Địa chỉ chi tiết
   },
     paymentStatus: { 
     type: String, 

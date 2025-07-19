@@ -84,7 +84,7 @@ const DetailOrder = () => {
     }
 
     if (!validateStatusTransition(orderData.order.orderStatus, newStatus)) {
-      setStatusError('Không thể chuyển từ trạng thái hiện tại sang trạng thái này. Vui lòng cập nhật theo thứ tự: Chờ xử lý → Đã xử lý → Đang giao hàng → Đã giao hàng → Đã nhận hàng');
+      setStatusError('Không thể chuyển từ trạng thái hiện tại sang trạng thái này. Chỉ có thể chuyển lên trạng thái tiếp theo hoặc hủy đơn hàng.');
       return;
     }
 
@@ -260,12 +260,13 @@ const DetailOrder = () => {
     const currentIndex = statusOrder.indexOf(currentStatus);
     const newIndex = statusOrder.indexOf(newStatus);
 
+    // Cho phép giữ nguyên trạng thái hiện tại
     if (currentIndex === newIndex) return true;
 
+    // Chỉ cho phép chuyển lên trạng thái tiếp theo
     if (newIndex === currentIndex + 1) return true;
 
-    if (newIndex === currentIndex - 1) return true;
-
+    // Cho phép hủy đơn hàng
     if (newStatus === 'Đã huỷ đơn hàng') return true;
 
     return false;
@@ -291,16 +292,14 @@ const DetailOrder = () => {
     const currentIndex = statusOrder.indexOf(currentStatus);
     const availableStatuses = [];
 
+    // Chỉ hiển thị trạng thái hiện tại và trạng thái tiếp theo
     availableStatuses.push(currentStatus);
 
     if (currentIndex < statusOrder.length - 1) {
       availableStatuses.push(statusOrder[currentIndex + 1]);
     }
 
-    if (currentIndex > 0) {
-      availableStatuses.push(statusOrder[currentIndex - 1]);
-    }
-
+    // Thêm các trạng thái đặc biệt
     if (canCancelOrder(currentStatus)) {
       availableStatuses.push('Đã huỷ đơn hàng');
     }
@@ -440,7 +439,10 @@ const DetailOrder = () => {
           <span role="img" aria-label="address">📍</span> Địa chỉ giao hàng
         </h3>
         <div className="text-gray-700">
-          {order.address.detail}, {order.address.ward}, {order.address.district}, {order.address.province}
+          {order.address.fullAddress 
+            ? order.address.fullAddress 
+            : `${order.address.detail}, ${order.address.ward}, ${order.address.district}, ${order.address.province}`
+          }
         </div>
       </div>
 
@@ -535,7 +537,7 @@ const DetailOrder = () => {
                 Trạng thái mới
               </label>
               <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-                <span role="img" aria-label="info">ℹ️</span> Quy tắc: Chờ xử lý → Đã xử lý → Đang giao hàng → Đã giao hàng → Đã nhận hàng
+                <span role="img" aria-label="info">ℹ️</span> Quy tắc: Chỉ có thể chuyển lên trạng thái tiếp theo. Không thể quay lại trạng thái trước đó.
               </div>
               {orderData?.order.paymentMethod === 'vnpay' && (
                 <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">

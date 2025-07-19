@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { type Province, type District, type Ward } from "sub-vn";
 import AddressSelector from "../../components/AddressSelector";
 import axios from "axios";
+import { getProvinces, getDistrictsByProvinceCode, getWardsByDistrictCode } from "sub-vn";
 
 interface CartItem {
   id: string;
@@ -37,10 +38,58 @@ const Checkout = () => {
   const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
   const [voucherError, setVoucherError] = useState<string>("");
   const [discount, setDiscount] = useState(0);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [userAddress, setUserAddress] = useState<string>("");
 
   const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   const shippingFee = 0;
   const total = subtotal + shippingFee - discount;
+
+  // Function để parse địa chỉ từ string
+  const parseAddressFromString = (addressString: string) => {
+    if (!addressString) return null;
+    
+    const provinces = getProvinces();
+    
+    // Tìm province
+    const province = provinces.find(p => 
+      addressString.includes(p.name) || 
+      addressString.includes(p.name.replace(/^(Tỉnh|Thành phố)\s*/, ""))
+    );
+    
+    if (!province) return null;
+    
+    const districts = getDistrictsByProvinceCode(province.code);
+    
+    // Tìm district
+    const district = districts.find(d => 
+      addressString.includes(d.name) || 
+      addressString.includes(d.name.replace(/^(Quận|Huyện|Thị xã)\s*/, ""))
+    );
+    
+    if (!district) return null;
+    
+    const wards = getWardsByDistrictCode(district.code);
+    
+    // Tìm ward
+    const ward = wards.find(w => 
+      addressString.includes(w.name) || 
+      addressString.includes(w.name.replace(/^(Phường|Xã|Thị trấn)\s*/, ""))
+    );
+    
+    if (!ward) return null;
+    
+    // Tìm địa chỉ chi tiết (phần còn lại)
+    const addressParts = addressString.split(',');
+    const detail = addressParts[0]?.trim() || "";
+    
+    return {
+      province,
+      district,
+      ward,
+      detail
+    };
+  };
 
   const parseCartItem = (item: any): CartItem => ({
     id: `${item._id || item.variantId}-${item.selectedScent}-${item.selectedVolume}`,
@@ -62,6 +111,20 @@ const Checkout = () => {
       setUserInfo(parsedUser);
       setFullName(parsedUser.username || "");
       setPhone(parsedUser.phone || "");
+      setUserAddress(parsedUser.address || "");
+      
+      // Nếu có địa chỉ từ user, parse và set vào form
+      if (parsedUser.address) {
+        const parsedAddress = parseAddressFromString(parsedUser.address);
+        if (parsedAddress) {
+          setAddress({
+            province: parsedAddress.province,
+            district: parsedAddress.district,
+            ward: parsedAddress.ward
+          });
+          setDetailAddress(parsedAddress.detail);
+        }
+      }
     }
 
     const buyNowRaw = localStorage.getItem("buyNowItem");
@@ -141,6 +204,11 @@ const Checkout = () => {
   const { province: selectedProvince, district: selectedDistrict, ward: selectedWard } = address;
 
   const isFormValid = () => {
+    // Nếu có địa chỉ từ user và không đang chỉnh sửa, chỉ cần kiểm tra thông tin cơ bản
+    if (userAddress && !showAddressForm) {
+      return fullName && phone && cartItems.length > 0;
+    }
+    // Nếu đang chỉnh sửa địa chỉ hoặc không có địa chỉ sẵn, kiểm tra đầy đủ
     return fullName && phone && selectedProvince && selectedDistrict && selectedWard && detailAddress && cartItems.length > 0;
   };
 
@@ -168,16 +236,32 @@ const Checkout = () => {
     setIsLoading(true);
 
     try {
-      const orderPayload = {
-        userId: userInfo._id,
-        fullName,
-        phone,
-        address: {
+      // Xác định địa chỉ giao hàng
+      let deliveryAddress;
+      if (userAddress && !showAddressForm) {
+        // Sử dụng địa chỉ từ user
+        deliveryAddress = {
+          fullAddress: userAddress,
+          province: "",
+          district: "",
+          ward: "",
+          detail: "",
+        };
+      } else {
+        // Sử dụng địa chỉ đã chỉnh sửa
+        deliveryAddress = {
           province: selectedProvince?.name,
           district: selectedDistrict?.name,
           ward: selectedWard?.name,
           detail: detailAddress,
-        },
+        };
+      }
+
+      const orderPayload = {
+        userId: userInfo._id,
+        fullName,
+        phone,
+        address: deliveryAddress,
         items: cartItems.map((item) => ({
           name: item.name,
           price: item.price,
@@ -264,11 +348,11 @@ const Checkout = () => {
 
             <div className="p-6 space-y-6">
               <div className="space-y-4">
-                <h3 className="text-md font-medium text-gray-700">Thông tin người nhận</h3>
+                <h3 className="text-md font-medium text-gray-700">👤 Thông tin người nhận</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Họ tên <span className="text-red-500">*</span>
+                      📛 Họ và tên <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -281,7 +365,7 @@ const Checkout = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Số điện thoại <span className="text-red-500">*</span>
+                      📱 Số điện thoại <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="tel"
@@ -295,31 +379,111 @@ const Checkout = () => {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-md font-medium text-gray-700">Địa chỉ giao hàng</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tỉnh/Thành phố, Quận/Huyện, Phường/Xã <span className="text-red-500">*</span>
-                    </label>
-                    <AddressSelector value={address} onChange={setAddress} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Địa chỉ chi tiết <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={detailAddress}
-                      onChange={(e) => setDetailAddress(e.target.value)}
-                      placeholder="Tên đường, Toà nhà, Số nhà."
-                      className="w-full p-3 border border-gray-300 rounded-md"
-                    />
-                  </div>
-                </div>
+                <h3 className="text-md font-medium text-gray-700">📦 Địa chỉ giao hàng</h3>
+                
+                {!showAddressForm && userAddress && (
+                  <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-2"><strong>🏠 Địa chỉ hiện tại:</strong></p>
+                        <p className="text-sm text-gray-800">{userAddress}</p>
+                      </div>
+                      <button
+                        onClick={() => setShowAddressForm(true)}
+                        className="text-sm font-medium text-[#5f518e] hover:text-white hover:bg-[#5f518e] border border-[#5f518e] rounded-full px-3 py-1 transition-colors duration-200"
+                      >
+                        ✏️ Thay đổi
+                      </button>
 
-                {detailAddress && selectedWard && selectedDistrict && selectedProvince && (
+                    </div>
+                  </div>
+                )}
+
+                {showAddressForm && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-l text-gray-600">📝 Chỉnh sửa địa chỉ giao hàng</span>
+                      <button
+                        onClick={() => {
+                          setShowAddressForm(false);
+                          // Reset về địa chỉ ban đầu nếu có
+                          if (userAddress) {
+                            const parsedAddress = parseAddressFromString(userAddress);
+                            if (parsedAddress) {
+                              setAddress({
+                                province: parsedAddress.province,
+                                district: parsedAddress.district,
+                                ward: parsedAddress.ward
+                              });
+                              setDetailAddress(parsedAddress.detail);
+                            }
+                          }
+                        }}
+                        className="text-sm font-medium text-[#5f518e] hover:text-white hover:bg-[#5f518e] border border-[#5f518e] rounded-full px-3 py-1 transition-colors duration-200"
+                      >
+                        ❌ Hủy
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          🗺️ Tỉnh/Thành phố, Quận/Huyện, Phường/Xã <span className="text-red-500">*</span>
+                        </label>
+
+                        <AddressSelector value={address} onChange={setAddress} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          🏡 Địa chỉ chi tiết <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={detailAddress}
+                          onChange={(e) => setDetailAddress(e.target.value)}
+                          placeholder="Tên đường, Toà nhà, Số nhà."
+                          className="w-full p-3 border border-gray-300 rounded-md"
+                        />
+                      </div>
+                    </div>
+
+                    {detailAddress && selectedWard && selectedDistrict && selectedProvince && (
+                      <div className="mt-4 p-4 bg-gray-50 rounded-md">
+                        <p className="text-sm text-gray-600"><strong>Địa chỉ giao hàng:</strong></p>
+                        <p className="text-sm text-gray-800 mt-1">
+                          {detailAddress}, {selectedWard.name}, {selectedDistrict.name}, {selectedProvince.name}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!showAddressForm && !userAddress && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        🗺️ Tỉnh/Thành phố, Quận/Huyện, Phường/Xã <span className="text-red-500">*</span>
+                      </label>
+                      <AddressSelector value={address} onChange={setAddress} />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        🏡 Địa chỉ chi tiết <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={detailAddress}
+                        onChange={(e) => setDetailAddress(e.target.value)}
+                        placeholder="Tên đường, Toà nhà, Số nhà."
+                        className="w-full p-3 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {!showAddressForm && !userAddress && detailAddress && selectedWard && selectedDistrict && selectedProvince && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-md">
-                    <p className="text-sm text-gray-600"><strong>Địa chỉ giao hàng:</strong></p>
+                    <p className="text-sm text-gray-600"><strong>📬Địa chỉ giao hàng:</strong></p>
                     <p className="text-sm text-gray-800 mt-1">
                       {detailAddress}, {selectedWard.name}, {selectedDistrict.name}, {selectedProvince.name}
                     </p>
@@ -328,7 +492,7 @@ const Checkout = () => {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-md font-medium text-gray-700">Phương thức thanh toán</h3>
+                <h3 className="text-md font-medium text-gray-700">💳 Phương thức thanh toán</h3>
                 <div className="space-y-3">
                   <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
                     <input
@@ -339,7 +503,7 @@ const Checkout = () => {
                       className="w-4 h-4"
                     />
                     <div className="ml-3">
-                      <span className="text-gray-700 font-medium">Thanh toán khi nhận hàng (COD)</span>
+                      <span className="text-gray-700 font-medium">💵 Thanh toán khi nhận hàng (COD)</span>
                     </div>
                   </label>
 
@@ -352,7 +516,7 @@ const Checkout = () => {
                       className="w-4 h-4"
                     />
                     <div className="ml-3">
-                      <span className="text-gray-700 font-medium">Thanh toán online (VNPAY)</span>
+                      <span className="text-gray-700 font-medium">💳 Thanh toán online (VNPAY)</span>
                     </div>
                   </label>
                 </div>
