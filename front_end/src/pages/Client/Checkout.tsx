@@ -45,13 +45,11 @@ const Checkout = () => {
   const shippingFee = 0;
   const total = subtotal + shippingFee - discount;
 
-  // Function để parse địa chỉ từ string
   const parseAddressFromString = (addressString: string) => {
     if (!addressString) return null;
     
     const provinces = getProvinces();
     
-    // Tìm province
     const province = provinces.find(p => 
       addressString.includes(p.name) || 
       addressString.includes(p.name.replace(/^(Tỉnh|Thành phố)\s*/, ""))
@@ -61,7 +59,6 @@ const Checkout = () => {
     
     const districts = getDistrictsByProvinceCode(province.code);
     
-    // Tìm district
     const district = districts.find(d => 
       addressString.includes(d.name) || 
       addressString.includes(d.name.replace(/^(Quận|Huyện|Thị xã)\s*/, ""))
@@ -71,7 +68,6 @@ const Checkout = () => {
     
     const wards = getWardsByDistrictCode(district.code);
     
-    // Tìm ward
     const ward = wards.find(w => 
       addressString.includes(w.name) || 
       addressString.includes(w.name.replace(/^(Phường|Xã|Thị trấn)\s*/, ""))
@@ -79,7 +75,6 @@ const Checkout = () => {
     
     if (!ward) return null;
     
-    // Tìm địa chỉ chi tiết (phần còn lại)
     const addressParts = addressString.split(',');
     const detail = addressParts[0]?.trim() || "";
     
@@ -113,7 +108,6 @@ const Checkout = () => {
       setPhone(parsedUser.phone || "");
       setUserAddress(parsedUser.address || "");
       
-      // Nếu có địa chỉ từ user, parse và set vào form
       if (parsedUser.address) {
         const parsedAddress = parseAddressFromString(parsedUser.address);
         if (parsedAddress) {
@@ -187,7 +181,6 @@ const Checkout = () => {
       setDiscount(0);
       return;
     }
-    // Nếu hợp lệ
     setVoucherError("");
     let d = 0;
     if (selectedVoucher.discountType === "percent") {
@@ -204,15 +197,12 @@ const Checkout = () => {
   const { province: selectedProvince, district: selectedDistrict, ward: selectedWard } = address;
 
   const isFormValid = () => {
-    // Nếu có địa chỉ từ user và không đang chỉnh sửa, chỉ cần kiểm tra thông tin cơ bản
     if (userAddress && !showAddressForm) {
       return fullName && phone && cartItems.length > 0;
     }
-    // Nếu đang chỉnh sửa địa chỉ hoặc không có địa chỉ sẵn, kiểm tra đầy đủ
     return fullName && phone && selectedProvince && selectedDistrict && selectedWard && detailAddress && cartItems.length > 0;
   };
 
-  // Lấy voucher khi mở modal
   const fetchVouchers = async () => {
     try {
       const res = await axios.get("http://localhost:3000/voucher");
@@ -236,10 +226,8 @@ const Checkout = () => {
     setIsLoading(true);
 
     try {
-      // Xác định địa chỉ giao hàng
       let deliveryAddress;
       if (userAddress && !showAddressForm) {
-        // Sử dụng địa chỉ từ user
         deliveryAddress = {
           fullAddress: userAddress,
           province: "",
@@ -248,7 +236,6 @@ const Checkout = () => {
           detail: "",
         };
       } else {
-        // Sử dụng địa chỉ đã chỉnh sửa
         deliveryAddress = {
           province: selectedProvince?.name,
           district: selectedDistrict?.name,
@@ -290,23 +277,18 @@ const Checkout = () => {
       const orderId = orderResult.orderId;
 
       if (paymentMethod === "vnpay") {
-        // Lưu lại danh sách sản phẩm đã đặt để xử lý sau khi thanh toán VNPAY thành công
         localStorage.setItem("lastOrderedItems", JSON.stringify(cartItems));
         const paymentRes = await fetch(`http://localhost:3000/payment/create_payment?amount=${total}&orderId=${orderId}`);
         const paymentData = await paymentRes.json();
         window.location.href = paymentData.paymentUrl;
       } else {
-        // Lấy cart hiện tại
         const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-        // Lọc ra các sản phẩm chưa được đặt
         const updatedCart = cart.filter(
           (cartItem: any) => !cartItems.some((ordered) => ordered.id === cartItem.id)
         );
-        // Ghi lại vào localStorage
         localStorage.setItem("cart", JSON.stringify(updatedCart));
         localStorage.removeItem("buyNowItem");
 
-        // Nếu có user đăng nhập, xóa từng sản phẩm đã đặt khỏi giỏ hàng server
         if (userInfo && userInfo._id) {
           for (const item of cartItems) {
             if (item.variantId) {
@@ -352,7 +334,7 @@ const Checkout = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      📛 Họ và tên <span className="text-red-500">*</span>
+                      Họ và tên <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -365,7 +347,7 @@ const Checkout = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      📱 Số điện thoại <span className="text-red-500">*</span>
+                      Số điện thoại <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="tel"
@@ -385,14 +367,14 @@ const Checkout = () => {
                   <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="text-sm text-gray-600 mb-2"><strong>🏠 Địa chỉ hiện tại:</strong></p>
+                        <p className="text-sm text-gray-600 mb-2"><strong>Địa chỉ hiện tại:</strong></p>
                         <p className="text-sm text-gray-800">{userAddress}</p>
                       </div>
                       <button
                         onClick={() => setShowAddressForm(true)}
                         className="text-sm font-medium text-[#5f518e] hover:text-white hover:bg-[#5f518e] border border-[#5f518e] rounded-full px-3 py-1 transition-colors duration-200"
                       >
-                        ✏️ Thay đổi
+                        Thay đổi
                       </button>
 
                     </div>
@@ -402,11 +384,10 @@ const Checkout = () => {
                 {showAddressForm && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-l text-gray-600">📝 Chỉnh sửa địa chỉ giao hàng</span>
+                      <span className="text-l text-gray-600">Chỉnh sửa địa chỉ giao hàng</span>
                       <button
                         onClick={() => {
                           setShowAddressForm(false);
-                          // Reset về địa chỉ ban đầu nếu có
                           if (userAddress) {
                             const parsedAddress = parseAddressFromString(userAddress);
                             if (parsedAddress) {
@@ -421,7 +402,7 @@ const Checkout = () => {
                         }}
                         className="text-sm font-medium text-[#5f518e] hover:text-white hover:bg-[#5f518e] border border-[#5f518e] rounded-full px-3 py-1 transition-colors duration-200"
                       >
-                        ❌ Hủy
+                        Hủy
                       </button>
                     </div>
                     
@@ -525,7 +506,6 @@ const Checkout = () => {
           </div>
         </div>
 
-        {/* Đơn hàng */}
         <div className="lg:w-1/3">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 sticky top-6">
             <div className="px-6 py-4 border-b border-gray-200">
