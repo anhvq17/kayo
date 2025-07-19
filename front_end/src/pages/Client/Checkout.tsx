@@ -33,17 +33,18 @@ const Checkout = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   const parseCartItem = (item: any): CartItem => ({
-    id: `${item._id || item.variantId}-${item.selectedScent}-${item.selectedVolume}`,
-    name: item.name,
-    price: item.price,
-    quantity: item.quantity,
-    volume: item.selectedVolume || item.volume || "",
-    fragrance: item.selectedScent || item.fragrance || "",
-    image: typeof item.image === "string"
-      ? { src: item.image, width: 100, height: 100 }
-      : item.image,
-    variantId: item.variantId || item._id,
-  });
+  id: `${item._id || item.variantId?._id || item.variantId}-${item.selectedScent}-${item.selectedVolume}`,
+  name: item.name,
+  price: item.price,
+  quantity: item.quantity,
+  volume: item.selectedVolume || item.volume || "",
+  fragrance: item.selectedScent || item.fragrance || "",
+  image: typeof item.image === "string"
+    ? { src: item.image, width: 100, height: 100 }
+    : item.image,
+  variantId: item.variantId?._id || item.variantId || item._id,
+});
+
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -90,6 +91,18 @@ const Checkout = () => {
   const discount = 0;
   const total = subtotal + shippingFee - discount;
 
+  const removeOrderedItemsFromCart = async (userId: string, variantIds: string[]) => {
+    try {
+      await fetch("http://localhost:3000/cart/remove-ordered", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, variantIds }),
+      });
+    } catch (error) {
+      console.error("Lỗi khi xoá sản phẩm khỏi giỏ hàng:", error);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!isFormValid()) {
       alert("Vui lòng điền đầy đủ thông tin!");
@@ -132,9 +145,7 @@ const Checkout = () => {
         body: JSON.stringify(orderPayload),
       });
 
-      if (!response.ok) {
-        throw new Error("Tạo đơn hàng thất bại");
-      }
+      if (!response.ok) throw new Error("Tạo đơn hàng thất bại");
 
       const orderResult = await response.json();
       const orderId = orderResult.orderId;
@@ -144,8 +155,13 @@ const Checkout = () => {
         const paymentData = await paymentRes.json();
         window.location.href = paymentData.paymentUrl;
       } else {
+        // ✅ Xóa giỏ hàng ở local + backend
         localStorage.removeItem("cart");
         localStorage.removeItem("buyNowItem");
+
+        const variantIds = cartItems.map((item) => item.variantId!).filter(Boolean);
+        await removeOrderedItemsFromCart(userInfo._id, variantIds);
+
         window.location.href = `ordersuccessfully?orderId=${orderId}`;
       }
     } catch (error) {
@@ -302,7 +318,7 @@ const Checkout = () => {
                       </div>
                       <div className="text-right text-sm">
                         <p className="font-semibold text-gray-800">
-                          {(item.price * item.quantity).toLocaleString("vi-VN")}
+                          {(item.price * item.quantity).toLocaleString("vi-VN")}₫
                         </p>
                         <p className="text-sm text-gray-500">x{item.quantity}</p>
                       </div>
@@ -312,7 +328,7 @@ const Checkout = () => {
                   <div className="border-t border-gray-200 pt-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Tạm tính</span>
-                      <span className="text-gray-800 font-medium">{subtotal.toLocaleString("vi-VN")}</span>
+                      <span className="text-gray-800 font-medium">{subtotal.toLocaleString("vi-VN")}₫</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Phí vận chuyển</span>
@@ -320,14 +336,14 @@ const Checkout = () => {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Giảm giá</span>
-                      <span className="text-gray-800 font-medium">{discount.toLocaleString("vi-VN")}</span>
+                      <span className="text-gray-800 font-medium">{discount.toLocaleString("vi-VN")}₫</span>
                     </div>
                   </div>
 
                   <div className="border-t border-gray-200 pt-4">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-bold text-red-500">Tổng tiền</span>
-                      <span className="text-lg font-bold text-red-500">{total.toLocaleString("vi-VN")}</span>
+                      <span className="text-lg font-bold text-red-500">{total.toLocaleString("vi-VN")}₫</span>
                     </div>
                   </div>
 
