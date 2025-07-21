@@ -155,20 +155,20 @@ const ClientHeader = () => {
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center px-4 py-2 text-sm hover:bg-gray-100"
                   >
-                    <i className="fas fa-user w-4 h-4 mr-2" /> Tài khoản
+                    <i className="fas fa-user w-4 h-4 mr-2 mt-1" /> Tài khoản
                   </Link>
                   <Link
                     to="/orders"
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center px-4 py-2 text-sm hover:bg-gray-100"
                   >
-                    <i className="fas fa-shopping-cart w-4 h-4 mr-2" /> Đơn hàng
+                    <i className="fas fa-box w-4 h-4 mr-2 mt-1" /> Đơn hàng
                   </Link>
                   <button
                     onClick={handleLogout}
                     className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100"
                   >
-                    <i className="fas fa-sign-out-alt w-4 h-4 mr-2" /> Đăng xuất
+                    <i className="fas fa-sign-out-alt w-4 h-4 mr-2 mt-1" /> Đăng xuất
                   </button>
                 </div>
               )}

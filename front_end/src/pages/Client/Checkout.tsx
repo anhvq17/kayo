@@ -592,7 +592,7 @@ const Checkout = () => {
                       <span className="text-gray-600">Giảm giá</span>
                       <span className="text-red-500 font-medium">
                         {selectedVoucher && selectedVoucher.discountType === 'percent'
-                          ? `-${selectedVoucher.discountValue}%`
+                          ? `-${discount.toLocaleString("vi-VN")}`
                           : `-${discount.toLocaleString("vi-VN")}`}
                       </span>
                     </div>
