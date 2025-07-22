@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 type Voucher = {
@@ -41,10 +41,8 @@ const Voucher = () => {
 
   return (
     <div className="bg-gray-100 font-sans min-h-screen">
-      {/* Filter & Search */}
       <section className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          {/* Search */}
           <div className="w-full md:w-1/3">
             <input
               type="text"
@@ -53,31 +51,26 @@ const Voucher = () => {
             />
           </div>
 
-          {/* Filters */}
           <div className="flex gap-4 flex-wrap">
             <select className="p-3 rounded-lg border border-gray-300">
               <option>Loại mã</option>
-              <option>Giảm giá %</option>
+              <option>Giảm phần trăm</option>
               <option>Giảm tiền mặt</option>
-              <option>Freeship</option>
             </select>
             <select className="p-3 rounded-lg border border-gray-300">
               <option>Thời gian hết hạn</option>
               <option>Còn hiệu lực</option>
-              <option>Sắp hết hạn</option>
+              <option>Hết hạn</option>
             </select>
             <select className="p-3 rounded-lg border border-gray-300">
               <option>Danh mục sản phẩm</option>
-              <option>iPhone</option>
-              <option>iPad</option>
-              <option>MacBook</option>
-              <option>Phụ kiện</option>
+              <option>Nam</option>
+              <option>Nữ</option>
             </select>
           </div>
         </div>
       </section>
 
-      {/* Vouchers */}
       <section className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {vouchers.map((voucher) => {
           const expired = isExpired(voucher.endDate);
@@ -106,7 +99,7 @@ const Voucher = () => {
                   {voucher.discountType === "percent"
                     ? `Giảm ${voucher.discountValue}%`
                     : voucher.discountType === "fixed"
-                    ? `Giảm ${voucher.discountValue.toLocaleString("vi-VN")}đ`
+                    ? `Giảm ${voucher.discountValue.toLocaleString("vi-VN")}`
                     : `Freeship toàn quốc`}
                 </h3>
               </div>
@@ -118,12 +111,12 @@ const Voucher = () => {
 
               {voucher.maxDiscountValue && voucher.discountType === "percent" && (
                 <p className="text-gray-700 mt-1">
-                  Giảm tối đa: {voucher.maxDiscountValue.toLocaleString("vi-VN")}đ
+                  Giảm tối đa: {voucher.maxDiscountValue.toLocaleString("vi-VN")}
                 </p>
               )}
 
               <p className="text-gray-700 mt-1">
-                Đơn tối thiểu: {voucher.minOrderValue.toLocaleString("vi-VN")}đ
+                Đơn tối thiểu: {voucher.minOrderValue.toLocaleString("vi-VN")}
               </p>
 
               <p className="text-gray-500 text-sm mt-1">

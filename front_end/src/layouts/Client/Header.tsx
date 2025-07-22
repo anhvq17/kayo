@@ -181,14 +181,12 @@ const ClientHeader = () => {
 
           <div className="h-5 border-l border-gray-300" />
 
-          {/* Icon mã giảm giá */}
           <Link to="/vouchers" className="hover:text-gray-600">
-            <i className="fas fa-ticket text-base"></i>
+            <i className="fas fa-ticket text-lg"></i>
           </Link>
 
           <div className="h-5 border-l border-gray-300" />
 
-          {/* Icon giỏ hàng */}
           <Link to="/cart" className="relative hover:text-gray-600">
             <i className="fas fa-cart-shopping text-lg"></i>
             {cartItemTypes > 0 && (

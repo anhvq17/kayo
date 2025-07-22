@@ -100,7 +100,7 @@ const DetailVoucher = () => {
             <p className="text-lg text-gray-900 font-medium">
               {voucher.discountType === "percent"
                 ? `${voucher.discountValue}%`
-                : `${voucher.discountValue.toLocaleString("vi-VN")}đ`}
+                : `${voucher.discountValue.toLocaleString("vi-VN")}`}
             </p>
           </div>
 
@@ -110,7 +110,7 @@ const DetailVoucher = () => {
             </p>
             <p className="text-lg text-gray-900 font-medium">
               {voucher.maxDiscountValue
-                ? `${voucher.maxDiscountValue.toLocaleString("vi-VN")}đ`
+                ? `${voucher.maxDiscountValue.toLocaleString("vi-VN")}`
                 : "Không giới hạn"}
             </p>
           </div>
@@ -120,7 +120,7 @@ const DetailVoucher = () => {
               Giá trị đơn hàng tối thiểu
             </p>
             <p className="text-lg text-gray-900 font-medium">
-              {voucher.minOrderValue.toLocaleString("vi-VN")}đ
+              {voucher.minOrderValue.toLocaleString("vi-VN")}
             </p>
           </div>
 
