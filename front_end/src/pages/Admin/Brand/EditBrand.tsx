@@ -49,17 +49,16 @@ const EditBrand = () => {
     try {
       let imageUrl = oldImage;
 
-      // Nếu user chọn file ảnh mới thì upload lên Cloudinary
       const fileInput = watch("image") as unknown as FileList;
       const file = fileInput?.[0];
 
       if (file instanceof File) {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("upload_preset", "DATN_upload"); // ✅ Preset thật của bạn
+        formData.append("upload_preset", "DATN_upload");
 
         const cloudRes = await axios.post(
-          "https://api.cloudinary.com/v1_1/dvourchjx/image/upload", // ✅ Cloud name thật
+          "https://api.cloudinary.com/v1_1/dvourchjx/image/upload",
           formData
         );
 
@@ -90,7 +89,7 @@ const EditBrand = () => {
   return (
     <div className="max-w-3xl mx-auto px-6 py-10 bg-white shadow-xl rounded-xl mt-8">
       <h1 className="text-3xl font-semibold text-gray-800 mb-8 text-center">
-        ✏️ Sửa Thương Hiệu
+        Sửa Thương Hiệu
       </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -140,13 +139,13 @@ const EditBrand = () => {
             onClick={() => nav("/admin/brands")}
             className="bg-gray-300 text-gray-800 font-medium px-5 py-2 rounded-lg hover:bg-gray-400 transition"
           >
-            🔙 Quay lại
+            Quay lại
           </button>
           <button
             type="submit"
             className="bg-green-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-green-700 transition"
           >
-            💾 Cập nhật thương hiệu
+            Cập nhật thương hiệu
           </button>
         </div>
       </form>

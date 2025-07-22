@@ -1,7 +1,6 @@
 import Cart from '../models/CartModel.js';
 import mongoose from 'mongoose';
 
-// 🛒 Thêm sản phẩm vào giỏ
 export const addToCart = async (req, res) => {
   try {
     const {
@@ -42,7 +41,6 @@ export const addToCart = async (req, res) => {
   }
 };
 
-// 🗑️ Xóa 1 sản phẩm khỏi giỏ
 export const removeFromCart = async (req, res) => {
   try {
     const { userId, variantId } = req.body;
@@ -59,13 +57,12 @@ export const removeFromCart = async (req, res) => {
   }
 };
 
-// 📦 Xem toàn bộ giỏ hàng của người dùng
 export const getCart = async (req, res) => {
   try {
     const { userId } = req.params;
 
     const items = await Cart.find({ userId })
-      .populate('variantId') // Chỉ cần nếu variantId là ref đến một model
+      .populate('variantId')
       .sort({ updatedAt: -1 });
 
     res.status(200).json({ cart: items });
@@ -99,7 +96,6 @@ export const updateCartItemQuantity = async (req, res) => {
   }
 };
 
-// ❌ Xoá toàn bộ giỏ hàng của user
 export const clearCartByUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -111,7 +107,6 @@ export const clearCartByUser = async (req, res) => {
   }
 };
 
-// ❓ Kiểm tra giỏ hàng có trống không
 export const isCartEmpty = async (req, res) => {
   try {
     const { userId } = req.params;

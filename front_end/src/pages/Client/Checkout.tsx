@@ -330,7 +330,7 @@ const Checkout = () => {
 
             <div className="p-6 space-y-6">
               <div className="space-y-4">
-                <h3 className="text-md font-medium text-gray-700">👤 Thông tin người nhận</h3>
+                <h3 className="text-base font-bold text-gray-700">Thông tin người nhận</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -361,7 +361,7 @@ const Checkout = () => {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-md font-medium text-gray-700">📦 Địa chỉ giao hàng</h3>
+                <h3 className="text-base font-bold text-gray-700">Địa chỉ giao hàng</h3>
                 
                 {!showAddressForm && userAddress && (
                   <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
@@ -409,14 +409,14 @@ const Checkout = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          🗺️ Tỉnh/Thành phố, Quận/Huyện, Phường/Xã <span className="text-red-500">*</span>
+                          Tỉnh/Thành phố, Quận/Huyện, Phường/Xã <span className="text-red-500">*</span>
                         </label>
 
                         <AddressSelector value={address} onChange={setAddress} />
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          🏡 Địa chỉ chi tiết <span className="text-red-500">*</span>
+                          Địa chỉ chi tiết <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
@@ -443,13 +443,13 @@ const Checkout = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        🗺️ Tỉnh/Thành phố, Quận/Huyện, Phường/Xã <span className="text-red-500">*</span>
+                        Tỉnh/Thành phố, Quận/Huyện, Phường/Xã <span className="text-red-500">*</span>
                       </label>
                       <AddressSelector value={address} onChange={setAddress} />
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        🏡 Địa chỉ chi tiết <span className="text-red-500">*</span>
+                        Địa chỉ chi tiết <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -464,7 +464,7 @@ const Checkout = () => {
 
                 {!showAddressForm && !userAddress && detailAddress && selectedWard && selectedDistrict && selectedProvince && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-md">
-                    <p className="text-sm text-gray-600"><strong>📬Địa chỉ giao hàng:</strong></p>
+                    <p className="text-sm text-gray-600"><strong>Địa chỉ giao hàng:</strong></p>
                     <p className="text-sm text-gray-800 mt-1">
                       {detailAddress}, {selectedWard.name}, {selectedDistrict.name}, {selectedProvince.name}
                     </p>
@@ -473,7 +473,7 @@ const Checkout = () => {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-md font-medium text-gray-700">💳 Phương thức thanh toán</h3>
+                <h3 className="text-base font-bold text-gray-700">Phương thức thanh toán</h3>
                 <div className="space-y-3">
                   <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
                     <input
@@ -484,7 +484,7 @@ const Checkout = () => {
                       className="w-4 h-4"
                     />
                     <div className="ml-3">
-                      <span className="text-gray-700 font-medium">💵 Thanh toán khi nhận hàng (COD)</span>
+                      <span className="text-gray-700 font-medium">Thanh toán khi nhận hàng (COD)</span>
                     </div>
                   </label>
 
@@ -497,7 +497,7 @@ const Checkout = () => {
                       className="w-4 h-4"
                     />
                     <div className="ml-3">
-                      <span className="text-gray-700 font-medium">💳 Thanh toán online (VNPAY)</span>
+                      <span className="text-gray-700 font-medium">Thanh toán online (VNPAY)</span>
                     </div>
                   </label>
                 </div>
@@ -592,8 +592,8 @@ const Checkout = () => {
                       <span className="text-gray-600">Giảm giá</span>
                       <span className="text-red-500 font-medium">
                         {selectedVoucher && selectedVoucher.discountType === 'percent'
-                          ? `${selectedVoucher.discountValue}%`
-                          : `${discount.toLocaleString("vi-VN")}`}
+                          ? `-${discount.toLocaleString("vi-VN")}`
+                          : `-${discount.toLocaleString("vi-VN")}`}
                       </span>
                     </div>
                     {selectedVoucher && voucherError && (

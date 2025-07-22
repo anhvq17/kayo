@@ -72,7 +72,7 @@ const Cart = () => {
         })
       );
     } catch (err) {
-      console.error("❌ Lỗi khi đồng bộ giỏ hàng:", err);
+      console.error("Lỗi khi đồng bộ giỏ hàng:", err);
     }
   };
 

@@ -2,7 +2,6 @@ import AttributeModel from "../models/AttributeModel.js";
 import AttributeValueModel from "../models/AttributeValueModel.js";
 import { attributeSchema } from "../validations/attribute.js";
 
-// Lấy danh sách attributes chưa bị xóa mềm
 export const getAllAttributes = async (req, res) => {
   try {
     const attributes = await AttributeModel.find({ deletedAt: null })
@@ -41,7 +40,6 @@ export const createAttribute = async (req, res) => {
 
     const { name, attributeCode, description } = req.body;
 
-    // Kiểm tra trùng name
     const nameExists = await AttributeModel.findOne({
       name: name.trim(),
       deletedAt: null,
@@ -53,7 +51,6 @@ export const createAttribute = async (req, res) => {
       });
     }
 
-    // Kiểm tra trùng attributeCode
     const codeExists = await AttributeModel.findOne({
       attributeCode: attributeCode.trim(),
       deletedAt: null,
@@ -101,12 +98,10 @@ export const updateAttribute = async (req, res) => {
   }
 };
 
-// xóa mềm 1 cái
 export const softDeleteAttribute = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Kiểm tra nếu thuộc tính đang có giá trị
     const isUsed = await AttributeValueModel.exists({
       attributeId: id,
       deletedAt: null,
@@ -132,8 +127,6 @@ export const softDeleteAttribute = async (req, res) => {
   }
 };
 
-
-// RESTORE
 export const restoreAttribute = async (req, res) => {
   try {
     const attribute = await AttributeModel.findByIdAndUpdate(req.params.id, {
@@ -148,7 +141,6 @@ export const restoreAttribute = async (req, res) => {
   }
 };
 
-// HARD DELETE
 export const hardDeleteAttribute = async (req, res) => {
   try {
     const attribute = await AttributeModel.findByIdAndDelete(req.params.id);
@@ -164,8 +156,6 @@ export const hardDeleteAttribute = async (req, res) => {
   }
 };
 
-
-// Lấy tất cả attribute đã bị xóa mềm
 export const getTrashedAttributes = async (req, res) => {
   try {
     const trashedAttributes = await AttributeModel.find({ deletedAt: { $ne: null } });
@@ -178,7 +168,6 @@ export const getTrashedAttributes = async (req, res) => {
   }
 };
 
-// Khôi phục nhiều attributes đã bị xóa mềm
 export const restoreManyAttributes = async (req, res) => {
   try {
     const { ids } = req.body;
@@ -237,7 +226,6 @@ export const restoreManyAttributes = async (req, res) => {
 //   }
 // };
 
-// Xóa cứng nhiều attributes đã bị xóa mềm
 export const hardDeleteManyAttributes = async (req, res) => {
   try {
     const { ids } = req.body;

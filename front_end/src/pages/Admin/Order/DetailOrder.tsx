@@ -260,13 +260,10 @@ const DetailOrder = () => {
     const currentIndex = statusOrder.indexOf(currentStatus);
     const newIndex = statusOrder.indexOf(newStatus);
 
-    // Cho phép giữ nguyên trạng thái hiện tại
     if (currentIndex === newIndex) return true;
 
-    // Chỉ cho phép chuyển lên trạng thái tiếp theo
     if (newIndex === currentIndex + 1) return true;
 
-    // Cho phép hủy đơn hàng
     if (newStatus === 'Đã huỷ đơn hàng') return true;
 
     return false;
@@ -292,14 +289,12 @@ const DetailOrder = () => {
     const currentIndex = statusOrder.indexOf(currentStatus);
     const availableStatuses = [];
 
-    // Chỉ hiển thị trạng thái hiện tại và trạng thái tiếp theo
     availableStatuses.push(currentStatus);
 
     if (currentIndex < statusOrder.length - 1) {
       availableStatuses.push(statusOrder[currentIndex + 1]);
     }
 
-    // Thêm các trạng thái đặc biệt
     if (canCancelOrder(currentStatus)) {
       availableStatuses.push('Đã huỷ đơn hàng');
     }
@@ -379,18 +374,18 @@ const DetailOrder = () => {
       </div>
 
       <div className="bg-white p-6 rounded-lg border shadow-sm mb-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <span role="img" aria-label="progress">📊</span>Tiến trình đơn hàng
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+          Tiến trình đơn hàng
         </h3>
         <OrderProgressBar currentStatus={order.orderStatus} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div className="bg-white p-6 rounded-lg border shadow-sm">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <span role="img" aria-label="customer">👤</span> Thông tin khách hàng
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+            Thông tin khách hàng
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-2 text-gray-700 text-sm">
             <div><strong>Tên khách hàng:</strong> {order.fullName}</div>
             <div><strong>Số điện thoại:</strong> {order.phone}</div>
             <div><strong>Email:</strong> {order.userId?.email || 'N/A'}</div>
@@ -398,10 +393,10 @@ const DetailOrder = () => {
         </div>
 
         <div className="bg-white p-6 rounded-lg border shadow-sm">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <span role="img" aria-label="order">📦</span> Thông tin đơn hàng
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+            Thông tin đơn hàng
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-2 text-gray-700 text-sm">
             <div><strong>Ngày đặt hàng:</strong> {new Date(order.createdAt).toLocaleString("vi-VN")}</div>
             <div><strong>Trạng thái:</strong> {getStatusBadge(order.orderStatus)}</div>
             <div><strong>Thanh toán:</strong> {getPaymentBadge(order.paymentStatus)}</div>
@@ -410,9 +405,8 @@ const DetailOrder = () => {
             {order.orderStatus === 'Đã huỷ đơn hàng' && order.cancelReason && (
               <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
                 <div className="flex items-start">
-                  <span className="text-red-600 mr-2">📝</span>
                   <div>
-                    <p className="text-sm font-medium text-red-800 mb-1">Lý do hủy đơn hàng:</p>
+                    <p className="text-sm font-medium text-red-800 mb-1">Lý do hủy:</p>
                     <p className="text-sm text-red-700">{order.cancelReason}</p>
                   </div>
                 </div>
@@ -422,7 +416,6 @@ const DetailOrder = () => {
             {(order.orderStatus === 'Yêu cầu hoàn hàng' || order.orderStatus === 'Đã hoàn hàng' || order.orderStatus === 'Từ chối hoàn hàng') && order.returnReason && (
               <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-md">
                 <div className="flex items-start">
-                  <span className="text-orange-600 mr-2">📝</span>
                   <div>
                     <p className="text-sm font-medium text-orange-800 mb-1">Lý do hoàn hàng:</p>
                     <p className="text-sm text-orange-700">{order.returnReason}</p>
@@ -435,10 +428,10 @@ const DetailOrder = () => {
       </div>
 
       <div className="bg-white p-6 rounded-lg border shadow-sm mb-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <span role="img" aria-label="address">📍</span> Địa chỉ giao hàng
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+          Địa chỉ giao hàng
         </h3>
-        <div className="text-gray-700">
+        <div className="text-gray-700 text-sm">
           {order.address.fullAddress 
             ? order.address.fullAddress 
             : `${order.address.detail}, ${order.address.ward}, ${order.address.district}, ${order.address.province}`
@@ -448,19 +441,19 @@ const DetailOrder = () => {
 
       <div className="bg-white rounded-lg border shadow-sm">
         <div className="p-6 border-b">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <span role="img" aria-label="products">🛍️</span> Danh sách sản phẩm
+          <h3 className="text-lg font-bold flex items-center gap-2">
+            Danh sách sản phẩm
           </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sản phẩm</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thuộc tính</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn giá</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thành tiền</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Tên sản phẩm</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Thuộc tính</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Số lượng</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Đơn giá</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Thành tiền</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -489,7 +482,7 @@ const DetailOrder = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.price.toLocaleString()}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {(item.price * item.quantity).toLocaleString()}
                   </td>
                 </tr>
@@ -500,8 +493,8 @@ const DetailOrder = () => {
         <div className="p-6 border-t bg-gray-50">
           <div className="flex justify-end">
             <div className="text-right">
-              <div className="text-lg font-semibold text-gray-900">
-                Tổng tiền thanh toán: <span className="text-red-600">{order.totalAmount.toLocaleString()}</span>
+              <div className="text-lg font-bold text-red-600">
+                Tổng tiền: <span>{order.totalAmount.toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -511,7 +504,7 @@ const DetailOrder = () => {
       <div className="flex justify-end mt-6">
         <Link to="/admin/orders">
           <button className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm transition duration-200">
-            Quay lại danh sách
+            Quay lại
           </button>
         </Link>
       </div>
@@ -519,7 +512,6 @@ const DetailOrder = () => {
       {showSuccess && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
           <div className="flex items-center gap-2">
-            <span role="img" aria-label="success">✅</span>
             {successMessage}
           </div>
         </div>
@@ -528,20 +520,20 @@ const DetailOrder = () => {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-[400px] shadow-lg relative">
-            <h3 className="text-lg font-semibold mb-4">Cập nhật trạng thái đơn hàng</h3>
+            <h3 className="text-lg font-bold mb-4">Cập nhật trạng thái đơn hàng</h3>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700">
                 Trạng thái hiện tại: <span className="font-semibold text-blue-600">{orderData?.order.orderStatus}</span>
               </label>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Trạng thái mới
+                Trạng thái mới:
               </label>
               <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-                <span role="img" aria-label="info">ℹ️</span> Quy tắc: Chỉ có thể chuyển lên trạng thái tiếp theo. Không thể quay lại trạng thái trước đó.
+                Quy tắc: Chỉ có thể chuyển sang trạng thái tiếp theo, không thể quay lại trạng thái trước đó.
               </div>
               {orderData?.order.paymentMethod === 'vnpay' && (
                 <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-                  <span role="img" aria-label="vnpay">💳</span> VNPAY: Khi khách hàng nhận hàng, trạng thái thanh toán sẽ tự động chuyển thành "Đã thanh toán"
+                  VNPAY: Khi khách hàng nhận hàng, trạng thái thanh toán sẽ tự động chuyển thành "Đã thanh toán"
                 </div>
               )}
               <select 
@@ -560,11 +552,11 @@ const DetailOrder = () => {
               </select>
               {statusError && (
                 <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
-                  <span role="img" aria-label="error">⚠️</span> {statusError}
+                  {statusError}
                 </div>
               )}
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-1">
               <button 
                 type="button" 
                 onClick={() => setIsModalOpen(false)}
@@ -589,20 +581,20 @@ const DetailOrder = () => {
       {showCancelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-[500px] shadow-lg relative">
-            <h3 className="text-lg font-semibold mb-4 text-red-600">Hủy đơn hàng</h3>
+            <h3 className="text-lg font-bold mb-1 text-gray-800">Hủy đơn hàng</h3>
             <div className="mb-4">
-              <p className="text-gray-700 mb-4">
-                Bạn có chắc chắn muốn hủy đơn hàng <strong>{orderData?.order._id}</strong> không?
+              <p className="text-gray-700 text-sm mb-4">
+                Bạn có chắc chắn muốn hủy đơn hàng này không?
               </p>
               
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Lý do hủy đơn hàng <span className="text-red-500">*</span>
+                  Lý do hủy <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="Vui lòng nhập lý do hủy đơn hàng..."
+                  placeholder="Vui lòng nhập lý do hủy đơn hàng"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
                   rows={4}
                   required
@@ -613,10 +605,10 @@ const DetailOrder = () => {
               </div>
 
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
-                <span role="img" aria-label="warning">⚠️</span> Lưu ý: Hành động này không thể hoàn tác!
+                Lưu ý: Hành động này không thể hoàn tác!
               </div>
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-1">
               <button 
                 type="button" 
                 onClick={() => {
@@ -644,16 +636,13 @@ const DetailOrder = () => {
       {showReturnModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-[500px] shadow-lg relative">
-            <h3 className="text-lg font-semibold mb-4 text-orange-600">Xử lý yêu cầu hoàn hàng</h3>
+            <h3 className="text-lg font-bold mb-1 text-gray-800">Xử lý yêu cầu hoàn hàng</h3>
             <div className="mb-4">
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700 text-sm mb-4">
                 Bạn muốn xử lý yêu cầu hoàn hàng này như thế nào?
               </p>
               
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Hành động <span className="text-red-500">*</span>
-                </label>
                 <div className="space-y-2">
                   <label className="flex items-center">
                     <input
@@ -663,7 +652,7 @@ const DetailOrder = () => {
                       onChange={(e) => setReturnAction(e.target.value as 'approve' | 'reject')}
                       className="mr-2"
                     />
-                    <span className="text-green-700 font-medium">✅ Đồng ý hoàn hàng</span>
+                    <span className="text-green-700 text-sm font-medium">Đồng ý hoàn hàng</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -673,23 +662,22 @@ const DetailOrder = () => {
                       onChange={(e) => setReturnAction(e.target.value as 'approve' | 'reject')}
                       className="mr-2"
                     />
-                    <span className="text-red-700 font-medium">❌ Từ chối hoàn hàng</span>
+                    <span className="text-red-700 text-sm font-medium">Từ chối hoàn hàng</span>
                   </label>
                 </div>
               </div>
 
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
-                <span role="img" aria-label="info">ℹ️</span> 
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700 mb-2">
                 {returnAction === 'approve' 
                   ? 'Đồng ý hoàn hàng sẽ chuyển trạng thái đơn hàng thành "Đã hoàn hàng". Nếu thanh toán qua VNPAY, trạng thái thanh toán sẽ tự động chuyển thành "Đã hoàn tiền".'
                   : 'Từ chối hoàn hàng sẽ chuyển trạng thái đơn hàng thành "Từ chối hoàn hàng"'
                 }
               </div>
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
-                <span role="img" aria-label="info">ℹ️</span> Lưu ý: Khi đơn hàng chuyển sang trạng thái "Đã nhận hàng", trạng thái thanh toán sẽ tự động chuyển thành "Đã thanh toán" (áp dụng cho cả COD và VNPAY)
+                Lưu ý: Khi đơn hàng chuyển sang trạng thái "Đã nhận hàng", trạng thái thanh toán sẽ tự động chuyển thành "Đã thanh toán" (áp dụng cho cả COD và VNPAY)
               </div>
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-1">
               <button 
                 type="button" 
                 onClick={() => {

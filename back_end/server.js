@@ -70,13 +70,11 @@ app.use('/users', userRoutes);
 app.use('/voucher',voucherRouter)
 app.use('/', authRouter);
 
-//  Khởi chạy HTTP server (không dùng app.listen)
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(` Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
 
-//  Nếu bạn dùng vite-node cho testing
 export const viteNodeApp = app;
 
 app.use((req, res, next) => {
@@ -87,4 +85,3 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Internal server error" });
 });
-

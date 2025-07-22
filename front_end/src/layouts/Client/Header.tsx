@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 const ClientHeader = () => {
@@ -9,6 +9,7 @@ const ClientHeader = () => {
   const [avatarUrl, setAvatarUrl] = useState<string>("");
 
   const navigate = useNavigate();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -42,13 +43,45 @@ const ClientHeader = () => {
     };
 
     updateCart();
+
     window.addEventListener("cartChanged", updateCart);
-    const interval = setInterval(updateCart, 1000);
+    
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "cart" || e.key === "token") {
+        updateCart();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    const interval = setInterval(updateCart);
+
     return () => {
       window.removeEventListener("cartChanged", updateCart);
+      window.removeEventListener("storage", handleStorage);
       clearInterval(interval);
     };
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -113,26 +146,29 @@ const ClientHeader = () => {
                 className="w-8 h-8 rounded-full border-2 border-gray-300 cursor-pointer object-cover"
               />
               {isMenuOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-50">
+                <div
+                  ref={dropdownRef}
+                  className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-50"
+                >
                   <Link
                     to="/profile"
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center px-4 py-2 text-sm hover:bg-gray-100"
                   >
-                    <i className="fas fa-user w-4 h-4 mr-2" /> Tài khoản
+                    <i className="fas fa-user w-4 h-4 mr-2 mt-1" /> Tài khoản
                   </Link>
                   <Link
                     to="/orders"
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center px-4 py-2 text-sm hover:bg-gray-100"
                   >
-                    <i className="fas fa-shopping-cart w-4 h-4 mr-2" /> Đơn hàng
+                    <i className="fas fa-box w-4 h-4 mr-2 mt-1" /> Đơn hàng
                   </Link>
                   <button
                     onClick={handleLogout}
                     className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100"
                   >
-                    <i className="fas fa-sign-out-alt w-4 h-4 mr-2" /> Đăng xuất
+                    <i className="fas fa-sign-out-alt w-4 h-4 mr-2 mt-1" /> Đăng xuất
                   </button>
                 </div>
               )}

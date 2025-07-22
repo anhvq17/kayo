@@ -30,8 +30,9 @@ const ProductList = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [selectedPriceRange, setSelectedPriceRange] = useState<string>("");
+  const [sortOrder, setSortOrder] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 9;
+  const productsPerPage = 16;
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -88,9 +89,15 @@ const ProductList = () => {
     return matchCategory && matchBrand && matchPrice;
   });
 
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (sortOrder === "asc") return a.priceDefault - b.priceDefault;
+    if (sortOrder === "desc") return b.priceDefault - a.priceDefault;
+    return 0;
+  });
+
+  const totalPages = Math.ceil(sortedProducts.length / productsPerPage);
   const startIndex = (currentPage - 1) * productsPerPage;
-  const currentProducts = filteredProducts.slice(
+  const currentProducts = sortedProducts.slice(
     startIndex,
     startIndex + productsPerPage
   );
@@ -210,7 +217,32 @@ const ProductList = () => {
         </aside>
 
         <main className="lg:w-3/4">
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="mb-4 flex justify-end">
+            <div className="relative w-52">
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="w-full appearance-none border border-gray-300 rounded-lg bg-white px-4 py-2 pr-10 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-[#5f518e] focus:border-[#5f518e] transition"
+              >
+                <option value="">-- Sắp xếp theo --</option>
+                <option value="asc">Giá tăng dần</option>
+                <option value="desc">Giá giảm dần</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                <svg
+                  className="w-4 h-4 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
             {currentProducts.map((product) => (
               <Link
                 to={`/productdetails/${product._id}`}
@@ -224,7 +256,7 @@ const ProductList = () => {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2 text-left">
+                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2 text-left min-h-[3rem]">
                   {product.name}
                 </h3>
                 <div className="flex gap-2 mb-2">

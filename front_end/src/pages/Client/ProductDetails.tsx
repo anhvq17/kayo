@@ -378,7 +378,7 @@ const ProductDetails = () => {
     );
 
     const cartItem = {
-      userId: user._id, // ✅ Sử dụng user._id thay vì biến userId không xác định
+      userId: user._id,
       variantId: selectedVariant._id,
       productId: product._id,
       name: product.name,
@@ -395,16 +395,14 @@ const ProductDetails = () => {
       cart.push(cartItem);
     }
 
-    // Lưu vào localStorage
     localStorage.setItem("cart", JSON.stringify(cart));
 
-    // Gửi dữ liệu lên server
     try {
-      console.log("🛒 Gửi cartItem:", cartItem); // Debug
+      console.log("Gửi cartItem:", cartItem);
       await axios.post("http://localhost:3000/cart", cartItem);
-      console.log("✅ Sản phẩm đã được gửi lên server.");
+      console.log("Sản phẩm đã được gửi lên server.");
     } catch (error) {
-      console.error("❌ Lỗi khi gửi sản phẩm lên server:", error);
+      console.error("Lỗi khi gửi sản phẩm lên server:", error);
     }
   };
 
@@ -734,10 +732,10 @@ console.log("Thumbnails:", thumbnails);
             <h3 className="font-semibold mb-5">ƯU ĐIỂM</h3>
             <div className="grid grid-cols-4 gap-4 text-sm text-gray-600">
               {[
-                { label: "Xuân", color: "bg-green-400", icon: "🍃" },
-                { label: "Hạ", color: "bg-red-300", icon: "🌂" },
-                { label: "Thu", color: "bg-yellow-400", icon: "🍂" },
-                { label: "Đông", color: "bg-blue-400", icon: "❄️" },
+                { label: "Xuân", color: "bg-green-400", icon: <i className="fas fa-leaf text-green-400"></i> },
+                { label: "Hạ", color: "bg-red-300", icon: <i className="fas fa-sun text-red-300"></i> },
+                { label: "Thu", color: "bg-yellow-400", icon: <i className="fas fa-wind text-yellow-400"></i> },
+                { label: "Đông", color: "bg-blue-400", icon: <i className="fas fa-snowflake text-blue-400"></i> },
               ].map((item) => (
                 <div key={item.label} className="flex flex-col items-center">
                   <div className="text-xl">{item.icon}</div>
@@ -756,30 +754,30 @@ console.log("Thumbnails:", thumbnails);
           <div className="border p-6 rounded shadow">
             <h3 className="font-semibold mb-6 text-center">DỊCH VỤ</h3>
             <ul className="space-y-4 text-sm">
-              <li className="flex items-start gap-3">
-                <span className="text-2xl">🛡️</span>
+              <li className="flex items-start gap-5">
+                <span className="text-xl"><i className="fas fa-shield-alt text-xl mt-1 text-gray-500"></i></span>
                 <div>
                   <p className="font-semibold">Cam kết chính hãng 100%</p>
                   <p className="text-gray-500 text-xs">
-                    Tất cả các dòng nước hoa.
+                    Tất cả các dòng nước hoa
                   </p>
                 </div>
               </li>
-              <li className="flex items-start gap-3">
-                <span className="text-xl">↩️</span>
+              <li className="flex items-start gap-5">
+                <span className="text-xl"><i className="fas fa-undo-alt text-xl mt-1 text-gray-500"></i></span>
                 <div>
                   <p className="font-semibold">Bảo hành đến giọt cuối cùng</p>
                   <p className="text-gray-500 text-xs">
-                    Miễn phí đổi trả trong 7 ngày.
+                    Miễn phí đổi trả trong 7 ngày
                   </p>
                 </div>
               </li>
-              <li className="flex items-start gap-3">
-                <span className="text-xl">🚚</span>
+              <li className="flex items-start gap-5">
+                <span className="text-xl"><i className="fas fa-truck text-base mt-1 text-gray-500"></i></span>
                 <div>
                   <p className="font-semibold">Giao hàng miễn phí toàn quốc</p>
                   <p className="text-gray-500 text-xs">
-                    Miễn phí thiệp & gói quà.
+                    Miễn phí thiệp & gói quà
                   </p>
                 </div>
               </li>
