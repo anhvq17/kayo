@@ -23,7 +23,7 @@ import { Server } from "socket.io";
 import voucherRouter from "./routes/voucherRoutes.js";
 
 dotenv.config();
-connectMongoDB(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/DATN");
+connectMongoDB(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/datn");
 
 const app = express();
 const server = http.createServer(app); // Tạo HTTP server từ Express

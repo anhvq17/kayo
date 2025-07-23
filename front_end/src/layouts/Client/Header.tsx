@@ -37,6 +37,46 @@ const ClientHeader = () => {
   }, []);
 
   useEffect(() => {
+  const checkUserStatus = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch("http://localhost:3000/users/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+        const data = await response.json();
+        if (data?.message?.includes("bị khóa")) {
+          alert("Tài khoản của bạn đã bị khóa. Bạn sẽ được đăng xuất.");
+
+          localStorage.removeItem("token");
+          localStorage.removeItem("role");
+          localStorage.removeItem("user");
+          localStorage.removeItem("cart");
+
+          window.dispatchEvent(new Event("loginChanged"));
+          window.dispatchEvent(new Event("cartChanged"));
+
+          navigate("/login");
+        }
+      
+    } catch (err) {
+      console.error("Lỗi kiểm tra trạng thái người dùng:", err);
+    }
+  };
+
+  checkUserStatus(); 
+
+  const intervalId = setInterval(checkUserStatus, 30000); 
+
+  return () => clearInterval(intervalId); 
+}, [navigate]);
+
+  useEffect(() => {
     const updateCart = () => {
       const cart = JSON.parse(localStorage.getItem("cart") || "[]");
       setCartItemTypes(cart.length);
@@ -45,7 +85,7 @@ const ClientHeader = () => {
     updateCart();
 
     window.addEventListener("cartChanged", updateCart);
-    
+
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "cart" || e.key === "token") {
         updateCart();
@@ -53,7 +93,7 @@ const ClientHeader = () => {
     };
     window.addEventListener("storage", handleStorage);
 
-    const interval = setInterval(updateCart);
+    const interval = setInterval(updateCart, 1000);
 
     return () => {
       window.removeEventListener("cartChanged", updateCart);
