@@ -139,7 +139,7 @@ const VoucherManager = () => {
               <td className="px-4 py-2 text-center">
                 {voucher.discountType === "percent"
                   ? `${voucher.discountValue}%`
-                  : `${voucher.discountValue.toLocaleString()}₫`}
+                  : `${voucher.discountValue.toLocaleString()}`}
               </td>
               <td className="px-4 py-2 text-center">
                 {new Date(voucher.startDate).toLocaleDateString()} -{" "}

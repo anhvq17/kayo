@@ -37,6 +37,46 @@ const ClientHeader = () => {
   }, []);
 
   useEffect(() => {
+  const checkUserStatus = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch("http://localhost:3000/users/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+        const data = await response.json();
+        if (data?.message?.includes("bị khóa")) {
+          alert("Tài khoản của bạn đã bị khóa. Bạn sẽ được đăng xuất.");
+
+          localStorage.removeItem("token");
+          localStorage.removeItem("role");
+          localStorage.removeItem("user");
+          localStorage.removeItem("cart");
+
+          window.dispatchEvent(new Event("loginChanged"));
+          window.dispatchEvent(new Event("cartChanged"));
+
+          navigate("/login");
+        }
+      
+    } catch (err) {
+      console.error("Lỗi kiểm tra trạng thái người dùng:", err);
+    }
+  };
+
+  checkUserStatus(); 
+
+  const intervalId = setInterval(checkUserStatus, 30000); 
+
+  return () => clearInterval(intervalId); 
+}, [navigate]);
+
+  useEffect(() => {
     const updateCart = () => {
       const cart = JSON.parse(localStorage.getItem("cart") || "[]");
       setCartItemTypes(cart.length);
@@ -45,7 +85,7 @@ const ClientHeader = () => {
     updateCart();
 
     window.addEventListener("cartChanged", updateCart);
-    
+
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "cart" || e.key === "token") {
         updateCart();
@@ -53,7 +93,7 @@ const ClientHeader = () => {
     };
     window.addEventListener("storage", handleStorage);
 
-    const interval = setInterval(updateCart);
+    const interval = setInterval(updateCart, 1000);
 
     return () => {
       window.removeEventListener("cartChanged", updateCart);
@@ -116,8 +156,8 @@ const ClientHeader = () => {
         </Link>
 
         <nav className="flex items-center space-x-10 text-sm font-bold uppercase">
-          <Link to="/products" className="hover:text-gray-700">Nước hoa nam</Link>
-          <Link to="/products" className="hover:text-gray-700">Nước hoa nữ</Link>
+          <Link to="/product-male" className="hover:text-gray-700">Nước hoa nam</Link>
+          <Link to="/product-female" className="hover:text-gray-700">Nước hoa nữ</Link>
           <Link to="/products" className="hover:text-gray-700">Thương hiệu</Link>
         </nav>
 
@@ -181,14 +221,12 @@ const ClientHeader = () => {
 
           <div className="h-5 border-l border-gray-300" />
 
-          {/* Icon mã giảm giá */}
           <Link to="/vouchers" className="hover:text-gray-600">
-            <i className="fas fa-ticket text-base"></i>
+            <i className="fas fa-ticket text-lg"></i>
           </Link>
 
           <div className="h-5 border-l border-gray-300" />
 
-          {/* Icon giỏ hàng */}
           <Link to="/cart" className="relative hover:text-gray-600">
             <i className="fas fa-cart-shopping text-lg"></i>
             {cartItemTypes > 0 && (
