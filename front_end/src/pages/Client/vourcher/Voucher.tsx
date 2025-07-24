@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 type Voucher = {
@@ -77,7 +77,6 @@ const Voucher = () => {
 
       setSavedCodes((prev) => [...prev, code]);
 
-      // Cập nhật lượt dùng ở frontend
       setVouchers((prev) =>
         prev.map((v) =>
           v.code === code ? { ...v, usedCount: v.usedCount + 1 } : v
@@ -95,42 +94,38 @@ const Voucher = () => {
   };
 
   return (
-    <div className="bg-gray-100 font-sans min-h-screen">
-      {/* Filter & Search */}
-      <section className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="w-full md:w-1/3">
-            <input
-              type="text"
-              placeholder="Tìm mã theo từ khóa..."
-              className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#696faa]"
-            />
-          </div>
-          <div className="flex gap-4 flex-wrap">
-            <select className="p-3 rounded-lg border border-gray-300">
-              <option>Loại mã</option>
-              <option>Giảm giá %</option>
+    <div className="min-h-screen">
+      <section className="max-w-7xl mx-auto px-6 lg:px-12 pt-11 pb-2">
+        <div className="flex flex-wrap justify-center gap-4">
+          <div className="relative">
+            <select className="appearance-none px-4 py-1 pr-10 rounded-lg border border-[#ccc] bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#696faa] transition">
+              <option disabled selected>Loại mã</option>
+              <option>Giảm phần trăm</option>
               <option>Giảm tiền mặt</option>
-              <option>Freeship</option>
             </select>
-            <select className="p-3 rounded-lg border border-gray-300">
-              <option>Thời gian hết hạn</option>
+            <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-500">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+
+          <div className="relative">
+            <select className="appearance-none px-4 py-1 pr-10 rounded-lg border border-[#ccc] bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#696faa] transition">
+              <option disabled selected>Trạng thái</option>
               <option>Còn hiệu lực</option>
               <option>Sắp hết hạn</option>
             </select>
-            <select className="p-3 rounded-lg border border-gray-300">
-              <option>Danh mục sản phẩm</option>
-              <option>iPhone</option>
-              <option>iPad</option>
-              <option>MacBook</option>
-              <option>Phụ kiện</option>
-            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-500">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Vouchers */}
-      <section className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <section className="max-w-7xl mx-auto px-6 lg:px-12 py-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
         {vouchers.map((voucher) => {
           const expired = isExpired(voucher.endDate);
           const fullyUsed = voucher.usedCount >= voucher.usageLimit;
@@ -145,85 +140,85 @@ const Voucher = () => {
           return (
             <div
               key={voucher._id}
-              className={`rounded-lg shadow-md p-6 border-2 border-dashed transition ${disabled
+              className={`h-full flex flex-col justify-between rounded-lg shadow-md p-6 border-2 border-dashed transition ${disabled
                   ? "bg-gray-200 border-[#aaa] opacity-70"
                   : "bg-white border-[#696faa] hover:shadow-lg"
                 }`}
             >
-              <div className="flex items-center gap-2">
-                <svg
-                  className={`w-6 h-6 ${disabled ? "text-gray-500" : "text-[#696faa]"
-                    }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
-                  />
-                </svg>
-                <h3 className="text-xl font-semibold">
-                  {voucher.discountType === "percent"
-                    ? `Giảm ${voucher.discountValue}%`
-                    : voucher.discountType === "fixed"
-                      ? `Giảm ${voucher.discountValue.toLocaleString("vi-VN")}đ`
-                      : `Freeship toàn quốc`}
-                </h3>
-              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <svg
+                    className={`w-6 h-6 ${disabled ? "text-gray-500" : "text-[#696faa]"
+                      }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
+                    />
+                  </svg>
+                  <h3 className="text-xl font-semibold">
+                    {voucher.discountType === "percent"
+                      ? `Giảm ${voucher.discountValue}%`
+                      : voucher.discountType === "fixed"
+                        ? `Giảm ${voucher.discountValue.toLocaleString("vi-VN")}`
+                        : `Freeship toàn quốc`}
+                  </h3>
+                </div>
 
-              <p className="text-gray-700 mt-1">
-                Mã:{" "}
-                <span className="font-bold text-[#696faa]">
-                  {voucher.code}
-                </span>
-              </p>
-
-              {voucher.maxDiscountValue &&
-                voucher.discountType === "percent" && (
-                  <p className="text-gray-700 mt-1">
-                    Giảm tối đa:{" "}
-                    {voucher.maxDiscountValue.toLocaleString("vi-VN")}đ
-                  </p>
-                )}
-
-              <p className="text-gray-700 mt-1">
-                Đơn tối thiểu:{" "}
-                {voucher.minOrderValue.toLocaleString("vi-VN")}đ
-              </p>
-
-              <p className="text-gray-500 text-sm mt-1">
-                Hết hạn: {formatDate(voucher.endDate)}
-              </p>
-
-              <p className="text-gray-500 text-sm mt-1">
-                Trạng thái: {expired ? "Hết hạn" : "Còn hạn"}
-              </p>
-
-              {/* Progress lượt dùng */}
-              <div className="mt-4">
-                <div className="flex justify-between text-sm text-gray-600 mb-1">
-                  <span>Lượt dùng</span>
-                  <span>
-                    {voucher.usedCount} / {voucher.usageLimit}
+                <p className="text-gray-700 mt-1">
+                  Mã:{" "}
+                  <span className="font-bold text-[#696faa]">
+                    {voucher.code}
                   </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div
-                    className="bg-[#696faa] h-2.5 rounded-full transition-all duration-300"
-                    style={{ width: `${percentUsed}%` }}
-                  ></div>
-                </div>
+                </p>
+
+                {voucher.maxDiscountValue &&
+                  voucher.discountType === "percent" && (
+                    <p className="text-gray-700 mt-1">
+                      Giảm tối đa:{" "}
+                      {voucher.maxDiscountValue.toLocaleString("vi-VN")}
+                    </p>
+                  )}
+
+                <p className="text-gray-700 mt-1">
+                  Đơn tối thiểu:{" "}
+                  {voucher.minOrderValue.toLocaleString("vi-VN")}
+                </p>
+
+                <p className="text-gray-500 text-sm mt-1">
+                  Hết hạn: {formatDate(voucher.endDate)}
+                </p>
+
+                <p className="text-gray-500 text-sm mt-1">
+                  Trạng thái: {expired ? "Hết hạn" : "Còn hạn"}
+                </p>
               </div>
 
-              {/* Nút lưu */}
-              <div className="mt-4">
+              <div className="mt-auto flex flex-col gap-4">
+                <div>
+                  <div className="flex justify-between text-sm text-gray-600 mt-9 mb-1">
+                    <span>Lượt dùng</span>
+                    <span>
+                      {voucher.usedCount} / {voucher.usageLimit}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div
+                      className="bg-[#696faa] h-2.5 rounded-full transition-all duration-300"
+                      style={{ width: `${percentUsed}%` }}
+                    ></div>
+                  </div>
+                </div>
+
                 <button
                   disabled={disabled}
                   onClick={() => handleSaveVoucher(voucher.code)}
-                  className={`px-4 py-2 rounded-lg text-white ${disabled
+                  className={`px-4 py-2 rounded-lg text-white w-full ${disabled
                       ? "bg-gray-400 cursor-not-allowed"
                       : "bg-[#696faa] hover:bg-[#4f5580]"
                     }`}
