@@ -156,8 +156,8 @@ const ClientHeader = () => {
         </Link>
 
         <nav className="flex items-center space-x-10 text-sm font-bold uppercase">
-          <Link to="/products" className="hover:text-gray-700">Nước hoa nam</Link>
-          <Link to="/products" className="hover:text-gray-700">Nước hoa nữ</Link>
+          <Link to="/product-male" className="hover:text-gray-700">Nước hoa nam</Link>
+          <Link to="/product-female" className="hover:text-gray-700">Nước hoa nữ</Link>
           <Link to="/products" className="hover:text-gray-700">Thương hiệu</Link>
         </nav>
 
