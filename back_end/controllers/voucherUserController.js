@@ -142,6 +142,8 @@ export const getUserVouchers = async (req, res) => {
                 code: v.code,
                 discountType: v.discountType,
                 discountValue: v.discountValue,
+                maxDiscountValue: v.maxDiscountValue || null,
+                minOrderValue: v.minOrderValue || 0,
                 startDate: v.startDate,
                 endDate: v.endDate,
                 status: v.status,

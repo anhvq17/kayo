@@ -1,11 +1,25 @@
 import VoucherModel from "../models/VoucherModel.js";
 import { voucherSchema } from "../validations/voucher.js";
 
-// Lấy tất cả voucher chưa bị xóa mềm
+// Lấy tất cả voucher chưa bị xóa mềm | dùng cho admin
 export const getAllVouchers = async (req, res) => {
   try {
     const vouchers = await VoucherModel.find({ deletedAt: null }).sort({ createdAt: -1 });
     return res.status(200).json({ message: "Danh sách voucher", data: vouchers });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
+// hiển thị voucher (trừ trạng thái inactive) | dùng bên client
+export const getPublicVouchers = async (req, res) => {
+  try {
+    const vouchers = await VoucherModel.find({
+      deletedAt: null,
+      status: "activated",
+    }).sort({ createdAt: -1 });
+
+    return res.status(200).json({ message: "Danh sách voucher khả dụng", data: vouchers });
   } catch (error) {
     return res.status(400).json({ message: error.message });
   }
