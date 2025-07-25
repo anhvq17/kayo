@@ -16,6 +16,7 @@ const MyVoucher = () => {
       const res = await axios.get(
         `http://localhost:3000/voucher-user/saved/${userId}`
       );
+      console.log("Dữ liệu mã đã lưu:", res.data); // 👈 THÊM DÒNG NÀY
       setSavedVouchers(res.data);
     } catch (err) {
       console.error("Lỗi khi lấy mã đã lưu", err);
@@ -105,16 +106,15 @@ const MyVoucher = () => {
       <section className="max-w-7xl mx-auto px-6 lg:px-12 py-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
         {filterVouchers().map((voucher: any) => {
           const expired = isExpired(voucher.endDate);
-          const discountValue = typeof voucher.discountValue === "number" ? voucher.discountValue : 0;
-          const maxDiscountValue = typeof voucher.maxDiscountValue === "number" ? voucher.maxDiscountValue : null;
-          const minOrderValue = typeof voucher.minOrderValue === "number" ? voucher.minOrderValue : 0;
+          const discountValue = Number(voucher.discountValue) || 0;
+          const maxDiscountValue = voucher.maxDiscountValue != null ? Number(voucher.maxDiscountValue) : null;
+          const minOrderValue = Number(voucher.minOrderValue) || 0;
 
           return (
             <div
               key={voucher._id}
-              className={`h-full flex flex-col justify-between rounded-lg shadow-md p-6 border-2 border-dashed transition ${
-                expired ? "bg-gray-200 border-[#aaa] opacity-70" : "bg-white border-[#696faa]"
-              }`}
+              className={`h-full flex flex-col justify-between rounded-lg shadow-md p-6 border-2 border-dashed transition ${expired ? "bg-gray-200 border-[#aaa] opacity-70" : "bg-white border-[#696faa]"
+                }`}
             >
               <div>
                 <div className="flex items-center gap-2">
@@ -135,8 +135,8 @@ const MyVoucher = () => {
                     {voucher.discountType === "percent"
                       ? `Giảm ${discountValue}%`
                       : voucher.discountType === "fixed"
-                      ? `Giảm ${discountValue.toLocaleString("vi-VN")}`
-                      : "Freeship toàn quốc"}
+                        ? `Giảm ${discountValue.toLocaleString("vi-VN")}`
+                        : "Freeship toàn quốc"}
                   </h3>
                 </div>
 
@@ -144,6 +144,7 @@ const MyVoucher = () => {
                   Mã: <span className="font-bold text-[#696faa]">{voucher.code}</span>
                 </p>
 
+                {/* 👉 THÊM DÒNG NÀY */}
                 {voucher.discountType === "percent" && maxDiscountValue !== null && (
                   <p className="text-gray-700 mt-1">
                     Giảm tối đa: {maxDiscountValue.toLocaleString("vi-VN")}
@@ -165,6 +166,7 @@ const MyVoucher = () => {
             </div>
           );
         })}
+
       </section>
     </div>
   );

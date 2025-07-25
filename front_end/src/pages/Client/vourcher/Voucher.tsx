@@ -6,7 +6,7 @@ type Voucher = {
   _id: string;
   code: string;
   description?: string;
-  discountType: "percent" | "fixed" | "freeship";
+  discountType: "percent" | "fixed";
   discountValue: number;
   minOrderValue: number;
   maxDiscountValue?: number | null;
@@ -28,7 +28,7 @@ const Voucher = () => {
 
   const fetchVouchers = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/voucher");
+      const res = await axios.get("http://localhost:3000/voucher/public"); // sửa dòng này
       setVouchers(res.data.data);
     } catch (error) {
       console.error("Lỗi khi lấy mã giảm giá", error);
