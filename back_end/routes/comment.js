@@ -12,7 +12,7 @@ import upload from "../middlewares/uploadMiddleware.js";
 const router = Router();
 
 // Tạo bình luận mới
-router.post("/", protect ,  upload.single('image') , createComment);
+router.post("/", protect ,  upload.array('image', 3) , createComment);
 
 // Lấy tất cả bình luận theo sản phẩm
 router.get("/product/:productId", getCommentsByProduct);

@@ -4,6 +4,8 @@ import axios from "axios";
 import { ShoppingCart } from "lucide-react";
 import moment from "moment";
 
+
+
 interface ProductDetailType {
   priceDefault: number | undefined;
   _id: string;
@@ -836,19 +838,30 @@ console.log("productId detail:", productId);
             ))}
           </div>
           <p>{comment.content}</p>
-          {comment.image && (
-              <a
-                href={`http://localhost:3000/uploads/${comment.image}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <img
-                  src={`http://localhost:3000/uploads/${comment.image}`}
-                  alt="Ảnh đánh giá"
-                  className="w-40 h-40 object-cover rounded border hover:brightness-75 transition"
-                />
-              </a>
+          {comment.image?.length > 0 && (
+                  <div className="flex gap-2 flex-wrap mt-2">
+                    {comment.image.map((img, idx) => {
+                      const imageUrl = img.startsWith("/uploads/")
+                        ? `http://localhost:3000${img}`
+                        : `http://localhost:3000/uploads/${img}`;
+                      return (
+                    <a
+                      key={idx}
+                      href={imageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={`Ảnh ${idx + 1}`}
+                        className="w-20 h-20 object-cover rounded border hover:brightness-75 transition"
+                      />
+                    </a>
+                  );
+                })}
+              </div>
             )}
+
         </div>
       ))}
     </div>

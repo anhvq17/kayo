@@ -20,14 +20,15 @@ export const createComment = async (req, res) => {
       return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin' });
     }
 
-    const image = req.file?.filename; // nếu có ảnh
+    // Xử lý nhiều ảnh (multer upload.array)
+    const imagePaths = req.files?.map((file) => `/uploads/${file.filename}`) || [];
 
     const newComment = new Comment({
       productId,
       userId: req.user._id,
       content,
       rating,
-      image, // thêm ảnh vào comment
+      image: imagePaths, // lưu mảng ảnh
     });
 
     const savedComment = await newComment.save();
@@ -39,6 +40,7 @@ export const createComment = async (req, res) => {
     res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo bình luận' });
   }
 };
+
 
 
 // [GET] Lấy danh sách bình luận theo sản phẩm
