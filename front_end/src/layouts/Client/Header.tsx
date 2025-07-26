@@ -156,9 +156,10 @@ const ClientHeader = () => {
         </Link>
 
         <nav className="flex items-center space-x-10 text-sm font-bold uppercase">
-          <Link to="/product-male" className="hover:text-gray-700">Nước hoa nam</Link>
-          <Link to="/product-female" className="hover:text-gray-700">Nước hoa nữ</Link>
+          <Link to="/products" className="hover:text-gray-700">Bộ sưu tập</Link>
+          <Link to="/newlist" className="hover:text-gray-700">Bài viết</Link>
           <Link to="/products" className="hover:text-gray-700">Thương hiệu</Link>
+          <Link to="/vouchers" className="hover:text-gray-700">Mã giảm giá</Link>
         </nav>
 
         <div className="flex items-center space-x-6 text-xl text-black">
@@ -204,6 +205,13 @@ const ClientHeader = () => {
                   >
                     <i className="fas fa-box w-4 h-4 mr-2 mt-1" /> Đơn hàng
                   </Link>
+                  <Link
+                    to="/myvoucher"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center px-4 py-2 text-sm hover:bg-gray-100"
+                  >
+                    <i className="fas fa-tags w-4 h-4 mr-2 mt-1" /> Mã của tôi
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100"
@@ -218,12 +226,6 @@ const ClientHeader = () => {
               <i className="fas fa-user text-base"></i>
             </Link>
           )}
-
-          <div className="h-5 border-l border-gray-300" />
-
-          <Link to="/vouchers" className="hover:text-gray-600">
-            <i className="fas fa-ticket text-lg"></i>
-          </Link>
 
           <div className="h-5 border-l border-gray-300" />
 

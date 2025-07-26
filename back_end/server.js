@@ -22,6 +22,7 @@ import variantRouter from "./routes/variantRoutes.js";
 import http from "http";
 import { Server } from "socket.io";
 import voucherRouter from "./routes/voucherRoutes.js";
+import voucherUserRouter from "./routes/voucherUserRouter.js";
 
 dotenv.config();
 console.log("JWT_SECRET:", process.env.JWT_SECRET);
@@ -69,7 +70,8 @@ app.use('/attribute', attributeRouter);
 app.use('/attribute-value', attributeValueRouter);
 app.use('/variant', variantRouter);
 app.use('/users', userRoutes);
-app.use('/voucher',voucherRouter)
+app.use('/voucher',voucherRouter) ; 
+app.use("/voucher-user", voucherUserRouter);
 app.use('/', authRouter);
 app.use('/uploads', express.static(path.join(path.resolve(), 'uploads')));
 
