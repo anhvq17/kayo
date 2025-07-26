@@ -15,6 +15,7 @@ import Profile from "../pages/Client/Profile";
 import CheckPayment from "../pages/Client/CheckPayment";
 import Voucher from "../pages/Client/vourcher/Voucher";
 import MyVoucher from "../pages/Client/vourcher/myVoucher";
+import ReviewPage from "../pages/Client/ReviewPage";
 import NewsList from "../pages/Client/NewsList";
 
 const ClientRoutes = {
@@ -37,6 +38,7 @@ const ClientRoutes = {
     { path: 'profile', element: <Profile /> },
     { path: 'payment-result', element: <CheckPayment /> },
     { path: 'newlist', element: <NewsList /> },
+    { path: 'review/:productId', element: <ReviewPage /> },
 
     // Khi đường dẫn sai hoặc không tồn tại, dẫn đến trang NotFound
     { path: '*', element: <NotFound homePath="/"/> },

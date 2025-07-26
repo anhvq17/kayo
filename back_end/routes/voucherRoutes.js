@@ -10,7 +10,8 @@ import {
   getTrashedVouchers,
   restoreManyVouchers,
   softDeleteManyVouchers,
-  hardDeleteManyVouchers
+  hardDeleteManyVouchers,
+  getPublicVouchers
 } from "../controllers/voucherController.js";
 
 const voucherRouter = Router();
@@ -22,7 +23,8 @@ voucherRouter.patch("/restore-many", restoreManyVouchers); // khôi phục nhi�
 voucherRouter.delete("/hard/:id", hardDeleteVoucher); // xóa cứng một voucher
 voucherRouter.patch("/restore/:id", restoreVoucher); // khôi phục một voucher
 voucherRouter.delete("/soft/:id", softDeleteVoucher); // xóa mềm một voucher
-voucherRouter.get("/", getAllVouchers); // lấy tất cả voucher chưa bị xóa
+voucherRouter.get("/", getAllVouchers); // lấy tất cả voucher chưa bị xóa 
+voucherRouter.get("/public", getPublicVouchers);
 voucherRouter.get("/:id", getVoucherDetail); // lấy chi tiết một voucher
 voucherRouter.post("/", createVoucher); // tạo mới voucher
 voucherRouter.put("/:id", updateVoucher); // cập nhật voucher

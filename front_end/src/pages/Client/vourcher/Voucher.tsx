@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 type Voucher = {
   _id: string;
   code: string;
   description?: string;
-  discountType: "percent" | "fixed" | "freeship";
+  discountType: "percent" | "fixed";
   discountValue: number;
   minOrderValue: number;
   maxDiscountValue?: number | null;
@@ -19,13 +20,15 @@ const Voucher = () => {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [savingCode, setSavingCode] = useState<string | null>(null);
   const [savedCodes, setSavedCodes] = useState<string[]>([]);
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userId = user?._id;
 
   const fetchVouchers = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/voucher");
+      const res = await axios.get("http://localhost:3000/voucher/public"); // sửa dòng này
       setVouchers(res.data.data);
     } catch (error) {
       console.error("Lỗi khi lấy mã giảm giá", error);
@@ -82,6 +85,7 @@ const Voucher = () => {
           v.code === code ? { ...v, usedCount: v.usedCount + 1 } : v
         )
       );
+
     } catch (err: any) {
       console.error(err);
       alert(
@@ -92,16 +96,53 @@ const Voucher = () => {
       setSavingCode(null);
     }
   };
+  const filterVouchers = (voucherList: Voucher[]) => {
+    const now = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(now.getDate() + 1);
+
+    return voucherList.filter((voucher) => {
+      // Loại mã
+      if (filterType !== "all" && voucher.discountType !== filterType) {
+        return false;
+      }
+
+      const endDate = new Date(voucher.endDate);
+
+      if (filterStatus === "valid") {
+        return endDate >= now;
+      }
+      if (filterStatus === "expiringSoon") {
+        return endDate > now && endDate <= tomorrow;
+      }
+      if (filterStatus === "expired") {
+        return endDate < now;
+      }
+
+      return true;
+    });
+  };
+
 
   return (
-    <div className="min-h-screen">
-      <section className="max-w-7xl mx-auto px-6 lg:px-12 pt-11 pb-2">
+    <div className="container mx-auto px-4 py-8 min-h-screen">
+      <div className="flex items-center text-sm mb-5">
+        <Link to="/" className="text-gray-500 hover:text-gray-900">Trang chủ</Link>
+        <span className="mx-2 text-gray-400">/</span>
+        <span className="font-medium text-black">Mã giảm giá</span>
+      </div>
+
+      <section className="max-w-7xl mx-auto px-6 lg:px-12 pb-2">
         <div className="flex flex-wrap justify-center gap-4">
           <div className="relative">
-            <select className="appearance-none px-4 py-1 pr-10 rounded-lg border border-[#ccc] bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#696faa] transition">
-              <option disabled selected>Loại mã</option>
-              <option>Giảm phần trăm</option>
-              <option>Giảm tiền mặt</option>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="appearance-none px-4 py-1 pr-10 rounded-lg border border-[#ccc] bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#696faa] transition"
+            >
+              <option value="all">Loại mã</option>
+              <option value="percent">Giảm phần trăm</option>
+              <option value="fixed">Giảm tiền mặt</option>
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-500">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -111,10 +152,15 @@ const Voucher = () => {
           </div>
 
           <div className="relative">
-            <select className="appearance-none px-4 py-1 pr-10 rounded-lg border border-[#ccc] bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#696faa] transition">
-              <option disabled selected>Trạng thái</option>
-              <option>Còn hiệu lực</option>
-              <option>Sắp hết hạn</option>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="appearance-none px-4 py-1 pr-10 rounded-lg border border-[#ccc] bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#696faa] transition"
+            >
+              <option value="all">Trạng thái</option>
+              <option value="valid">Còn hiệu lực</option>
+              <option value="expiringSoon">Sắp hết hạn</option>
+              <option value="expired">Hết hạn</option>
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-500">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -126,7 +172,7 @@ const Voucher = () => {
       </section>
 
       <section className="max-w-7xl mx-auto px-6 lg:px-12 py-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-        {vouchers.map((voucher) => {
+        {filterVouchers(vouchers).map((voucher) => {
           const expired = isExpired(voucher.endDate);
           const fullyUsed = voucher.usedCount >= voucher.usageLimit;
           const percentUsed = Math.min(
@@ -141,8 +187,8 @@ const Voucher = () => {
             <div
               key={voucher._id}
               className={`h-full flex flex-col justify-between rounded-lg shadow-md p-6 border-2 border-dashed transition ${disabled
-                  ? "bg-gray-200 border-[#aaa] opacity-70"
-                  : "bg-white border-[#696faa] hover:shadow-lg"
+                ? "bg-gray-200 border-[#aaa] opacity-70"
+                : "bg-white border-[#696faa] hover:shadow-lg"
                 }`}
             >
               <div>
@@ -201,7 +247,7 @@ const Voucher = () => {
 
               <div className="mt-auto flex flex-col gap-4">
                 <div>
-                  <div className="flex justify-between text-sm text-gray-600 mt-9 mb-1">
+                  <div className="flex justify-between text-sm text-gray-600 mt-7 mb-1">
                     <span>Lượt dùng</span>
                     <span>
                       {voucher.usedCount} / {voucher.usageLimit}
@@ -219,8 +265,8 @@ const Voucher = () => {
                   disabled={disabled}
                   onClick={() => handleSaveVoucher(voucher.code)}
                   className={`px-4 py-2 rounded-lg text-white w-full ${disabled
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-[#696faa] hover:bg-[#4f5580]"
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-[#696faa] hover:bg-[#4f5580]"
                     }`}
                 >
                   {expired || fullyUsed

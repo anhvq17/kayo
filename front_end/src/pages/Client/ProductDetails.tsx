@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ShoppingCart } from "lucide-react";
+import moment from "moment";
+
+
 
 interface ProductDetailType {
   priceDefault: number | undefined;
@@ -35,6 +38,8 @@ interface CommentType {
   _id: string;
   userId: { _id: string; username: string };
   content: string;
+  image? : string[];
+  rating : number;
   createdAt: string;
 }
 
@@ -56,6 +61,7 @@ interface AttributeValueType {
 }
 
 const ProductDetails = () => {
+   const { id: productId } = useParams();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -74,7 +80,6 @@ const ProductDetails = () => {
     "description"
   );
   const [comments, setComments] = useState<CommentType[]>([]);
-  const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUserInfo] = useState<UserInfoType | null>(null);
   const [error] = useState<string | null>(null);
@@ -109,7 +114,6 @@ const ProductDetails = () => {
   useEffect(() => {
     if (id) {
       fetchProduct();
-      fetchComments();
     }
   }, [id]);
 
@@ -328,16 +332,19 @@ const ProductDetails = () => {
     return match || value;
   };
 
-  const fetchComments = async () => {
-    try {
-      const res = await axios.get(
-        `http://localhost:3000/comments/product/${id}`
-      );
-      setComments(res.data);
-    } catch {
-      setComments([]);
-    }
-  };
+  useEffect(() => {
+    if (!product?._id) return;
+    const fetchComments = async () => {
+      try {
+        const res = await axios.get(`http://localhost:3000/comments/product/${product._id}`);
+        console.log("Dữ liệu comment từ backend:", res.data);
+        setComments(res.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy bình luận:", error);
+      }
+    };
+    fetchComments();
+  }, [product]);
 
   useEffect(() => {
     fetchAttributes();
@@ -451,31 +458,6 @@ const ProductDetails = () => {
     navigate("/checkout");
   };
 
-  const handleCommentSubmit = async () => {
-    if (!user) {
-      alert("Vui lòng đăng nhập để bình luận!");
-      return;
-    }
-
-    if (!newComment.trim()) {
-      alert("Nội dung bình luận không được để trống!");
-      return;
-    }
-
-    try {
-      await axios.post("http://localhost:3000/comments", {
-        productId: id,
-        userId: user._id,
-        content: newComment.trim(),
-      });
-
-      setNewComment("");
-      fetchComments();
-    } catch (error) {
-      console.error("Lỗi gửi bình luận:", error);
-      alert("Không thể gửi bình luận. Vui lòng thử lại sau.");
-    }
-  };
 
   if (!id)
     return <div className="text-center py-10">Không có ID sản phẩm.</div>;
@@ -503,6 +485,8 @@ const thumbnails = [product.image, ...Array.from(imageMap.values())].filter(Bool
 
 console.log("Thumbnails:", thumbnails);
 
+
+console.log("productId detail:", productId);
 
 
   return (
@@ -830,52 +814,61 @@ console.log("Thumbnails:", thumbnails);
 
           {activeTab === "review" && (
             <div className="p-6">
-              <div className="mb-4">
-                <textarea
-                  className="w-full border rounded p-3 resize-none"
-                  rows={4}
-                  placeholder="Viết đánh giá của bạn..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                />
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleCommentSubmit}
-                    disabled={!newComment.trim()}
-                    className={`mt-2 px-4 py-2 rounded text-white ${
-                      newComment.trim()
-                        ? "bg-[#5f518e] hover:bg-[#696faa]"
-                        : "bg-gray-400 cursor-not-allowed"
-                    }`}
-                  >
-                    Gửi đánh giá
-                  </button>
-                </div>
-              </div>
 
-              <div className="mt-6">
-                <h4 className="font-semibold mb-3">Đánh giá</h4>
-                {comments.length === 0 ? (
-                  <p className="text-gray-500">Chưa có đánh giá nào.</p>
-                ) : (
-                  <ul className="space-y-3">
-                    {comments.map((cmt) => (
-                      <li
-                        key={cmt._id}
-                        className="border p-3 rounded bg-gray-50 shadow-sm"
-                      >
-                        <p className="font-medium">
-                          {cmt.userId?.username || "Ẩn danh"}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(cmt.createdAt).toLocaleString()}
-                        </p>
-                        <p className="mt-1">{cmt.content}</p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+
+            <div className="mt-8">
+  <h2 className="text-xl font-semibold mb-4">Đánh giá sản phẩm</h2>
+
+  {comments.length === 0 ? (
+    <p>Chưa có đánh giá nào.</p>
+  ) : (
+    <div className="space-y-4">
+      {comments.map((comment) => (
+        <div key={comment._id} className="border rounded-lg p-4 shadow">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-medium">{comment.userId?.username || "Người dùng"}</span>
+            <span className="text-sm text-gray-500">{moment(comment.createdAt).format("DD/MM/YYYY HH:mm:ss")}</span>
+          </div>
+          <div className="flex mb-1">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <span key={index} className={index < comment.rating ? "text-yellow-400" : "text-gray-300"}>
+                ★
+              </span>
+              
+            ))}
+          </div>
+          <p>{comment.content}</p>
+          {(comment.image?.length ?? 0) > 0 && (
+                  <div className="flex gap-2 flex-wrap mt-2">
+                    {comment.image?.map((img, idx) => {
+                      const imageUrl = img.startsWith("/uploads/")
+                        ? `http://localhost:3000${img}`
+                        : `http://localhost:3000/uploads/${img}`;
+                      return (
+                    <a
+                      key={idx}
+                      href={imageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={`Ảnh ${idx + 1}`}
+                        className="w-20 h-20 object-cover rounded border hover:brightness-75 transition"
+                      />
+                    </a>
+                  );
+                })}
               </div>
+            )}
+
+        </div>
+      ))}
+    </div>
+    
+  )}
+</div>
+
             </div>
           )}
         </div>
@@ -929,5 +922,6 @@ console.log("Thumbnails:", thumbnails);
     </div>
   );
 };
+
 
 export default ProductDetails;
