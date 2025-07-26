@@ -838,9 +838,9 @@ console.log("productId detail:", productId);
             ))}
           </div>
           <p>{comment.content}</p>
-          {comment.image?.length > 0 && (
+          {(comment.image?.length ?? 0) > 0 && (
                   <div className="flex gap-2 flex-wrap mt-2">
-                    {comment.image.map((img, idx) => {
+                    {comment.image?.map((img, idx) => {
                       const imageUrl = img.startsWith("/uploads/")
                         ? `http://localhost:3000${img}`
                         : `http://localhost:3000/uploads/${img}`;
