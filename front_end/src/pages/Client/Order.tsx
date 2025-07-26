@@ -370,14 +370,33 @@ const OrderList = () => {
                     </button>
                   )}
                   {canRequestReturn(item.orderStatus) && (
-                    <button
-                      onClick={() => openReturnModal(item._id)}
-                      disabled={requestingReturnId === item._id}
-                      className="inline-flex items-center gap-2 bg-orange-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-orange-700 transition text-sm disabled:opacity-50"
+              <>
+                <button
+                  onClick={() => openReturnModal(item._id)}
+                  disabled={requestingReturnId === item._id}
+                  className="inline-flex items-center gap-2 bg-orange-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-orange-700 transition text-sm disabled:opacity-50"
+                >
+                  {requestingReturnId === item._id ? 'Đang gửi...' : 'Yêu cầu hoàn hàng'}
+                </button>
+
+                {item.items?.map((prod: OrderItem) => {
+                  const productId = prod?.variantId?.productId?._id;
+
+                  if (!productId) return null;
+
+                  return (
+                    <Link
+                      key={prod._id}
+                      to={`/review/${productId}`}
+                      className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition text-sm"
                     >
-                      {requestingReturnId === item._id ? 'Đang gửi...' : 'Yêu cầu hoàn hàng'}
-                    </button>
-                  )}
+                      Đánh giá
+                    </Link>
+                  );
+                })}
+
+              </>
+            )}
                 </div>
               </div>
               <div className="border-t pt-4 mt-4">
