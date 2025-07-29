@@ -3,7 +3,8 @@ import {
   createComment,
   getCommentsByProduct,
   getCommentById,
-  deleteComment
+  deleteComment,
+  toggleCommentHidden
 } from "../controllers/commentController.js";
 
 import { protect } from "../middlewares/authMiddleware.js";
@@ -22,5 +23,8 @@ router.get("/:id", getCommentById);
 
 // Xóa bình luận theo ID
 router.delete("/:id", deleteComment);
+
+router.put("/:id/hide", toggleCommentHidden);
+// Toggle trạng thái ẩn hiện của bình luận
 
 export default router;

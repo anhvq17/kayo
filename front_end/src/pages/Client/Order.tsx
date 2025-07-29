@@ -26,6 +26,7 @@ interface OrderItem {
   };
   quantity: number;
   price: number;
+  isReviewed?: boolean; // Add this property
 }
 
 const ORDER_TABS = [
@@ -379,21 +380,7 @@ const OrderList = () => {
                   {requestingReturnId === item._id ? 'Đang gửi...' : 'Yêu cầu hoàn hàng'}
                 </button>
 
-                {item.items?.map((prod: OrderItem) => {
-                  const productId = prod?.variantId?.productId?._id;
-
-                  if (!productId) return null;
-
-                  return (
-                    <Link
-                      key={prod._id}
-                      to={`/review/${productId}`}
-                      className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition text-sm"
-                    >
-                      Đánh giá
-                    </Link>
-                  );
-                })}
+                
 
               </>
             )}
@@ -415,7 +402,19 @@ const OrderList = () => {
                       </div>
                       <div className="text-right">
                         <div className="text-base font-bold text-red-500">{prod.price.toLocaleString()}</div>
-                       
+                       {item.orderStatus === 'Đã nhận hàng' && !prod.isReviewed && (
+                            <Link
+                              to={`/review/${prod.variantId?.productId?._id}/${prod._id}`}
+                              className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition text-sm"
+                            >
+                              Đánh giá
+                            </Link>
+                          )}
+                          {prod.isReviewed && (
+                            <span className="inline-block text-sm text-gray-500 italic">Đã đánh giá</span>
+                          )}
+
+
                       </div>
                     </div>
                   ))

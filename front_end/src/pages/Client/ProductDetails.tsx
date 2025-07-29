@@ -41,6 +41,7 @@ interface CommentType {
   image? : string[];
   rating : number;
   createdAt: string;
+  hidden?: boolean;
 }
 
 interface UserInfoType {
@@ -338,7 +339,12 @@ const ProductDetails = () => {
       try {
         const res = await axios.get(`http://localhost:3000/comments/product/${product._id}`);
         console.log("Dữ liệu comment từ backend:", res.data);
-        setComments(res.data);
+        const filtered = Array.isArray(res.data)
+        ? res.data.filter((c: CommentType) => !c.hidden)
+        : [];
+
+      setComments(filtered);
+
       } catch (error) {
         console.error("Lỗi khi lấy bình luận:", error);
       }

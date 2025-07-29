@@ -25,6 +25,10 @@ const commentSchema = new mongoose.Schema({
       type: [String], // ✅ CHỖ NÀY: phải là mảng string
       default: [],
     }, // thêm trường ảnh
+    hidden: {
+    type: Boolean,
+    default: false, // ✅ Mặc định hiển thị
+  },
 }, { timestamps: true });
 
 export default mongoose.model("Comment", commentSchema);

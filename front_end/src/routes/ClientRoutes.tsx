@@ -38,7 +38,7 @@ const ClientRoutes = {
     { path: 'profile', element: <Profile /> },
     { path: 'payment-result', element: <CheckPayment /> },
     { path: 'newlist', element: <NewsList /> },
-    { path: 'review/:productId', element: <ReviewPage /> },
+    { path: 'review/:productId/:orderItemId', element: <ReviewPage /> },
 
     // Khi đường dẫn sai hoặc không tồn tại, dẫn đến trang NotFound
     { path: '*', element: <NotFound homePath="/"/> },
