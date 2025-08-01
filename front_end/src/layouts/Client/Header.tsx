@@ -1,24 +1,127 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 const ClientHeader = () => {
   const [keyword, setKeyword] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [cartItemTypes, setCartItemTypes] = useState(0);
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
+
   const navigate = useNavigate();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-  const updateLoginStatus = () => {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
+
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        setAvatarUrl(user.avatar || "");
+      } catch (error) {
+        console.error("Lỗi parse user:", error);
+      }
+    } else {
+      setAvatarUrl("");
+    }
+
+    const handleLoginChange = () => {
+      const token = localStorage.getItem("token");
+      setIsLoggedIn(!!token);
+    };
+
+    window.addEventListener("loginChanged", handleLoginChange);
+    return () => window.removeEventListener("loginChanged", handleLoginChange);
+  }, []);
+
+  useEffect(() => {
+  const checkUserStatus = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch("http://localhost:3000/users/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+        const data = await response.json();
+        if (data?.message?.includes("bị khóa")) {
+          alert("Tài khoản của bạn đã bị khóa. Bạn sẽ được đăng xuất.");
+
+          localStorage.removeItem("token");
+          localStorage.removeItem("role");
+          localStorage.removeItem("user");
+          localStorage.removeItem("cart");
+
+          window.dispatchEvent(new Event("loginChanged"));
+          window.dispatchEvent(new Event("cartChanged"));
+
+          navigate("/login");
+        }
+      
+    } catch (err) {
+      console.error("Lỗi kiểm tra trạng thái người dùng:", err);
+    }
   };
 
-  updateLoginStatus(); 
+  checkUserStatus(); 
 
-  window.addEventListener("loginChanged", updateLoginStatus);
-  return () => window.removeEventListener("loginChanged", updateLoginStatus);
-}, []);
+  const intervalId = setInterval(checkUserStatus, 30000); 
 
+  return () => clearInterval(intervalId); 
+}, [navigate]);
+
+  useEffect(() => {
+    const updateCart = () => {
+      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+      setCartItemTypes(cart.length);
+    };
+
+    updateCart();
+
+    window.addEventListener("cartChanged", updateCart);
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "cart" || e.key === "token") {
+        updateCart();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    const interval = setInterval(updateCart, 1000);
+
+    return () => {
+      window.removeEventListener("cartChanged", updateCart);
+      window.removeEventListener("storage", handleStorage);
+      clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,43 +132,37 @@ const ClientHeader = () => {
   };
 
   const handleLogout = () => {
-  const confirmed = window.confirm("Bạn có chắc chắn muốn đăng xuất?");
-  if (confirmed) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("user");
-    localStorage.removeItem("cart");
-    setIsLoggedIn(false);
-    setIsMenuOpen(false);
+    if (window.confirm("Bạn có chắc chắn muốn đăng xuất?")) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("user");
+      localStorage.removeItem("cart");
 
-    window.dispatchEvent(new Event('loginChanged'));
+      setIsLoggedIn(false);
+      setIsMenuOpen(false);
 
-    navigate("/login");
-  }
-};
+      window.dispatchEvent(new Event("loginChanged"));
+      window.dispatchEvent(new Event("cartChanged"));
+
+      navigate("/login");
+    }
+  };
 
   return (
     <header className="w-full h-[60px] bg-[#fdfdfd] shadow-md">
       <div className="max-w-[1280px] mx-auto px-6 h-full flex items-center justify-between">
-        <div className="h-full flex items-center">
-          <Link to={"/"}>
-            <img src="/img/logo.png" alt="Logo" className="h-6 object-contain" />
-          </Link>
-        </div>
+        <Link to="/">
+          <img src="/img/logo.png" alt="Logo" className="h-6 object-contain" />
+        </Link>
 
         <nav className="flex items-center space-x-10 text-sm font-bold uppercase">
-          <Link to={"/products"} className="relative group cursor-pointer">
-            <span className="hover:text-gray-700">Nước hoa nam</span>
-          </Link>
-          <Link to={"/products"} className="relative group cursor-pointer">
-            <span className="hover:text-gray-700">Nước hoa nữ</span>
-          </Link>
-          <Link to={"/products"} className="relative group cursor-pointer">
-            <span className="hover:text-gray-700">Thương hiệu</span>
-          </Link>
+          <Link to="/products" className="hover:text-gray-700">Bộ sưu tập</Link>
+          <Link to="/newlist" className="hover:text-gray-700">Bài viết</Link>
+          <Link to="/products" className="hover:text-gray-700">Thương hiệu</Link>
+          <Link to="/vouchers" className="hover:text-gray-700">Mã giảm giá</Link>
         </nav>
 
-        <div className="flex items-center space-x-6 text-xl text-black relative">
+        <div className="flex items-center space-x-6 text-xl text-black">
           <form onSubmit={handleSearch} className="relative">
             <input
               type="text"
@@ -79,43 +176,66 @@ const ClientHeader = () => {
             </button>
           </form>
 
-          <div className="h-5 border-l border-gray-300"></div>
+          <div className="h-5 border-l border-gray-300" />
 
           {isLoggedIn ? (
             <div className="relative">
               <img
-                src="https://i.pravatar.cc/40"
+                src={avatarUrl || "https://i.pravatar.cc/40"}
                 alt="avatar"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="w-8 h-8 rounded-full border-2 border-gray-300 cursor-pointer"
+                className="w-8 h-8 rounded-full border-2 border-gray-300 cursor-pointer object-cover"
               />
               {isMenuOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-50">
-                  <Link to={"/profile"} className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100">
-                    <i className="fas fa-user w-4 h-4 mr-2" /> Tài khoản
+                <div
+                  ref={dropdownRef}
+                  className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-50"
+                >
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center px-4 py-2 text-sm hover:bg-gray-100"
+                  >
+                    <i className="fas fa-user w-4 h-4 mr-2 mt-1" /> Tài khoản
                   </Link>
-                  <Link to={"/orders"} className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100">
-                    <i className="fas fa-shopping-cart w-4 h-4 mr-2" /> Đơn hàng
+                  <Link
+                    to="/orders"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center px-4 py-2 text-sm hover:bg-gray-100"
+                  >
+                    <i className="fas fa-box w-4 h-4 mr-2 mt-1" /> Đơn hàng
+                  </Link>
+                  <Link
+                    to="/myvoucher"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center px-4 py-2 text-sm hover:bg-gray-100"
+                  >
+                    <i className="fas fa-tags w-4 h-4 mr-2 mt-1" /> Mã của tôi
                   </Link>
                   <button
                     onClick={handleLogout}
                     className="flex items-center px-4 py-2 w-full text-sm hover:bg-gray-100"
                   >
-                    <i className="fas fa-sign-out-alt w-4 h-4 mr-2" /> Đăng xuất
+                    <i className="fas fa-sign-out-alt w-4 h-4 mr-2 mt-1" /> Đăng xuất
                   </button>
                 </div>
               )}
             </div>
           ) : (
-            <Link to={"/login"} className="hover:text-gray-600">
+            <Link to="/login" className="hover:text-gray-600">
               <i className="fas fa-user text-base"></i>
             </Link>
           )}
 
-          <div className="h-5 border-l border-gray-300"></div>
+          <div className="h-5 border-l border-gray-300" />
 
-          <Link to={"/cart"} className="hover:text-gray-600">
-            <i className="fas fa-cart-shopping text-base"></i>
+          <Link to="/cart" className="relative hover:text-gray-600">
+            <i className="fas fa-cart-shopping text-lg"></i>
+            {cartItemTypes > 0 && (
+              <span className="absolute -top-1 -right-4 bg-[#5f518e] text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+                {cartItemTypes}
+              </span>
+            )}
           </Link>
         </div>
       </div>

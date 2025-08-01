@@ -10,8 +10,11 @@ type Voucher = {
   discountValue: number;
   startDate: string;
   endDate: string;
+  usageLimit: number | null;
+  usedCount: number;
   status: "activated" | "inactivated";
 };
+
 
 const VoucherManager = () => {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -103,56 +106,80 @@ const VoucherManager = () => {
         </Link>
       </div>
 
-      <table className="min-w-full bg-white border text-sm">
+      <table className="min-w-full bg-white border text-sm text-center">
         <thead>
-          <tr className="bg-black text-white text-left">
-            <th className="px-4 py-2 w-10"></th>
-            <th className="px-4 py-2">STT</th>
-            <th className="px-4 py-2">Mã</th>
-            <th className="px-4 py-2">Loại</th>
-            <th className="px-4 py-2">Giá trị</th>
-            <th className="px-4 py-2">HSD</th>
-            <th className="px-4 py-2">Trạng thái</th>
-            <th className="px-4 py-2">Hành động</th>
+          <tr className="bg-black text-white">
+            <th className="px-4 py-2 w-10 text-center"></th>
+            <th className="px-4 py-2 text-center">STT</th>
+            <th className="px-4 py-2 text-center">Mã</th>
+            <th className="px-4 py-2 text-center">Loại</th>
+            <th className="px-4 py-2 text-center">Giá trị</th>
+            <th className="px-4 py-2 text-center">HSD</th>
+            <th className="px-4 py-2 text-center">Lượt dùng</th>
+            <th className="px-4 py-2 text-center">Trạng thái</th>
+            <th className="px-4 py-2 text-center">Hành động</th>
           </tr>
         </thead>
         <tbody>
           {vouchers.map((voucher, index) => (
             <tr key={voucher._id} className="hover:bg-gray-50 border-b">
-              <td className="px-4 py-2">
+              <td className="px-4 py-2 text-center">
                 <input
                   type="checkbox"
                   checked={selectedIds.includes(voucher._id)}
                   onChange={() => handleSelect(voucher._id)}
-                  className="w-5 h-5 accent-blue-600"
+                  className="w-5 h-5 accent-blue-600 mx-auto"
                 />
               </td>
-              <td className="px-4 py-2">{index + 1}</td>
-              <td className="px-4 py-2">{voucher.code}</td>
-              <td className="px-4 py-2">
+              <td className="px-4 py-2 text-center">{index + 1}</td>
+              <td className="px-4 py-2 text-center">{voucher.code}</td>
+              <td className="px-4 py-2 text-center">
                 {voucher.discountType === "percent" ? "Phần trăm" : "Tiền mặt"}
               </td>
-              <td className="px-4 py-2">
+              <td className="px-4 py-2 text-center">
                 {voucher.discountType === "percent"
                   ? `${voucher.discountValue}%`
                   : `${voucher.discountValue.toLocaleString()}`}
               </td>
-              <td className="px-4 py-2">
+              <td className="px-4 py-2 text-center">
                 {new Date(voucher.startDate).toLocaleDateString()} -{" "}
                 {new Date(voucher.endDate).toLocaleDateString()}
+                <div>
+                  <span className={`mt-1 inline-block text-xs font-medium rounded px-2 py-0.5 
+              ${new Date(voucher.endDate) < new Date()
+                      ? "bg-red-100 text-red-600"
+                      : "bg-green-100 text-green-600"}`}>
+                    {new Date(voucher.endDate) < new Date() ? "Hết hạn" : "Còn hạn"}
+                  </span>
+                </div>
               </td>
-              <td className="px-4 py-2">
+              <td className="px-4 py-2 text-center">
+                {voucher.usageLimit !== null
+                  ? `${voucher.usedCount} / ${voucher.usageLimit}`
+                  : `${voucher.usedCount} / ∞`}
+                <div>
+                  <span className={`mt-1 inline-block text-xs font-medium rounded px-2 py-0.5 
+              ${voucher.usageLimit !== null && voucher.usedCount >= voucher.usageLimit
+                      ? "bg-red-100 text-red-600"
+                      : "bg-green-100 text-green-600"}`}>
+                    {voucher.usageLimit !== null && voucher.usedCount >= voucher.usageLimit
+                      ? "Hết lượt"
+                      : "Còn lượt"}
+                  </span>
+                </div>
+              </td>
+              <td className="px-4 py-2 text-center">
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-semibold 
-                  ${voucher.status === "activated"
+            ${voucher.status === "activated"
                       ? "bg-green-100 text-green-700"
                       : "bg-yellow-100 text-yellow-700"}`}
                 >
                   {voucher.status === "activated" ? "Kích hoạt" : "Tạm dừng"}
                 </span>
               </td>
-              <td className="px-4 py-2">
-                <div className="flex gap-1">
+              <td className="px-4 py-2 text-center">
+                <div className="flex gap-1 justify-center">
                   <Link to={`/admin/vouchers/${voucher._id}`}>
                     <button className="w-8 h-8 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center justify-center">
                       <Eye size={14} />
@@ -175,6 +202,8 @@ const VoucherManager = () => {
           ))}
         </tbody>
       </table>
+
+
     </div>
   );
 };

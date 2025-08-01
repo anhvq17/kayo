@@ -44,8 +44,8 @@ import AttributeValueManager from "../pages/Admin/AttributeValue/AttributeValueM
 import TrashAttributeValue from "../pages/Admin/AttributeValue/TrashAttributeValue"
 import EditAttributeValue from "../pages/Admin/AttributeValue/EditAttributeValue"
 import DetailProduct from "../pages/Admin/Product/DetailProduct"
-import TrashVoucher from "../pages/Admin/Voucher/TrashVourcher"
-import DetailVoucher from "../pages/Admin/Voucher/DetailVourcher"
+import TrashVoucher from "../pages/Admin/Voucher/TrashVoucher"
+import DetailVoucher from "../pages/Admin/Voucher/DetailVoucher"
 
 
 

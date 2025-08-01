@@ -30,7 +30,7 @@ const ProductFemale = () => {
             product.categoryId?.name?.toLowerCase().includes("nữ") ||
             product.name.toLowerCase().includes("nữ")
         );
-        setProducts(filtered);
+        setProducts(filtered.slice(0, 8));
       } catch (error) {
         console.error("Lỗi khi lấy sản phẩm nữ:", error);
       }

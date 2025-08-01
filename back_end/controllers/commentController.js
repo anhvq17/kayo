@@ -1,85 +1,128 @@
+
+// [POST] Tạo bình luận mới
 import Comment from "../models/Comment.js";
 import Product from "../models/ProductModel.js";
+import OrderItem from "../models/OrderItemModel.js";
+import Joi from "joi";
 
-// Thêm bình luận
+// Validate dữ liệu
+const commentValidationSchema = Joi.object({
+  productId: Joi.string().required(),
+  content: Joi.string().min(1).max(1000).required(),
+  rating: Joi.number().min(1).max(5).required(),
+});
+
+// [POST] Tạo bình luận mới
 export const createComment = async (req, res) => {
   try {
-    const { productId, userId, content, rating } = req.body;
+    const { productId, orderItemId, content, rating } = req.body;
 
-    // Kiểm tra sản phẩm tồn tại
-    const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({ message: "Không tìm thấy sản phẩm." });
+    if (!productId || !content || !rating || !orderItemId) {
+      return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin' });
     }
 
-    const newComment = new Comment({ productId, userId, content, rating });
-    await newComment.save();
+    // ✅ Kiểm tra đơn hàng sản phẩm đã đánh giá chưa
+    const orderItem = await OrderItem.findById(orderItemId);
+    if (!orderItem) {
+      return res.status(404).json({ message: 'Không tìm thấy đơn hàng sản phẩm' });
+    }
+    if (orderItem.isReviewed) {
+      return res.status(400).json({ message: 'Sản phẩm này đã được đánh giá' });
+    }
 
-    return res.status(201).json({
-      message: "Đã thêm bình luận.",
-      comment: newComment,
+    const imagePaths = req.files?.map((file) => `/uploads/${file.filename}`) || [];
+
+    const newComment = new Comment({
+      productId,
+      userId: req.user._id,
+      content,
+      rating,
+      image: imagePaths,
     });
+
+    const savedComment = await newComment.save();
+    const populated = await savedComment.populate('userId', 'name');
+
+    // ✅ Đánh dấu đã đánh giá
+    await OrderItem.findByIdAndUpdate(orderItemId, { isReviewed: true });
+
+    res.status(201).json(populated);
   } catch (error) {
-    return res.status(500).json({
-      message: "Lỗi khi thêm bình luận.",
-      error: error.message,
-    });
+    console.error('Lỗi tạo bình luận:', error);
+    res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo bình luận' });
   }
 };
 
-// Lấy tất cả bình luận theo sản phẩm
+
+
+
+// [GET] Lấy danh sách bình luận theo sản phẩm
 export const getCommentsByProduct = async (req, res) => {
   try {
     const { productId } = req.params;
 
-    const comments = await Comment.find({ productId })
+    const comments = await Comment.find({ productId, hidden: false }) // ✅ Lọc ẩn
       .populate("userId", "username")
-      .sort({ createdAt: -1 }); // sắp xếp mới nhất trước
+      .sort({ createdAt: -1 });
 
-    return res.status(200).json(comments);
+    res.status(200).json(comments);
   } catch (error) {
-    return res.status(500).json({
-      message: "Lỗi khi lấy bình luận.",
+    res.status(500).json({
+      message: "Lỗi khi lấy danh sách bình luận.",
       error: error.message,
     });
   }
 };
 
-// Lấy chi tiết một bình luận theo ID
+// [GET] Lấy chi tiết một bình luận
 export const getCommentById = async (req, res) => {
   try {
     const { id } = req.params;
 
     const comment = await Comment.findById(id).populate("userId", "username");
-
     if (!comment) {
       return res.status(404).json({ message: "Không tìm thấy bình luận." });
     }
 
-    return res.status(200).json(comment);
+    res.status(200).json(comment);
   } catch (error) {
-    return res.status(500).json({
+    res.status(500).json({
       message: "Lỗi khi lấy chi tiết bình luận.",
       error: error.message,
     });
   }
 };
 
-// Xoá bình luận
+// [DELETE] Xóa bình luận
 export const deleteComment = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const deleted = await Comment.findByIdAndDelete(id);
-    if (!deleted) {
-      return res.status(404).json({ message: "Không tìm thấy bình luận." });
+    const deletedComment = await Comment.findByIdAndDelete(id);
+    if (!deletedComment) {
+      return res.status(404).json({ message: "Không tìm thấy bình luận để xoá." });
     }
 
-    return res.status(200).json({ message: "Xoá bình luận thành công." });
+    res.status(200).json({ message: "Xoá bình luận thành công." });
   } catch (error) {
-    return res.status(500).json({
+    res.status(500).json({
       message: "Lỗi khi xoá bình luận.",
       error: error.message,
     });
+  }
+};
+
+export const toggleCommentHidden = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const comment = await Comment.findById(id);
+    if (!comment) return res.status(404).json({ message: 'Không tìm thấy bình luận' });
+
+    comment.hidden = !comment.hidden;
+    await comment.save();
+
+    res.status(200).json({ message: 'Cập nhật trạng thái thành công', hidden: comment.hidden });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi khi cập nhật trạng thái', error: error.message });
   }
 };

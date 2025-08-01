@@ -60,8 +60,8 @@ const getPaymentBadge = (paymentStatus: string) => {
 
 const getPaymentMethodText = (method: string) => {
   switch (method) {
-    case 'cod': return 'Thanh toán khi nhận hàng';
-    case 'vnpay': return 'Thanh toán qua VNPay';
+    case 'cod': return 'Thanh toán khi nhận hàng (COD)';
+    case 'vnpay': return 'Thanh toán online (VNPay)';
     default: return method;
   }
 };
@@ -247,7 +247,6 @@ const OrderManager = () => {
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
           <div className="flex items-center gap-2">
-            <span role="img" aria-label="error">❌</span>
             {error}
           </div>
         </div>
@@ -256,14 +255,13 @@ const OrderManager = () => {
       {successMessage && (
         <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
           <div className="flex items-center gap-2">
-            <span role="img" aria-label="success">✅</span>
             {successMessage}
           </div>
         </div>
       )}
 
       <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-        <span role="img" aria-label="order"></span> Quản lý đơn hàng
+        Quản lý đơn hàng
       </h2>
       <div className="mb-6 flex flex-col md:flex-row gap-4">
         <div className="flex-1">
@@ -371,14 +369,14 @@ const OrderManager = () => {
                         to={`/admin/orderDetails/${order._id}`} 
                         className="inline-flex items-center gap-2 border bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs font-semibold shadow transition duration-200"
                       >
-                        <span role="img" aria-label="detail"></span>Chi tiết
+                        Chi tiết
                       </Link>
                       {canCancelOrder(order.orderStatus) && (
                         <button
                           onClick={() => openCancelModal(order._id)}
                           className="inline-flex items-center gap-2 border bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs font-semibold shadow transition duration-200"
                         >
-                          <span role="img" aria-label="cancel"></span>Huỷ
+                          Huỷ
                         </button>
                       )}
                       {canProcessReturn(order.orderStatus) && (
@@ -386,7 +384,7 @@ const OrderManager = () => {
                           onClick={() => openReturnModal(order._id)}
                           className="inline-flex items-center gap-2 border bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded-md text-xs font-semibold shadow transition duration-200"
                         >
-                          <span role="img" aria-label="return">🔄</span> Xử lý hoàn hàng
+                          Xử lý hoàn hàng 
                         </button>
                       )}
                     </div>
@@ -407,19 +405,19 @@ const OrderManager = () => {
       {showCancelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-[500px] shadow-lg relative">
-            <h3 className="text-lg font-semibold mb-4 text-red-600">Hủy đơn hàng</h3>
+            <h3 className="text-lg font-bold mb-1 text-gray-800">Hủy đơn hàng</h3>
             <div className="mb-4">
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700 text-sm mb-4">
                 Bạn có chắc chắn muốn hủy đơn hàng này không?
               </p>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Lý do hủy đơn hàng <span className="text-red-500">*</span>
+                  Lý do hủy <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="Vui lòng nhập lý do hủy đơn hàng..."
+                  placeholder="Vui lòng nhập lý do hủy đơn hàng"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
                   rows={4}
                   required
@@ -430,10 +428,10 @@ const OrderManager = () => {
               </div>
 
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
-                <span role="img" aria-label="warning">⚠️</span> Lưu ý: Hành động này không thể hoàn tác!
+                Lưu ý: Hành động này không thể hoàn tác!
               </div>
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-1">
               <button 
                 type="button" 
                 onClick={() => {
@@ -452,7 +450,7 @@ const OrderManager = () => {
                 disabled={cancellingOrderId !== null || !cancelReason.trim()}
                 className="border bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm transition duration-200 disabled:opacity-50"
               >
-                {cancellingOrderId ? 'Đang hủy...' : 'Xác nhận hủy'}
+                {cancellingOrderId ? 'Đang hủy...' : 'Xác nhận'}
               </button>
             </div>
           </div>
@@ -461,16 +459,13 @@ const OrderManager = () => {
       {showReturnModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-[500px] shadow-lg relative">
-            <h3 className="text-lg font-semibold mb-4 text-orange-600">Xử lý yêu cầu hoàn hàng</h3>
+            <h3 className="text-lg font-bold mb-1 text-gray-800">Xử lý yêu cầu hoàn hàng</h3>
             <div className="mb-4">
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700 text-sm mb-4">
                 Bạn muốn xử lý yêu cầu hoàn hàng này như thế nào?
               </p>
               
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Hành động <span className="text-red-500">*</span>
-                </label>
                 <div className="space-y-2">
                   <label className="flex items-center">
                     <input
@@ -480,7 +475,7 @@ const OrderManager = () => {
                       onChange={(e) => setReturnAction(e.target.value as 'approve' | 'reject')}
                       className="mr-2"
                     />
-                    <span className="text-green-700 font-medium">✅ Đồng ý hoàn hàng</span>
+                    <span className="text-green-700 text-sm font-medium">Đồng ý hoàn hàng</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -490,23 +485,22 @@ const OrderManager = () => {
                       onChange={(e) => setReturnAction(e.target.value as 'approve' | 'reject')}
                       className="mr-2"
                     />
-                    <span className="text-red-700 font-medium">❌ Từ chối hoàn hàng</span>
+                    <span className="text-red-700 text-sm font-medium">Từ chối hoàn hàng</span>
                   </label>
                 </div>
               </div>
 
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
-                <span role="img" aria-label="info">ℹ️</span> 
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700 mb-2"> 
                 {returnAction === 'approve' 
                   ? 'Đồng ý hoàn hàng sẽ chuyển trạng thái đơn hàng thành "Đã hoàn hàng". Nếu thanh toán qua VNPAY, trạng thái thanh toán sẽ tự động chuyển thành "Đã hoàn tiền".'
                   : 'Từ chối hoàn hàng sẽ chuyển trạng thái đơn hàng thành "Từ chối hoàn hàng"'
                 }
               </div>
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
-                <span role="img" aria-label="info">ℹ️</span> Lưu ý: Khi đơn hàng chuyển sang trạng thái "Đã nhận hàng", trạng thái thanh toán sẽ tự động chuyển thành "Đã thanh toán" (áp dụng cho cả COD và VNPAY)
+                Lưu ý: Khi đơn hàng chuyển sang trạng thái "Đã nhận hàng", trạng thái thanh toán sẽ tự động chuyển thành "Đã thanh toán" (áp dụng cho cả COD và VNPAY)
               </div>
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-1">
               <button 
                 type="button" 
                 onClick={() => {

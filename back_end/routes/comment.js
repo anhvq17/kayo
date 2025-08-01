@@ -3,14 +3,28 @@ import {
   createComment,
   getCommentsByProduct,
   getCommentById,
-  deleteComment
+  deleteComment,
+  toggleCommentHidden
 } from "../controllers/commentController.js";
+
+import { protect } from "../middlewares/authMiddleware.js";
+import upload from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
-router.post("/", createComment);                         // Tạo bình luận
-router.get("/product/:productId", getCommentsByProduct); // Lấy bình luận theo sản phẩm
-router.get("/:id", getCommentById);                      // Xem chi tiết một bình luận
-router.delete("/:id", deleteComment);                    // Xóa bình luận theo ID
+// Tạo bình luận mới
+router.post("/", protect ,  upload.array('image', 3) , createComment);
+
+// Lấy tất cả bình luận theo sản phẩm
+router.get("/product/:productId", getCommentsByProduct);
+
+// Lấy chi tiết một bình luận theo ID
+router.get("/:id", getCommentById);
+
+// Xóa bình luận theo ID
+router.delete("/:id", deleteComment);
+
+router.put("/:id/hide", toggleCommentHidden);
+// Toggle trạng thái ẩn hiện của bình luận
 
 export default router;

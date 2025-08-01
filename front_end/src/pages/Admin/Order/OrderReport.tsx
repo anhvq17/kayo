@@ -132,7 +132,7 @@ const OrderReport = () => {
     <div className="p-4">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-semibold flex items-center gap-2">
-          <span role="img" aria-label="report"></span> Báo cáo đơn hàng
+          Báo cáo đơn hàng
         </h2>
         <button
           onClick={exportToCSV}
@@ -229,13 +229,13 @@ const OrderReport = () => {
           <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã đơn hàng</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách hàng</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thanh toán</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phương thức thanh toán</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Mã đơn hàng</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Khách hàng</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Tổng tiền</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Trạng thái</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Thanh toán</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Phương thức thanh toán</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Ngày tạo</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -270,7 +270,7 @@ const OrderReport = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán qua VNPay'}
+                      {order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng (COD)' : 'Thanh toán online (VNPay)'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(order.createdAt).toLocaleString("vi-VN")}

@@ -26,6 +26,7 @@ interface OrderItem {
   };
   quantity: number;
   price: number;
+  isReviewed?: boolean; // Add this property
 }
 
 const ORDER_TABS = [
@@ -98,8 +99,8 @@ const OrderList = () => {
 
   const getPaymentMethodText = (method: string) => {
     switch (method) {
-      case 'cod': return 'Thanh toán khi nhận hàng';
-      case 'vnpay': return 'Thanh toán qua VNPay';
+      case 'cod': return 'Thanh toán khi nhận hàng (COD)';
+      case 'vnpay': return 'Thanh toán online (VNPay)';
       default: return method;
     }
   };
@@ -119,45 +120,35 @@ const OrderList = () => {
     }
   };
 
-  // Kiểm tra xem đơn hàng có thể hủy không
   const canCancelOrder = (orderStatus: string) => {
     return orderStatus === 'Chờ xử lý' || orderStatus === 'Đã xử lý';
   };
 
-  // Kiểm tra xem đơn hàng có thể yêu cầu hoàn hàng không (chỉ khi ở trạng thái Đã nhận hàng)
   const canRequestReturn = (orderStatus: string) => {
     return orderStatus === 'Đã nhận hàng';
   };
 
-  // Kiểm tra xem đơn hàng có thể xác nhận đã nhận hàng không (chỉ khi ở trạng thái Đã giao hàng)
   const canConfirmReceived = (orderStatus: string) => {
     return orderStatus === 'Đã giao hàng';
   };
 
-  // Xử lý hủy đơn hàng
   const handleCancelOrder = async () => {
     if (!selectedOrderId || !cancelReason.trim()) return;
 
     try {
       setCancellingOrderId(selectedOrderId);
-      
-      // Tìm đơn hàng để kiểm tra phương thức thanh toán
       const order = orderList.find(o => o._id === selectedOrderId);
-      
-      // Chuẩn bị dữ liệu cập nhật
       const updateData: any = { 
         orderStatus: 'Đã huỷ đơn hàng',
         cancelReason: cancelReason.trim()
       };
       
-      // Nếu phương thức thanh toán là VNPAY thì tự động cập nhật trạng thái thanh toán thành "Đã hoàn tiền"
       if (order && order.paymentMethod === 'vnpay') {
         updateData.paymentStatus = 'Đã hoàn tiền';
       }
       
       await updateOrder(selectedOrderId, updateData);
       
-      // Cập nhật lại danh sách đơn hàng
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const data = await getOrdersByUserWithItems(user._id);
       if (Array.isArray(data)) {
@@ -166,16 +157,14 @@ const OrderList = () => {
       
       setShowCancelModal(false);
       setSelectedOrderId(null);
-      setCancelReason(''); // Reset lý do
+      setCancelReason('');
       
-      // Hiển thị thông báo phù hợp
       if (order && order.paymentMethod === 'vnpay') {
         setSuccessMessage('Hủy đơn hàng thành công! Trạng thái thanh toán đã được cập nhật thành "Đã hoàn tiền".');
       } else {
         setSuccessMessage('Hủy đơn hàng thành công!');
       }
       
-      // Tự động ẩn thông báo sau 3 giây
       setTimeout(() => {
         setSuccessMessage(null);
       }, 3000);
@@ -186,7 +175,6 @@ const OrderList = () => {
     }
   };
 
-  // Xử lý yêu cầu hoàn hàng
   const handleRequestReturn = async () => {
     if (!selectedOrderId || !returnReason.trim()) return;
 
@@ -197,7 +185,6 @@ const OrderList = () => {
         returnReason: returnReason.trim()
       });
       
-      // Cập nhật lại danh sách đơn hàng
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const data = await getOrdersByUserWithItems(user._id);
       if (Array.isArray(data)) {
@@ -206,7 +193,7 @@ const OrderList = () => {
       
       setShowReturnModal(false);
       setSelectedOrderId(null);
-      setReturnReason(''); // Reset lý do
+      setReturnReason('');
     } catch (err: any) {
       setError(err.message || 'Đã xảy ra lỗi khi yêu cầu hoàn hàng.');
     } finally {
@@ -214,7 +201,6 @@ const OrderList = () => {
     }
   };
 
-  // Xử lý xác nhận đã nhận hàng
   const handleConfirmReceived = async (orderId: string) => {
     try {
       setConfirmingReceivedId(orderId);
@@ -225,7 +211,6 @@ const OrderList = () => {
         orderStatus: 'Đã nhận hàng'
       });
       
-      // Cập nhật lại danh sách đơn hàng
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const data = await getOrdersByUserWithItems(user._id);
       if (Array.isArray(data)) {
@@ -238,43 +223,35 @@ const OrderList = () => {
     }
   };
 
-  // Mở modal hủy đơn hàng
   const openCancelModal = (orderId: string) => {
     setSelectedOrderId(orderId);
-    setCancelReason(''); // Reset lý do khi mở modal
+    setCancelReason('');
     setShowCancelModal(true);
   };
 
-  // Mở modal yêu cầu hoàn hàng
   const openReturnModal = (orderId: string) => {
     setSelectedOrderId(orderId);
-    setReturnReason(''); // Reset lý do khi mở modal
+    setReturnReason('');
     setShowReturnModal(true);
   };
 
-  // Lọc đơn theo tab
   const filteredOrders = tab === 'all' ? orderList : orderList.filter((o) => o.orderStatus === tab);
-  // Sắp xếp đơn hàng mới nhất lên đầu
   const sortedOrders = [...filteredOrders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Thông báo lỗi */}
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
           <div className="flex items-center gap-2">
-            <span role="img" aria-label="error">❌</span>
             {error}
           </div>
         </div>
       )}
 
-      {/* Thông báo thành công */}
       {successMessage && (
         <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
           <div className="flex items-center gap-2">
-            <span role="img" aria-label="success">✅</span>
             {successMessage}
           </div>
         </div>
@@ -288,11 +265,10 @@ const OrderList = () => {
 
       <div className="mx-auto mt-10 text-center">
         <h1 className="text-3xl font-bold flex items-center gap-2 justify-center">
-          <span role="img" aria-label="order-list"></span> DANH SÁCH ĐƠN HÀNG
+          DANH SÁCH ĐƠN HÀNG
         </h1>
       </div>
 
-      {/* Tabs lọc trạng thái */}
       <div className="flex flex-wrap gap-2 justify-center mt-8 mb-8">
         {ORDER_TABS.map((t) => (
           <button
@@ -317,11 +293,13 @@ const OrderList = () => {
                 <div className="flex-1">
                   <div className="flex flex-col md:flex-row md:items-center md:gap-6 gap-2">
                     <div>
-                      <p className="text-lg text-gray-500 flex items-center gap-1">
-                        <span role="img" aria-label="id">#️⃣</span> Mã đơn: <span className="font-semibold text-gray-800">{item._id}</span>
+                      <p className="text-base text-gray-500 flex items-center gap-2">
+                        <i className="fas fa-barcode text-gray-600"></i>
+                        Mã vận đơn: <span className="font-semibold text-gray-800">{item._id}</span>
                       </p>
-                      <p className="text-lg text-gray-500 flex items-center gap-1 mt-1">
-                        <span role="img" aria-label="date">📅</span> Ngày tạo: <span className="font-medium">{new Date(item.createdAt).toLocaleString("vi-VN")}</span>
+                      <p className="text-base text-gray-500 flex items-center gap-2 mt-1">
+                        <i className="fas fa-clock text-gray-600"></i>
+                        Thời gian tạo: <span className="font-medium text-gray-800">{new Date(item.createdAt).toLocaleString("vi-VN")}</span>
                       </p>
                     </div>
                     <div className="flex flex-col gap-1 mt-2 md:mt-0">
@@ -333,7 +311,6 @@ const OrderList = () => {
                         item.orderStatus === 'Đã nhận hàng' ? 'bg-green-200 text-green-900' :
                         'bg-red-100 text-red-800'
                       }`}>
-                        <span role="img" aria-label="status">🔖</span>
                         {getStatusText(item.orderStatus)}
                       </span>
                       <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${
@@ -341,32 +318,32 @@ const OrderList = () => {
                         getPaymentStatusText(item.paymentStatus) === 'Đã hoàn tiền' ? 'bg-blue-100 text-blue-800' :
                         'bg-yellow-100 text-yellow-800'}`}
                       >
-                        <span role="img" aria-label="payment">💰</span>
                         {getPaymentStatusText(item.paymentStatus)}
                       </span>
                     </div>
                   </div>
-                  <div className="flex flex-col md:flex-row md:items-center md:gap-6 gap-2 mt-4">
-                    {item.voucherCode && item.discount > 0 && (
-                      <p className="text-lg text-gray-500 flex items-center gap-1">
-                        <span role="img" aria-label="voucher">🏷️</span> 
-                        Giảm giá:
-                        <span className="text-red-500">
-                          {item.discountType === 'percent' && typeof item.discountValue === 'number'
-                            ? `-${item.discountValue}%`
-                            : `-${item.discount?.toLocaleString()}đ`}
+                  <div className="flex flex-col gap-2 mt-4">
+                    <p className="text-base text-gray-500 flex items-center gap-2">
+                      <i className="fas fa-wallet text-gray-600"></i>
+                      Tổng tiền thanh toán:
+                      <span className="text-red-500 font-bold">
+                        {item.totalAmount.toLocaleString()}
+                      </span>
+                      {item.voucherCode && item.discount > 0 && (
+                        <span className="ml-2 text-sm font-semibold text-gray-800">
+                          (Giảm giá:
+                          <span className="text-red-500 font-semibold ml-1">
+                            {item.discountType === 'percent' && typeof item.discountValue === 'number'
+                              ? `-${item.discountValue}%`
+                              : `-${item.discount?.toLocaleString()}`}
+                          </span>)
                         </span>
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex flex-col md:flex-row md:items-center md:gap-6 gap-2 mt-4">
-                    
-                    <p className="text-lg text-gray-500 flex items-center gap-1">
-                      <span role="img" aria-label="money">💵</span> Tổng tiền thanh toán: <span className="text-red-500 font-bold">{item.totalAmount.toLocaleString()}</span>
+                      )}
                     </p>
-                    
-                    <p className="text-lg text-gray-500 flex items-center gap-1">
-                      <span role="img" aria-label="paymethod">💳</span> {getPaymentMethodText(item.paymentMethod)}
+
+                    <p className="text-base text-gray-500 flex items-center gap-2">
+                      <i className="fas fa-credit-card text-gray-600"></i>
+                      Phương thức thanh toán: <span className="font-semibold text-gray-800">{getPaymentMethodText(item.paymentMethod)}</span>
                     </p>
                   </div>
                 </div>
@@ -374,14 +351,14 @@ const OrderList = () => {
                 <div className="flex justify-end md:justify-center mt-4 md:mt-0 gap-2">
                   <Link to={`/orders/${item._id}`}
                     className="inline-flex items-center gap-2 bg-[#5f518e] text-white px-5 py-2 rounded-lg font-semibold shadow hover:opacity-90 transition text-sm">
-                    <span role="img" aria-label="detail">🔎</span> Xem chi tiết
+                    Xem chi tiết
                   </Link>
                   {canCancelOrder(item.orderStatus) && (
                     <button
                       onClick={() => openCancelModal(item._id)}
                       className="inline-flex items-center gap-2 bg-red-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-red-700 transition text-sm"
                     >
-                      <span role="img" aria-label="cancel">❌</span> Hủy đơn hàng
+                     Hủy đơn hàng
                     </button>
                   )}
                   {canConfirmReceived(item.orderStatus) && (
@@ -390,30 +367,32 @@ const OrderList = () => {
                       disabled={confirmingReceivedId === item._id}
                       className="inline-flex items-center gap-2 bg-green-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-green-700 transition text-sm disabled:opacity-50"
                     >
-                      <span role="img" aria-label="received">✅</span> 
                       {confirmingReceivedId === item._id ? 'Đang xác nhận...' : 'Đã nhận hàng'}
                     </button>
                   )}
                   {canRequestReturn(item.orderStatus) && (
-                    <button
-                      onClick={() => openReturnModal(item._id)}
-                      disabled={requestingReturnId === item._id}
-                      className="inline-flex items-center gap-2 bg-orange-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-orange-700 transition text-sm disabled:opacity-50"
-                    >
-                      <span role="img" aria-label="return">🔄</span> 
-                      {requestingReturnId === item._id ? 'Đang gửi...' : 'Yêu cầu hoàn hàng'}
-                    </button>
-                  )}
+              <>
+                <button
+                  onClick={() => openReturnModal(item._id)}
+                  disabled={requestingReturnId === item._id}
+                  className="inline-flex items-center gap-2 bg-orange-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-orange-700 transition text-sm disabled:opacity-50"
+                >
+                  {requestingReturnId === item._id ? 'Đang gửi...' : 'Yêu cầu hoàn hàng'}
+                </button>
+
+                
+
+              </>
+            )}
                 </div>
               </div>
-              {/* Hiển thị danh sách sản phẩm */} 
               <div className="border-t pt-4 mt-4">
                 {item.items && item.items.length > 0 ? (
                   item.items.map((prod: OrderItem) => (
                     <div key={prod._id} className="flex items-center gap-4 py-2 border-b last:border-b-0">
                       <img src={ prod.variantId?.image} alt={prod.variantId?.productId?.name} className="w-20 h-20 object-cover rounded border" />
                       <div className="flex-1">
-                        <div className="text-xl font-medium text-gray-900">{prod.variantId?.productId?.name || 'Sản phẩm'}</div>
+                        <div className="text-lg font-medium text-gray-900">{prod.variantId?.productId?.name || 'Sản phẩm'}</div>
                         <div className="text-xs text-gray-500">
                           {prod.variantId?.attributes?.map((attr, i) => (
                             <span key={i} className="mr-2">{attr.attributeId?.name}: {attr.valueId?.value}</span>
@@ -422,8 +401,20 @@ const OrderList = () => {
                         <div className="text-xs text-gray-500">Số lượng: {prod.quantity}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-red-500">{prod.price.toLocaleString()}</div>
-                       
+                        <div className="text-base font-bold text-red-500">{prod.price.toLocaleString()}</div>
+                       {item.orderStatus === 'Đã nhận hàng' && !prod.isReviewed && (
+                            <Link
+                              to={`/review/${prod.variantId?.productId?._id}/${prod._id}`}
+                              className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition text-sm"
+                            >
+                              Đánh giá
+                            </Link>
+                          )}
+                          {prod.isReviewed && (
+                            <span className="inline-block text-sm text-gray-500 italic">Đã đánh giá</span>
+                          )}
+
+
                       </div>
                     </div>
                   ))

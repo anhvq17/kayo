@@ -70,3 +70,17 @@ export const login = async (req, res) => {
     res.status(500).json({ message: 'Lỗi máy chủ' });
   }
 };
+export const getCurrentUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Lỗi lấy thông tin người dùng:", error);
+    res.status(500).json({ message: 'Lỗi máy chủ' });
+  }
+};
+

@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ShoppingCart } from "lucide-react";
+import moment from "moment";
+
+
 
 interface ProductDetailType {
   priceDefault: number | undefined;
@@ -35,7 +38,10 @@ interface CommentType {
   _id: string;
   userId: { _id: string; username: string };
   content: string;
+  image? : string[];
+  rating : number;
   createdAt: string;
+  hidden?: boolean;
 }
 
 interface UserInfoType {
@@ -56,6 +62,7 @@ interface AttributeValueType {
 }
 
 const ProductDetails = () => {
+   const { id: productId } = useParams();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -74,7 +81,6 @@ const ProductDetails = () => {
     "description"
   );
   const [comments, setComments] = useState<CommentType[]>([]);
-  const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUserInfo] = useState<UserInfoType | null>(null);
   const [error] = useState<string | null>(null);
@@ -109,7 +115,6 @@ const ProductDetails = () => {
   useEffect(() => {
     if (id) {
       fetchProduct();
-      fetchComments();
     }
   }, [id]);
 
@@ -328,16 +333,24 @@ const ProductDetails = () => {
     return match || value;
   };
 
-  const fetchComments = async () => {
-    try {
-      const res = await axios.get(
-        `http://localhost:3000/comments/product/${id}`
-      );
-      setComments(res.data);
-    } catch {
-      setComments([]);
-    }
-  };
+  useEffect(() => {
+    if (!product?._id) return;
+    const fetchComments = async () => {
+      try {
+        const res = await axios.get(`http://localhost:3000/comments/product/${product._id}`);
+        console.log("Dữ liệu comment từ backend:", res.data);
+        const filtered = Array.isArray(res.data)
+        ? res.data.filter((c: CommentType) => !c.hidden)
+        : [];
+
+      setComments(filtered);
+
+      } catch (error) {
+        console.error("Lỗi khi lấy bình luận:", error);
+      }
+    };
+    fetchComments();
+  }, [product]);
 
   useEffect(() => {
     fetchAttributes();
@@ -378,7 +391,7 @@ const ProductDetails = () => {
     );
 
     const cartItem = {
-      userId: user._id, // ✅ Sử dụng user._id thay vì biến userId không xác định
+      userId: user._id,
       variantId: selectedVariant._id,
       productId: product._id,
       name: product.name,
@@ -395,16 +408,14 @@ const ProductDetails = () => {
       cart.push(cartItem);
     }
 
-    // Lưu vào localStorage
     localStorage.setItem("cart", JSON.stringify(cart));
 
-    // Gửi dữ liệu lên server
     try {
-      console.log("🛒 Gửi cartItem:", cartItem); // Debug
+      console.log("Gửi cartItem:", cartItem);
       await axios.post("http://localhost:3000/cart", cartItem);
-      console.log("✅ Sản phẩm đã được gửi lên server.");
+      console.log("Sản phẩm đã được gửi lên server.");
     } catch (error) {
-      console.error("❌ Lỗi khi gửi sản phẩm lên server:", error);
+      console.error("Lỗi khi gửi sản phẩm lên server:", error);
     }
   };
 
@@ -453,31 +464,6 @@ const ProductDetails = () => {
     navigate("/checkout");
   };
 
-  const handleCommentSubmit = async () => {
-    if (!user) {
-      alert("Vui lòng đăng nhập để bình luận!");
-      return;
-    }
-
-    if (!newComment.trim()) {
-      alert("Nội dung bình luận không được để trống!");
-      return;
-    }
-
-    try {
-      await axios.post("http://localhost:3000/comments", {
-        productId: id,
-        userId: user._id,
-        content: newComment.trim(),
-      });
-
-      setNewComment("");
-      fetchComments();
-    } catch (error) {
-      console.error("Lỗi gửi bình luận:", error);
-      alert("Không thể gửi bình luận. Vui lòng thử lại sau.");
-    }
-  };
 
   if (!id)
     return <div className="text-center py-10">Không có ID sản phẩm.</div>;
@@ -487,11 +473,27 @@ const ProductDetails = () => {
   if (!product)
     return <div className="text-center py-10">Không tìm thấy sản phẩm.</div>;
 
-  const thumbnails = [
-    ...new Set(
-      [product.image, ...variants.map((v) => v.image)].filter(Boolean)
-    ),
-  ];
+  const imageMap = new Map<string, string>();
+
+variants.forEach((v) => {
+  const scent =
+    v.attributes?.find((a) => a.attributeId.name === "Mùi hương")?.valueId?.value || v.flavors;
+  const volume =
+    v.attributes?.find((a) => a.attributeId.name === "Dung tích")?.valueId?.value || v.volume.toString();
+
+  const key = `${scent}-${volume}`;
+  if (!imageMap.has(key)) {
+    imageMap.set(key, v.image);
+  }
+});
+
+const thumbnails = [product.image, ...Array.from(imageMap.values())].filter(Boolean);
+
+console.log("Thumbnails:", thumbnails);
+
+
+console.log("productId detail:", productId);
+
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -516,18 +518,20 @@ const ProductDetails = () => {
               className="w-full rounded shadow object-contain max-h-[400px]"
             />
             <div className="flex gap-2 mt-4 justify-center">
-              {thumbnails.map((src, index) => (
-                <img
-                  key={`${src}-${index}`}
-                  src={src}
-                  alt={`thumb-${index}`}
-                  className={`w-14 h-14 border rounded object-cover cursor-pointer ${
-                    mainImg === src ? "border-purple-600" : ""
-                  }`}
-                  onClick={() => setMainImg(src)}
-                />
-              ))}
-            </div>
+            {thumbnails.slice(0, 5).map((src, index) => (
+              <img
+                key={`${src}-${index}`}
+                src={src}
+                alt={`thumb-${index}`}
+                className={`w-14 h-14 border rounded object-cover cursor-pointer ${
+                  mainImg === src ? "border-purple-600" : ""
+                }`}
+                onClick={() => setMainImg(src)}
+              />
+            ))}
+          </div>
+
+
           </div>
 
           <div className="w-full md:w-1/2">
@@ -718,10 +722,10 @@ const ProductDetails = () => {
             <h3 className="font-semibold mb-5">ƯU ĐIỂM</h3>
             <div className="grid grid-cols-4 gap-4 text-sm text-gray-600">
               {[
-                { label: "Xuân", color: "bg-green-400", icon: "🍃" },
-                { label: "Hạ", color: "bg-red-300", icon: "🌂" },
-                { label: "Thu", color: "bg-yellow-400", icon: "🍂" },
-                { label: "Đông", color: "bg-blue-400", icon: "❄️" },
+                { label: "Xuân", color: "bg-green-400", icon: <i className="fas fa-leaf text-green-400"></i> },
+                { label: "Hạ", color: "bg-red-300", icon: <i className="fas fa-sun text-red-300"></i> },
+                { label: "Thu", color: "bg-yellow-400", icon: <i className="fas fa-wind text-yellow-400"></i> },
+                { label: "Đông", color: "bg-blue-400", icon: <i className="fas fa-snowflake text-blue-400"></i> },
               ].map((item) => (
                 <div key={item.label} className="flex flex-col items-center">
                   <div className="text-xl">{item.icon}</div>
@@ -740,30 +744,30 @@ const ProductDetails = () => {
           <div className="border p-6 rounded shadow">
             <h3 className="font-semibold mb-6 text-center">DỊCH VỤ</h3>
             <ul className="space-y-4 text-sm">
-              <li className="flex items-start gap-3">
-                <span className="text-2xl">🛡️</span>
+              <li className="flex items-start gap-5">
+                <span className="text-xl"><i className="fas fa-shield-alt text-xl mt-1 text-gray-500"></i></span>
                 <div>
                   <p className="font-semibold">Cam kết chính hãng 100%</p>
                   <p className="text-gray-500 text-xs">
-                    Tất cả các dòng nước hoa.
+                    Tất cả các dòng nước hoa
                   </p>
                 </div>
               </li>
-              <li className="flex items-start gap-3">
-                <span className="text-xl">↩️</span>
+              <li className="flex items-start gap-5">
+                <span className="text-xl"><i className="fas fa-undo-alt text-xl mt-1 text-gray-500"></i></span>
                 <div>
                   <p className="font-semibold">Bảo hành đến giọt cuối cùng</p>
                   <p className="text-gray-500 text-xs">
-                    Miễn phí đổi trả trong 7 ngày.
+                    Miễn phí đổi trả trong 7 ngày
                   </p>
                 </div>
               </li>
-              <li className="flex items-start gap-3">
-                <span className="text-xl">🚚</span>
+              <li className="flex items-start gap-5">
+                <span className="text-xl"><i className="fas fa-truck text-base mt-1 text-gray-500"></i></span>
                 <div>
                   <p className="font-semibold">Giao hàng miễn phí toàn quốc</p>
                   <p className="text-gray-500 text-xs">
-                    Miễn phí thiệp & gói quà.
+                    Miễn phí thiệp & gói quà
                   </p>
                 </div>
               </li>
@@ -816,52 +820,61 @@ const ProductDetails = () => {
 
           {activeTab === "review" && (
             <div className="p-6">
-              <div className="mb-4">
-                <textarea
-                  className="w-full border rounded p-3 resize-none"
-                  rows={4}
-                  placeholder="Viết đánh giá của bạn..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                />
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleCommentSubmit}
-                    disabled={!newComment.trim()}
-                    className={`mt-2 px-4 py-2 rounded text-white ${
-                      newComment.trim()
-                        ? "bg-[#5f518e] hover:bg-[#696faa]"
-                        : "bg-gray-400 cursor-not-allowed"
-                    }`}
-                  >
-                    Gửi đánh giá
-                  </button>
-                </div>
-              </div>
 
-              <div className="mt-6">
-                <h4 className="font-semibold mb-3">Đánh giá</h4>
-                {comments.length === 0 ? (
-                  <p className="text-gray-500">Chưa có đánh giá nào.</p>
-                ) : (
-                  <ul className="space-y-3">
-                    {comments.map((cmt) => (
-                      <li
-                        key={cmt._id}
-                        className="border p-3 rounded bg-gray-50 shadow-sm"
-                      >
-                        <p className="font-medium">
-                          {cmt.userId?.username || "Ẩn danh"}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(cmt.createdAt).toLocaleString()}
-                        </p>
-                        <p className="mt-1">{cmt.content}</p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+
+            <div className="mt-8">
+  <h2 className="text-xl font-semibold mb-4">Đánh giá sản phẩm</h2>
+
+  {comments.length === 0 ? (
+    <p>Chưa có đánh giá nào.</p>
+  ) : (
+    <div className="space-y-4">
+      {comments.map((comment) => (
+        <div key={comment._id} className="border rounded-lg p-4 shadow">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-medium">{comment.userId?.username || "Người dùng"}</span>
+            <span className="text-sm text-gray-500">{moment(comment.createdAt).format("DD/MM/YYYY HH:mm:ss")}</span>
+          </div>
+          <div className="flex mb-1">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <span key={index} className={index < comment.rating ? "text-yellow-400" : "text-gray-300"}>
+                ★
+              </span>
+              
+            ))}
+          </div>
+          <p>{comment.content}</p>
+          {(comment.image?.length ?? 0) > 0 && (
+                  <div className="flex gap-2 flex-wrap mt-2">
+                    {comment.image?.map((img, idx) => {
+                      const imageUrl = img.startsWith("/uploads/")
+                        ? `http://localhost:3000${img}`
+                        : `http://localhost:3000/uploads/${img}`;
+                      return (
+                    <a
+                      key={idx}
+                      href={imageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={`Ảnh ${idx + 1}`}
+                        className="w-20 h-20 object-cover rounded border hover:brightness-75 transition"
+                      />
+                    </a>
+                  );
+                })}
               </div>
+            )}
+
+        </div>
+      ))}
+    </div>
+    
+  )}
+</div>
+
             </div>
           )}
         </div>
@@ -915,5 +928,6 @@ const ProductDetails = () => {
     </div>
   );
 };
+
 
 export default ProductDetails;

@@ -1,6 +1,6 @@
 import Cart from '../models/CartModel.js';
+import mongoose from 'mongoose';
 
-// 🛒 Thêm sản phẩm vào giỏ
 export const addToCart = async (req, res) => {
   try {
     const {
@@ -41,7 +41,6 @@ export const addToCart = async (req, res) => {
   }
 };
 
-// 🗑️ Xóa 1 sản phẩm khỏi giỏ
 export const removeFromCart = async (req, res) => {
   try {
     const { userId, variantId } = req.body;
@@ -58,13 +57,12 @@ export const removeFromCart = async (req, res) => {
   }
 };
 
-// 📦 Xem toàn bộ giỏ hàng của người dùng
 export const getCart = async (req, res) => {
   try {
     const { userId } = req.params;
 
     const items = await Cart.find({ userId })
-      .populate('variantId') // Chỉ cần nếu variantId là ref đến một model
+      .populate('variantId')
       .sort({ updatedAt: -1 });
 
     res.status(200).json({ cart: items });
@@ -98,7 +96,6 @@ export const updateCartItemQuantity = async (req, res) => {
   }
 };
 
-// ❌ Xoá toàn bộ giỏ hàng của user
 export const clearCartByUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -110,7 +107,6 @@ export const clearCartByUser = async (req, res) => {
   }
 };
 
-// ❓ Kiểm tra giỏ hàng có trống không
 export const isCartEmpty = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -122,3 +118,35 @@ export const isCartEmpty = async (req, res) => {
   }
 };
 
+export const removeOrderedItems = async (req, res) => {
+  try {
+    const { userId, variantIds } = req.body;
+
+    if (!userId || !Array.isArray(variantIds) || variantIds.length === 0) {
+      return res.status(400).json({ message: "Dữ liệu không hợp lệ" });
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const objectVariantIds = variantIds.map((id) => new mongoose.Types.ObjectId(id));
+
+    // 🧪 Thử xóa bằng cả 2 cách: variantId và variantId._id
+    const result = await Cart.deleteMany({
+      userId: userObjectId,
+      $or: [
+        { variantId: { $in: objectVariantIds } },
+        { "variantId._id": { $in: objectVariantIds } }
+      ]
+    });
+
+    res.status(200).json({
+      message: "Đã xoá sản phẩm đã đặt khỏi giỏ",
+      deletedCount: result.deletedCount,
+    });
+  } catch (err) {
+    console.error("Lỗi khi xoá sản phẩm:", err);
+    res.status(500).json({
+      message: "Lỗi khi xoá sản phẩm đã đặt",
+      error: err.message,
+    });
+  }
+};

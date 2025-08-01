@@ -10,19 +10,17 @@ const userSchema = new mongoose.Schema({
   avatar: { type: String, default: "" },
 address: { type: String, default: "" },
 
-  isActive: { type: Boolean, default: true }, // ✅ thêm dòng này
+  isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 
-// Hàm kiểm tra mật khẩu
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Mã hóa mật khẩu trước khi lưu vào DB
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next(); // fix: thêm return
+  if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 10);
-  next(); // fix: gọi next() sau khi hash
+  next();
 });
 
 export default mongoose.model('User', userSchema);

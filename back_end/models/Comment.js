@@ -9,7 +9,7 @@ const commentSchema = new mongoose.Schema({
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-  ref: "User", // ✅ trùng với model đã khai báo
+  ref: "User",
   required: true,
   },
   content: {
@@ -21,6 +21,14 @@ const commentSchema = new mongoose.Schema({
     min: 1,
     max: 5,
   },
-}, { timestamps: true }); // createdAt, updatedAt
+  image: {
+      type: [String], // ✅ CHỖ NÀY: phải là mảng string
+      default: [],
+    }, // thêm trường ảnh
+    hidden: {
+    type: Boolean,
+    default: false, // ✅ Mặc định hiển thị
+  },
+}, { timestamps: true });
 
 export default mongoose.model("Comment", commentSchema);
