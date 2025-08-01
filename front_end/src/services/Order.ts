@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { CreateOrderPayload, Order } from "../types/Order";
+import type { Order } from "../types/Order";
 
 const API_URL = "http://localhost:3000";
 

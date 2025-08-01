@@ -135,20 +135,24 @@ export const getUserVouchers = async (req, res) => {
             .populate("voucherId")
             .lean();
 
-        const result = vouchers.map((vu) => {
-            const v = vu.voucherId;
-            return {
-                _id: v._id,
-                code: v.code,
-                discountType: v.discountType,
-                discountValue: v.discountValue,
-                maxDiscountValue: v.maxDiscountValue || null,
-                minOrderValue: v.minOrderValue || 0,
-                startDate: v.startDate,
-                endDate: v.endDate,
-                status: v.status,
-            };
-        });
+        const result = vouchers
+            .map((vu) => {
+                const v = vu.voucherId;
+                if (!v) return null; // Nếu voucher đã bị xóa
+                
+                return {
+                    _id: v._id,
+                    code: v.code,
+                    discountType: v.discountType,
+                    discountValue: v.discountValue,
+                    maxDiscountValue: v.maxDiscountValue || null,
+                    minOrderValue: v.minOrderValue || 0,
+                    startDate: v.startDate,
+                    endDate: v.endDate,
+                    status: v.status,
+                };
+            })
+            .filter(v => v !== null); // Lọc bỏ những voucher null
 
         res.status(200).json(result);
     } catch (err) {
@@ -163,6 +167,40 @@ export const removeSavedVoucher = async (req, res) => {
     try {
         await VoucherUserModel.deleteOne({ userId, voucherId });
         res.status(200).json({ message: "Đã xóa voucher khỏi tài khoản" });
+    } catch (err) {
+        res.status(500).json({ message: "Lỗi server", error: err.message });
+    }
+};
+
+// Tự động xóa voucher hết hạn khỏi tài khoản user
+export const removeExpiredVouchers = async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        const now = new Date();
+        
+        // Tìm tất cả voucher của user
+        const userVouchers = await VoucherUserModel.find({ userId })
+            .populate("voucherId")
+            .lean();
+
+        // Lọc ra những voucher đã hết hạn
+        const expiredVouchers = userVouchers.filter(vu => {
+            const v = vu.voucherId;
+            if (!v) return true; // Nếu voucher đã bị xóa
+            return v.endDate && new Date(v.endDate) < now;
+        });
+
+        // Xóa những voucher hết hạn
+        if (expiredVouchers.length > 0) {
+            const expiredIds = expiredVouchers.map(vu => vu._id);
+            await VoucherUserModel.deleteMany({ _id: { $in: expiredIds } });
+        }
+
+        res.status(200).json({ 
+            message: "Đã xóa voucher hết hạn", 
+            removedCount: expiredVouchers.length 
+        });
     } catch (err) {
         res.status(500).json({ message: "Lỗi server", error: err.message });
     }

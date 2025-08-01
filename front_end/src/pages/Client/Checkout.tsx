@@ -34,7 +34,7 @@ const Checkout = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
-  const [vouchers, setVouchers] = useState<any[]>([]);
+  const [userVouchers, setUserVouchers] = useState<any[]>([]);
   const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
   const [voucherError, setVoucherError] = useState<string>("");
   const [discount, setDiscount] = useState(0);
@@ -146,6 +146,13 @@ const Checkout = () => {
     }
   }, []);
 
+  // Fetch user vouchers when userInfo is available
+  useEffect(() => {
+    if (userInfo?._id) {
+      fetchUserVouchers();
+    }
+  }, [userInfo]);
+
   useEffect(() => {
     if (!selectedVoucher) {
       setVoucherError("");
@@ -203,12 +210,39 @@ const Checkout = () => {
     return fullName && phone && selectedProvince && selectedDistrict && selectedWard && detailAddress && cartItems.length > 0;
   };
 
-  const fetchVouchers = async () => {
+  const fetchUserVouchers = async () => {
+    if (!userInfo?._id) return;
+    
     try {
-      const res = await axios.get("http://localhost:3000/voucher");
-      setVouchers(res.data.data);
+      // Trước tiên xóa những voucher hết hạn
+      await axios.delete(`http://localhost:3000/voucher-user/remove-expired/${userInfo._id}`);
+      
+      // Sau đó lấy danh sách voucher còn hiệu lực
+      const res = await axios.get(`http://localhost:3000/voucher-user/saved/${userInfo._id}`);
+      setUserVouchers(res.data);
     } catch (error) {
-      setVouchers([]);
+      console.error("Lỗi khi lấy mã giảm giá của user:", error);
+      setUserVouchers([]);
+    }
+  };
+
+  // Function để xóa sản phẩm khỏi cart server một cách an toàn
+  const removeFromServerCart = async (userId: string, variantId: string, itemName: string) => {
+    try {
+      await axios.delete("http://localhost:3000/cart", {
+        data: {
+          userId,
+          variantId,
+        },
+      });
+      console.log(`✅ Đã xóa ${itemName} khỏi giỏ hàng server`);
+    } catch (error: any) {
+      // Nếu lỗi 404, có thể sản phẩm đã được xóa trước đó
+      if (error.response?.status === 404) {
+        console.log(`ℹ️ ${itemName} không tồn tại trong giỏ hàng server`);
+      } else {
+        console.warn(`⚠️ Không thể xóa ${itemName} khỏi giỏ hàng server:`, error.message);
+      }
     }
   };
 
@@ -292,12 +326,7 @@ const Checkout = () => {
         if (userInfo && userInfo._id) {
           for (const item of cartItems) {
             if (item.variantId) {
-              await axios.delete("http://localhost:3000/cart", {
-                data: {
-                  userId: userInfo._id,
-                  variantId: item.variantId,
-                },
-              });
+              await removeFromServerCart(userInfo._id, item.variantId, item.name);
             }
           }
         }
@@ -536,7 +565,7 @@ const Checkout = () => {
                 className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium"
                 onClick={() => {
                   setShowVoucherModal(true);
-                  fetchVouchers();
+                  fetchUserVouchers();
                 }}
               >
                 Chọn mã giảm giá
@@ -617,10 +646,10 @@ const Checkout = () => {
                         </button>
 
                         <div className="space-y-2 max-h-80 overflow-y-auto">
-                          {vouchers.length === 0 ? (
+                          {userVouchers.length === 0 ? (
                             <div className="text-gray-500 text-center">Không có mã giảm giá khả dụng</div>
                           ) : (
-                            vouchers.map((voucher) => {
+                            userVouchers.map((voucher) => {
                               const isOutOfUsage = voucher.usageLimit && voucher.usedCount >= voucher.usageLimit;
                               const isInactive = voucher.status === "inactivated";
                               const disabled = isOutOfUsage || isInactive;
@@ -633,6 +662,7 @@ const Checkout = () => {
                                 statusText = "Tạm dừng";
                                 statusClass = "bg-yellow-100 text-yellow-700";
                               }
+                              
                               return (
                                 <div
                                   key={voucher._id}

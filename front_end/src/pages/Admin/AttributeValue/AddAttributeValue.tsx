@@ -48,7 +48,7 @@ const AddAttributeValue = () => {
 
     const onSubmit = async (data: FormData) => {
         try {
-            const res = await axios.post("http://localhost:3000/attribute-value", data);
+            await axios.post("http://localhost:3000/attribute-value", data);
             alert("Thêm giá trị thành công!");
             reset();
         } catch (error: any) {

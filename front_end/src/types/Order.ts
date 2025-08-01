@@ -60,27 +60,3 @@ export interface Order {
   discountValue?: number;
 }
 
-interface OrderItem {
-  _id: string;
-  variantId: {
-    _id: string;
-    image: string;
-    productId: {
-      _id: string;
-      name: string;
-      image: string;
-    };
-    attributes?: {
-      attributeId: {
-        _id: string;
-        name: string;
-      };
-      valueId: {
-        _id: string;
-        value: string;
-      };
-    }[];
-  };
-  quantity: number;
-  price: number;
-}

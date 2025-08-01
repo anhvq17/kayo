@@ -550,14 +550,13 @@ const EditProduct = () => {
             Chọn thuộc tính <span className="text-red-500">*</span>
           </h3>
           {attributes.map((attr) => (
-            <AttributeSelector
-              key={attr.attributeId}
-              name={attr.name}
-              attributeId={attr.attributeId}
-              values={attr.values}
-              selected={(selectedValues[attr.attributeId] || []).map((v) => v._id)}
-              onChange={(ids) => handleSelectValues(attr.attributeId, ids)}
-            />
+                          <AttributeSelector
+                key={attr.attributeId}
+                name={attr.name}
+                values={attr.values}
+                selected={(selectedValues[attr.attributeId] || []).map((v) => v._id)}
+                onChange={(ids) => handleSelectValues(attr.attributeId, ids)}
+              />
           ))}
           <button
             type="button"

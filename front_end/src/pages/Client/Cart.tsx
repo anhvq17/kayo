@@ -27,6 +27,8 @@ interface UserInfoType {
   username: string;
 }
 
+
+
 const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);

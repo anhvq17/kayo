@@ -1,5 +1,7 @@
 import Order from '../models/OrderModel.js';
 import OrderItem from '../models/OrderItemModel.js';
+import VoucherModel from '../models/VoucherModel.js';
+import VoucherUserModel from '../models/VoucherUserModel.js';
 
 export const createOrder = async (req, res) => {
   try {
@@ -23,7 +25,11 @@ export const createOrder = async (req, res) => {
 
     if (voucherCode) {
       // Tìm voucher hợp lệ
-      const voucher = await import('../models/VoucherModel.js').then(m => m.default.findOne({ code: voucherCode.trim().toUpperCase(), deletedAt: null }));
+      const voucher = await VoucherModel.findOne({ 
+        code: voucherCode.trim().toUpperCase(), 
+        deletedAt: null 
+      });
+      
       const now = new Date();
       if (voucher && voucher.status === 'activated' &&
         (!voucher.startDate || now >= voucher.startDate) &&
@@ -31,6 +37,16 @@ export const createOrder = async (req, res) => {
         (!voucher.usageLimit || voucher.usedCount < voucher.usageLimit) &&
         (totalAmount >= (voucher.minOrderValue || 0))
       ) {
+        // Kiểm tra xem user đã lưu voucher này chưa
+        const userVoucher = await VoucherUserModel.findOne({
+          userId,
+          voucherId: voucher._id
+        });
+        
+        if (!userVoucher) {
+          return res.status(400).json({ message: "Bạn chưa lưu mã giảm giá này" });
+        }
+        
         // Tính discount
         discountType = voucher.discountType;
         discountValue = voucher.discountValue;
@@ -43,8 +59,15 @@ export const createOrder = async (req, res) => {
           discount = Math.min(voucher.discountValue, totalAmount);
         }
         appliedVoucher = voucher;
-        // Tăng usedCount
-        await voucher.updateOne({ $inc: { usedCount: 1 } });
+        
+        // Tăng usedCount của voucher
+        await VoucherModel.findByIdAndUpdate(voucher._id, { $inc: { usedCount: 1 } });
+        
+        // Xóa voucher khỏi tài khoản user sau khi sử dụng
+        await VoucherUserModel.deleteOne({
+          userId,
+          voucherId: voucher._id
+        });
       }
     }
     totalAmount = totalAmount - discount;

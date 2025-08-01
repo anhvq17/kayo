@@ -13,7 +13,6 @@ interface AttributeValue {
 
 interface AttributeSelectorProps {
   name: string;
-  attributeId: string;
   values: AttributeValue[];
   selected: string[];
   onChange: (selectedIds: string[]) => void;
@@ -21,7 +20,6 @@ interface AttributeSelectorProps {
 
 const AttributeSelector: React.FC<AttributeSelectorProps> = ({
   name,
-  attributeId,
   values,
   selected,
   onChange,
