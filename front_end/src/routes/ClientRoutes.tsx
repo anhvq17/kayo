@@ -17,6 +17,7 @@ import Voucher from "../pages/Client/vourcher/Voucher";
 import MyVoucher from "../pages/Client/vourcher/myVoucher";
 import ReviewPage from "../pages/Client/ReviewPage";
 import NewsList from "../pages/Client/NewsList";
+import Wallet from "../pages/Client/Wallet";
 
 const ClientRoutes = {
   path: '/',
@@ -36,6 +37,7 @@ const ClientRoutes = {
     { path: 'ordersuccessfully', element: <OrderSuccessfully/>},
     { path: 'search', element: <SearchResults /> },
     { path: 'profile', element: <Profile /> },
+    { path: 'wallet', element: <Wallet /> },
     { path: 'payment-result', element: <CheckPayment /> },
     { path: 'newlist', element: <NewsList /> },
     { path: 'review/:productId/:orderItemId', element: <ReviewPage /> },
