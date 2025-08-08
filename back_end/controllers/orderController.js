@@ -18,6 +18,9 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ message: "Invalid address format" });
     }
 
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "Người dùng không tồn tại" });
+
     let originalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     let totalAmount = originalAmount;
     let discount = 0;
@@ -26,7 +29,7 @@ export const createOrder = async (req, res) => {
     let appliedVoucher = null;
 
     if (voucherCode) {
-      // Tìm voucher hợp lệ
+      // Voucher xử lý như cũ
       const voucher = await VoucherModel.findOne({
         code: voucherCode.trim().toUpperCase(),
         deletedAt: null
@@ -39,7 +42,6 @@ export const createOrder = async (req, res) => {
         (!voucher.usageLimit || voucher.usedCount < voucher.usageLimit) &&
         (totalAmount >= (voucher.minOrderValue || 0))
       ) {
-        // Kiểm tra xem user đã lưu voucher này chưa
         const userVoucher = await VoucherUserModel.findOne({
           userId,
           voucherId: voucher._id
@@ -49,7 +51,6 @@ export const createOrder = async (req, res) => {
           return res.status(400).json({ message: "Bạn chưa lưu mã giảm giá này" });
         }
 
-        // Tính discount
         discountType = voucher.discountType;
         discountValue = voucher.discountValue;
         if (voucher.discountType === 'percent') {
@@ -62,17 +63,21 @@ export const createOrder = async (req, res) => {
         }
         appliedVoucher = voucher;
 
-        // Tăng usedCount của voucher
         await VoucherModel.findByIdAndUpdate(voucher._id, { $inc: { usedCount: 1 } });
-
-        // Xóa voucher khỏi tài khoản user sau khi sử dụng
-        await VoucherUserModel.deleteOne({
-          userId,
-          voucherId: voucher._id
-        });
+        await VoucherUserModel.deleteOne({ userId, voucherId: voucher._id });
       }
     }
+
     totalAmount = totalAmount - discount;
+
+    // ** Thanh toán bằng ví: kiểm tra số dư và trừ tiền ví ngay **
+    if (paymentMethod === 'wallet') {
+      if (user.wallet < totalAmount) {
+        return res.status(400).json({ message: "Số dư ví không đủ để thanh toán" });
+      }
+      user.wallet -= totalAmount;
+      await user.save();
+    }
 
     const order = await Order.create({
       userId,
@@ -83,7 +88,7 @@ export const createOrder = async (req, res) => {
       totalAmount,
       originalAmount,
       orderStatus: 'Chờ xử lý',
-      paymentStatus: 'Chưa thanh toán',
+      paymentStatus: paymentMethod === 'wallet' ? 'Đã thanh toán' : 'Chưa thanh toán',
       voucherCode: appliedVoucher ? appliedVoucher.code : undefined,
       discount,
       discountType,
@@ -102,6 +107,7 @@ export const createOrder = async (req, res) => {
     return res.status(400).json({ error: err.message });
   }
 };
+
 
 
 export const getAllOrders = async (req, res) => {
@@ -265,7 +271,7 @@ export const updateOrder = async (req, res) => {
       }
 
       // Hoàn tiền cho cả COD và VNPAY
-      if (order.paymentMethod === 'vnpay' || order.paymentMethod === 'cod') {
+      if (order.paymentMethod === 'vnpay' || order.paymentMethod === 'cod' || order.paymentMethod === 'wallet') {
         user.wallet += order.totalAmount;
         await user.save();
       }
@@ -275,7 +281,7 @@ export const updateOrder = async (req, res) => {
     // Nếu trạng thái đơn hàng được cập nhật thành "Đã huỷ đơn hàng"
     if (req.body.orderStatus === 'Đã huỷ đơn hàng') {
       const order = await Order.findById(req.params.id);
-      if (order && order.paymentMethod === 'vnpay') {
+      if (order && (order.paymentMethod === 'vnpay' || order.paymentMethod === 'wallet')) {
         updateData.paymentStatus = 'Đã hoàn tiền';
 
         const user = await User.findById(order.userId);
