@@ -24,6 +24,10 @@ import { Server } from "socket.io";
 import voucherRouter from "./routes/voucherRoutes.js";
 import voucherUserRouter from "./routes/voucherUserRouter.js";
 
+import walletRoutes from "./routes/wallet.js";
+import cookieParser from "cookie-parser";
+
+
 dotenv.config();
 console.log("JWT_SECRET:", process.env.JWT_SECRET);
 connectMongoDB(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/datn");
@@ -55,7 +59,12 @@ export const notifyOrderStatus = (orderId, status) => {
 
 // Middleware
 app.use(express.json());
-app.use(cors({ origin: 'http://localhost:5173' }));
+app.use(cookieParser()); // cần để đọc cookie trong protect middleware
+
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true // cho phép FE gửi cookie
+}));
 
 // Routes
 app.get('/', (req, res) => res.send('Hello from Home'));
@@ -74,6 +83,8 @@ app.use('/voucher',voucherRouter) ;
 app.use("/voucher-user", voucherUserRouter);
 app.use('/', authRouter);
 app.use('/uploads', express.static(path.join(path.resolve(), 'uploads')));
+
+app.use("/api/wallet", walletRoutes);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {

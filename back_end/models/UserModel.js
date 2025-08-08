@@ -11,6 +11,8 @@ const userSchema = new mongoose.Schema({
 address: { type: String, default: "" },
 
   isActive: { type: Boolean, default: true },
+
+  wallet: { type: Number, default: 0 },
 }, { timestamps: true });
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
