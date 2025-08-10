@@ -1,7 +1,17 @@
 import { useState, useEffect } from "react";
-import { BarChart, LineChart, Users, Package, ShoppingCart } from "lucide-react";
+import { Users, Package, ShoppingCart } from "lucide-react";
 import { getAllOrders } from "../../services/Order";
 import type { Order } from "../../types/Order";
+import {
+  BarChart as ReBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend
+} from "recharts";
 
 interface OrderWithUser extends Omit<Order, 'userId'> {
   userId: {
@@ -15,6 +25,7 @@ export default function Dashboard() {
   const [orders, setOrders] = useState<OrderWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1); // tháng hiện tại
 
   useEffect(() => {
     fetchOrders();
@@ -32,27 +43,45 @@ export default function Dashboard() {
     }
   };
 
+  // Lọc đơn hàng theo tháng được chọn
+  const filteredOrders = orders.filter(order => {
+    const orderDate = new Date(order.createdAt);
+    return orderDate.getMonth() + 1 === selectedMonth;
+  });
+
   const today = new Date();
-  const todayOrders = orders.filter(order => {
+  const todayOrders = filteredOrders.filter(order => {
     const orderDate = new Date(order.createdAt);
     return orderDate.toDateString() === today.toDateString();
   });
 
   const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.originalAmount ?? order.totalAmount), 0);
-  const totalRevenue = orders.reduce((sum, order) => sum + (order.originalAmount ?? order.totalAmount), 0);
-  const newOrders = orders.filter(order => order.orderStatus === 'Chờ xử lý').length;
-  const completedOrders = orders.filter(order => 
+  const totalRevenue = filteredOrders.reduce((sum, order) => sum + (order.originalAmount ?? order.totalAmount), 0);
+  const newOrders = filteredOrders.filter(order => order.orderStatus === 'Chờ xử lý').length;
+  const completedOrders = filteredOrders.filter(order =>
     order.orderStatus === 'Đã giao hàng' || order.orderStatus === 'Đã nhận hàng'
   ).length;
 
   const statusStats = {
-    'Chờ xử lý': orders.filter(o => o.orderStatus === 'Chờ xử lý').length,
-    'Đã xử lý': orders.filter(o => o.orderStatus === 'Đã xử lý').length,
-    'Đang giao hàng': orders.filter(o => o.orderStatus === 'Đang giao hàng').length,
-    'Đã giao hàng': orders.filter(o => o.orderStatus === 'Đã giao hàng').length,
-    'Đã nhận hàng': orders.filter(o => o.orderStatus === 'Đã nhận hàng').length,
-    'Đã huỷ đơn hàng': orders.filter(o => o.orderStatus === 'Đã huỷ đơn hàng').length,
+    'Chờ xử lý': filteredOrders.filter(o => o.orderStatus === 'Chờ xử lý').length,
+    'Đã xử lý': filteredOrders.filter(o => o.orderStatus === 'Đã xử lý').length,
+    'Đang giao hàng': filteredOrders.filter(o => o.orderStatus === 'Đang giao hàng').length,
+    'Đã giao hàng': filteredOrders.filter(o => o.orderStatus === 'Đã giao hàng').length,
+    'Đã nhận hàng': filteredOrders.filter(o => o.orderStatus === 'Đã nhận hàng').length,
+    'Đã huỷ đơn hàng': filteredOrders.filter(o => o.orderStatus === 'Đã huỷ đơn hàng').length,
   };
+
+  // === Tạo dữ liệu cho biểu đồ ===
+  const revenueByDate = filteredOrders.reduce((acc: Record<string, number>, order) => {
+    const dateKey = new Date(order.createdAt).toLocaleDateString("vi-VN");
+    acc[dateKey] = (acc[dateKey] || 0) + (order.originalAmount ?? order.totalAmount);
+    return acc;
+  }, {});
+
+  const chartData = Object.entries(revenueByDate).map(([date, revenue]) => ({
+    date,
+    revenue,
+  }));
 
   if (loading) {
     return (
@@ -70,7 +99,7 @@ export default function Dashboard() {
       <div className="p-6">
         <div className="text-center py-8">
           <p className="text-red-600 mb-4">{error}</p>
-          <button 
+          <button
             onClick={fetchOrders}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
@@ -84,13 +113,30 @@ export default function Dashboard() {
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-3xl font-bold">Bảng điều khiển</h1>
+
+      {/* Bộ lọc tháng */}
+      <div className="flex items-center gap-4">
+        <label className="font-medium">Chọn tháng:</label>
+        <select
+          className="border px-3 py-1 rounded"
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(Number(e.target.value))}
+        >
+          {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+            <option key={month} value={month}>
+              Tháng {month}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Thống kê */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="rounded-xl border bg-white shadow p-4 flex items-center justify-between">
           <div>
             <p className="text-gray-500">Ngày hôm nay</p>
             <p className="text-xl font-semibold">{todayRevenue.toLocaleString()}</p>
           </div>
-          <LineChart className="w-6 h-6 text-blue-500" />
         </div>
 
         <div className="rounded-xl border bg-white shadow p-4 flex items-center justify-between">
@@ -98,7 +144,6 @@ export default function Dashboard() {
             <p className="text-gray-500">Tổng doanh thu</p>
             <p className="text-xl font-semibold">{totalRevenue.toLocaleString()}</p>
           </div>
-          <LineChart className="w-6 h-6 text-indigo-500" />
         </div>
 
         <div className="rounded-xl border bg-white shadow p-4 flex items-center justify-between">
@@ -112,7 +157,7 @@ export default function Dashboard() {
         <div className="rounded-xl border bg-white shadow p-4 flex items-center justify-between">
           <div>
             <p className="text-gray-500">Tổng đơn hàng</p>
-            <p className="text-xl font-semibold">{orders.length}</p>
+            <p className="text-xl font-semibold">{filteredOrders.length}</p>
           </div>
           <Package className="w-6 h-6 text-yellow-500" />
         </div>
@@ -126,46 +171,37 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-xl border bg-white shadow p-4">
-          <p className="text-lg font-semibold mb-2">Thống kê đơn hàng</p>
-          <div className="h-56 bg-gray-100 flex items-center justify-center rounded-md">
-            <BarChart className="w-12 h-12 text-gray-400" />
-            <span className="ml-2 text-gray-500">Biểu đồ thống kê</span>
-          </div>
-        </div>
-
-        <div className="rounded-xl border bg-white shadow p-4">
-          <p className="text-lg font-semibold mb-4">Tình trạng đơn hàng</p>
-          <ul className="space-y-3">
-            <li className="flex items-center justify-between bg-yellow-50 border border-yellow-200 px-4 py-2 rounded-md">
-              <span className="text-yellow-700 font-medium">Chờ xử lý</span>
-              <span className="font-semibold text-yellow-700">{statusStats['Chờ xử lý']}</span>
-            </li>
-            <li className="flex items-center justify-between bg-blue-50 border border-blue-200 px-4 py-2 rounded-md">
-              <span className="text-blue-700 font-medium">Đã xử lý</span>
-              <span className="font-semibold text-blue-700">{statusStats['Đã xử lý']}</span>
-            </li>
-            <li className="flex items-center justify-between bg-indigo-50 border border-indigo-200 px-4 py-2 rounded-md">
-              <span className="text-indigo-700 font-medium">Đang giao hàng</span>
-              <span className="font-semibold text-indigo-700">{statusStats['Đang giao hàng']}</span>
-            </li>
-            <li className="flex items-center justify-between bg-green-50 border border-green-200 px-4 py-2 rounded-md">
-              <span className="text-green-700 font-medium">Đã giao hàng</span>
-              <span className="font-semibold text-green-700">{statusStats['Đã giao hàng']}</span>
-            </li>
-            <li className="flex items-center justify-between bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-md">
-              <span className="text-emerald-700 font-medium">Đã nhận hàng</span>
-              <span className="font-semibold text-emerald-700">{statusStats['Đã nhận hàng']}</span>
-            </li>
-            <li className="flex items-center justify-between bg-red-50 border border-red-200 px-4 py-2 rounded-md">
-              <span className="text-red-700 font-medium">Đã huỷ</span>
-              <span className="font-semibold text-red-700">{statusStats['Đã huỷ đơn hàng']}</span>
-            </li>
-          </ul>
+      {/* Bar Chart */}
+      <div className="rounded-xl border bg-white shadow p-4">
+        <p className="text-lg font-semibold mb-2">Biểu đồ doanh thu</p>
+        <div className="h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <ReBarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip formatter={(value) => value.toLocaleString("vi-VN") + " ₫"} />
+              <Legend />
+              <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            </ReBarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
+      {/* Trạng thái đơn hàng */}
+      <div className="rounded-xl border bg-white shadow p-4">
+        <p className="text-lg font-semibold mb-4">Tình trạng đơn hàng</p>
+        <ul className="space-y-3">
+          {Object.entries(statusStats).map(([status, count]) => (
+            <li key={status} className="flex items-center justify-between bg-gray-50 border px-4 py-2 rounded-md">
+              <span className="font-medium">{status}</span>
+              <span className="font-semibold">{count}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Đơn hàng gần đây */}
       <div className="rounded-xl border bg-white shadow p-4">
         <p className="text-lg font-semibold mb-4">Đơn hàng gần đây</p>
         <div className="overflow-x-auto">
@@ -181,21 +217,12 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {orders.slice(0, 5).map((order) => (
+              {filteredOrders.slice(0, 5).map((order) => (
                 <tr key={order._id} className="border-b hover:bg-gray-50">
                   <td className="py-2 font-medium">{order._id}</td>
                   <td className="py-2">{order.fullName}</td>
                   <td className="py-2 text-red-600 font-semibold">{(order.originalAmount ?? order.totalAmount).toLocaleString()}</td>
-                  <td className="py-2">
-                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
-                      order.orderStatus === 'Đã giao hàng' || order.orderStatus === 'Đã nhận hàng' ? 'bg-green-100 text-green-800' :
-                      order.orderStatus === 'Chờ xử lý' || order.orderStatus === 'Đã xử lý' ? 'bg-yellow-100 text-yellow-800' :
-                      order.orderStatus === 'Đang giao hàng' ? 'bg-blue-100 text-blue-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {order.orderStatus}
-                    </span>
-                  </td>
+                  <td className="py-2">{order.orderStatus}</td>
                   <td className="py-2">
                     {order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán qua VNPay'}
                   </td>
