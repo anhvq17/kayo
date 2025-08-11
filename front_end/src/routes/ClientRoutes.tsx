@@ -4,7 +4,7 @@ import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
 import Cart from "../pages/Client/Cart";
 import NotFound from "../pages/NotFound";
-import ProductDetails from "../pages/Client/ProductDetails";
+// import ProductDetails from "../pages/Client/ProductDetails";
 import ProductList from "../pages/Client/ProductList";
 import OrderList from "../pages/Client/Order";
 import OrderDetail from "../pages/Client/OrderDetail";
@@ -15,7 +15,7 @@ import Profile from "../pages/Client/Profile";
 import CheckPayment from "../pages/Client/CheckPayment";
 import Voucher from "../pages/Client/vourcher/Voucher";
 import MyVoucher from "../pages/Client/vourcher/myVoucher";
-import ReviewPage from "../pages/Client/ReviewPage";
+// import ReviewPage from "../pages/Client/ReviewPage";
 import NewsList from "../pages/Client/NewsList";
 import Wallet from "../pages/Client/Wallet";
 
@@ -27,7 +27,7 @@ const ClientRoutes = {
     { path: 'login', element: <Login /> },
     { path: 'register', element: <Register /> },
     { path: 'cart', element: <Cart /> },
-    { path: 'productdetails/:id', element: <ProductDetails /> },
+    // { path: 'productdetails/:id', element: <ProductDetails /> },
     { path: 'products', element: <ProductList /> },
     { path: 'vouchers', element: <Voucher /> },
     { path: 'myvoucher', element: <MyVoucher /> },
@@ -40,7 +40,7 @@ const ClientRoutes = {
     { path: 'wallet', element: <Wallet /> },
     { path: 'payment-result', element: <CheckPayment /> },
     { path: 'newlist', element: <NewsList /> },
-    { path: 'review/:productId/:orderItemId', element: <ReviewPage /> },
+    // { path: 'review/:productId/:orderItemId', element: <ReviewPage /> },
 
     // Khi đường dẫn sai hoặc không tồn tại, dẫn đến trang NotFound
     { path: '*', element: <NotFound homePath="/"/> },
