@@ -52,7 +52,6 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
-  console.log(orders);
   
   const today = new Date();
   const todayOrders = orders.filter((order) => {
@@ -170,7 +169,6 @@ export default function Dashboard() {
       </div>
     );
   }
-  console.log(topProducts);
 
   return (
     <div className="p-6 space-y-6">
