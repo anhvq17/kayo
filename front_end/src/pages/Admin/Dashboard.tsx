@@ -250,7 +250,6 @@ const topCustomers = Object.values(
                 cy="50%"
                 outerRadius={100}
                 dataKey="value"
-                label={({ name, value }) => `${name} (${value})`}
               >
                 {Object.keys(statusStats).map((_, index) => (
                   <Cell

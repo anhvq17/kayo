@@ -44,6 +44,7 @@ export interface Order {
   userId: string;
   fullName: string;
   phone: string;
+  email: string;
   address: Address;
   orderStatus: 'Chờ xử lý' | 'Đã xử lý' | 'Đang giao hàng' | 'Đã giao hàng' | 'Đã nhận hàng' | 'Đã huỷ đơn hàng' | 'Yêu cầu hoàn hàng' | 'Đã hoàn hàng' | 'Từ chối hoàn hàng';
   totalAmount: number;

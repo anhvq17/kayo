@@ -381,9 +381,6 @@ const OrderList = () => {
                 >
                   {requestingReturnId === item._id ? 'Đang gửi...' : 'Yêu cầu hoàn hàng'}
                 </button>
-
-                
-
               </>
             )}
                 </div>
@@ -415,8 +412,6 @@ const OrderList = () => {
                           {prod.isReviewed && (
                             <span className="inline-block text-sm text-gray-500 italic">Đã đánh giá</span>
                           )}
-
-
                       </div>
                     </div>
                   ))
@@ -432,7 +427,6 @@ const OrderList = () => {
         )}
       </div>
 
-      {/* Modal xác nhận hủy đơn hàng */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-[500px] shadow-lg relative">
@@ -442,7 +436,6 @@ const OrderList = () => {
                 Bạn có chắc chắn muốn hủy đơn hàng này không?
               </p>
               
-              {/* Form nhập lý do hủy đơn hàng */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Lý do hủy đơn hàng <span className="text-red-500">*</span>
@@ -461,7 +454,7 @@ const OrderList = () => {
               </div>
 
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
-                <span role="img" aria-label="warning">⚠️</span> Lưu ý: Hành động này không thể hoàn tác!
+                Lưu ý: Hành động này không thể hoàn tác!
               </div>
             </div>
             <div className="flex justify-end space-x-3">
@@ -490,7 +483,6 @@ const OrderList = () => {
         </div>
       )}
 
-      {/* Modal yêu cầu hoàn hàng */}
       {showReturnModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-[500px] shadow-lg relative">
@@ -499,8 +491,7 @@ const OrderList = () => {
               <p className="text-gray-700 mb-4">
                 Bạn có chắc chắn muốn yêu cầu hoàn hàng cho đơn hàng này không?
               </p>
-              
-              {/* Form nhập lý do hoàn hàng */}
+
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Lý do hoàn hàng <span className="text-red-500">*</span>
@@ -519,10 +510,10 @@ const OrderList = () => {
               </div>
 
               <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
-                <span role="img" aria-label="info">ℹ️</span> Yêu cầu hoàn hàng sẽ được gửi đến admin để xem xét và phê duyệt. Nếu thanh toán qua VNPAY và được chấp thuận, bạn sẽ được hoàn tiền.
+                Yêu cầu hoàn hàng sẽ được gửi đến admin để xem xét và phê duyệt. Nếu được chấp thuận, bạn sẽ được hoàn tiền về Ví điện tử.
               </div>
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-1">
               <button 
                 type="button" 
                 onClick={() => {
@@ -552,4 +543,3 @@ const OrderList = () => {
 };
 
 export default OrderList;
-  

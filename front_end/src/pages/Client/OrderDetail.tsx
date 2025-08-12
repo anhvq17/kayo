@@ -87,22 +87,34 @@ const OrderDetail = () => {
     }
   };
 
-  const getStatusText = (orderStatus: string) => {
-    switch (orderStatus) {
-      case 'Chờ xử lý': return 'Chờ xử lý';
-      case 'Đã xử lý': return 'Đã xử lý';
-      case 'Đang giao hàng': return 'Đang giao hàng';
-      case 'Đã giao hàng': return 'Đã giao hàng';
-      case 'Đã nhận hàng': return 'Đã nhận hàng';
-      case 'Đã huỷ đơn hàng': return 'Đã huỷ đơn hàng';
-      default: return orderStatus;
+  const getStatusBadge = (status: string) => {
+    let color = '';
+    switch (status) {
+      case 'Đã giao hàng': 
+      case 'Đã nhận hàng': 
+        color = 'bg-green-100 text-green-800'; 
+        break;
+      case 'Chờ xử lý': 
+      case 'Đã xử lý': 
+        color = 'bg-yellow-100 text-yellow-800'; 
+        break;
+      case 'Đang giao hàng': 
+        color = 'bg-blue-100 text-blue-800'; 
+        break;
+      case 'Đã huỷ đơn hàng': 
+        color = 'bg-red-100 text-red-800'; 
+        break;
+      default: 
+        color = 'bg-gray-100 text-gray-800';
     }
+    return <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${color}`}>{status}</span>;
   };
 
   const getPaymentMethodText = (method: string) => {
     switch (method) {
       case 'cod': return 'Thanh toán khi nhận hàng';
       case 'vnpay': return 'Thanh toán qua VNPay';
+      case 'wallet': return 'Thanh toán bằng Ví điện tử';
       default: return method;
     }
   };
@@ -120,6 +132,23 @@ const OrderDetail = () => {
       default:
         return status;
     }
+  };
+
+  const getPaymentBadge = (paymentStatus: string) => {
+    const statusText = getPaymentStatusText(paymentStatus);
+    let badgeClass = 'bg-yellow-100 text-yellow-800';
+    
+    if (statusText === 'Đã thanh toán') {
+      badgeClass = 'bg-green-100 text-green-800';
+    } else if (statusText === 'Đã hoàn tiền') {
+      badgeClass = 'bg-blue-100 text-blue-800';
+    }
+    
+    return (
+      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${badgeClass}`}>
+        {statusText}
+      </span>
+    );
   };
 
   if (loading) {
@@ -168,6 +197,8 @@ const OrderDetail = () => {
         <span className="font-medium text-black">Chi tiết đơn hàng</span>
       </div>
 
+      <h2 className="text-2xl font-semibold mb-6">Chi tiết đơn hàng - {order._id}</h2>
+
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
         <div className="mb-8">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
@@ -175,61 +206,26 @@ const OrderDetail = () => {
           </h2>
           <OrderProgressBar currentStatus={order.orderStatus} />
         </div>
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
-          <div>
-            <h1 className="text-gray-500 flex items-center gap-2">
-              <span className="font-medium">Mã vận đơn: {order._id}</span>
-            </h1>
-            <p className="text-gray-500 font-medium mt-1">Thời gian đặt hàng: {new Date(order.createdAt).toLocaleString("vi-VN")}</p>
-          </div>
-          <div className="flex flex-col md:items-end gap-2">
-            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold shadow-sm ${
-              order.orderStatus === 'Đã xử lý' ? 'bg-green-100 text-green-800' :
-              order.orderStatus === 'Chờ xử lý' ? 'bg-yellow-100 text-yellow-800' :
-              order.orderStatus === 'Đang giao hàng' ? 'bg-blue-100 text-blue-800' :
-              order.orderStatus === 'Đã giao hàng' ? 'bg-green-100 text-green-800' :
-              order.orderStatus === 'Đã nhận hàng' ? 'bg-green-200 text-green-900' :
-              'bg-red-100 text-red-800'
-            }`}>
-              {getStatusText(order.orderStatus)}
-            </span>
-            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${
-              getPaymentStatusText(order.paymentStatus) === 'Đã thanh toán' ? 'bg-green-100 text-green-800' :
-              getPaymentStatusText(order.paymentStatus) === 'Đã hoàn tiền' ? 'bg-blue-100 text-blue-800' :
-              'bg-yellow-100 text-yellow-800'}`}
-            >
-              {getPaymentStatusText(order.paymentStatus)}
-            </span>
-          </div>
-        </div>
+      
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-gray-50 rounded-lg p-6 border border-gray-100">
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2">Thông tin người nhận</h2>
             <div className="space-y-2 text-gray-700 text-sm">
               <p><strong>Họ và tên:</strong> {order.fullName}</p>
               <p><strong>Số điện thoại:</strong> {order.phone}</p>
-              <p><strong>Địa chỉ:</strong> {
-                order.address.fullAddress 
-                  ? order.address.fullAddress 
-                  : `${order.address.detail}, ${order.address.ward}, ${order.address.district}, ${order.address.province}`
-              }</p>
-              <p><strong>Phương thức thanh toán:</strong> {getPaymentMethodText(order.paymentMethod)}</p>
+              <div>
+                <strong>Email:</strong> {(order.userId as { email?: string })?.email || 'N/A'}
+              </div>
             </div>
           </div>
           <div className="flex flex-col justify-between h-full">
             <div className="bg-gray-50 rounded-lg p-6 border border-gray-100 mb-4">
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2">Thông tin thanh toán</h2>
+              <h2 className="text-lg font-bold mb-4 flex items-center gap-2">Thông tin đơn hàng</h2>
               <div className="space-y-2 text-gray-700 text-sm">
-                <p><strong>Trạng thái đơn hàng:</strong> {getStatusText(order.orderStatus)}</p>
-                <p><strong>Trạng thái thanh toán:</strong> {getPaymentStatusText(order.paymentStatus)}</p>
-                {order.voucherCode && (order.discount ?? 0) > 0 && (
-                  <p>
-                    <strong>Mã giảm giá: </strong>
-                    <span className="text-green-700 font-semibold">{order.voucherCode} </span>
-                    <span className="text-red-500 font-semibold">(-{(order.discount ?? 0).toLocaleString()})</span>
-                  </p>
-                )}
-                <p><strong>Tổng tiền:</strong> <span className="text-red-500 font-bold text-sm">{order.totalAmount.toLocaleString()}</span></p>
+                <p><strong>Ngày đặt hàng: </strong>{new Date(order.createdAt).toLocaleString("vi-VN")}</p>
+                <div><strong>Trạng thái:</strong> {getStatusBadge(order.orderStatus)}</div>
+                <div><strong>Thanh toán:</strong> {getPaymentBadge(order.paymentStatus)}</div>
+                <p><strong>Phương thức:</strong> {getPaymentMethodText(order.paymentMethod)}</p>
               </div>
             </div>
             
@@ -258,8 +254,20 @@ const OrderDetail = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">Danh sách sản phẩm</h2>
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+          Địa chỉ giao hàng
+        </h3>
+        <div className="text-gray-700 text-sm">
+          {order.address.fullAddress 
+            ? order.address.fullAddress 
+            : `${order.address.detail}, ${order.address.ward}, ${order.address.district}, ${order.address.province}`
+          }
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 px-8">
+        <h2 className="text-lg font-bold mt-8 mb-4 flex items-center gap-2">Danh sách sản phẩm</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50">
@@ -301,6 +309,22 @@ const OrderDetail = () => {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="p-6 border-t">
+          <div className="flex justify-end">
+            <div className="text-right">
+              <div className="text-lg font-bold text-red-600">
+                Tổng tiền: <span>{order.totalAmount.toLocaleString()}
+                  {order.voucherCode && (order.discount ?? 0) > 0 && (
+                    <p className="text-sm text-gray-500 mt-1 font-medium">
+                      Đã áp dụng mã giảm giá
+                      <span className="font-semibold"> (-{(order.discount ?? 0).toLocaleString()})</span>
+                    </p>
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
