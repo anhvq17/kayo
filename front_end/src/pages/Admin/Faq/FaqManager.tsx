@@ -61,7 +61,7 @@ const FaqManager: React.FC = () => {
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-3xl font-semibold">Quản lý FAQ</h1>
                 <button
-                    onClick={() => navigate("/admin/faqs/add")}
+                    onClick={() => navigate("/admin/addfaqs")}
                     className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                     disabled={loading}
                 >
