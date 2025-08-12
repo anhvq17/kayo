@@ -102,7 +102,6 @@ const Voucher = () => {
     tomorrow.setDate(now.getDate() + 1);
 
     return voucherList.filter((voucher) => {
-      // Loại mã
       if (filterType !== "all" && voucher.discountType !== filterType) {
         return false;
       }
@@ -122,7 +121,6 @@ const Voucher = () => {
       return true;
     });
   };
-
 
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen">
