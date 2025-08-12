@@ -90,6 +90,7 @@ const AdminSidebar = ({ collapsed, setCollapsed }: Props) => {
             <SidebarItem to="/admin/users" icon="fas fa-users" label="Người dùng" collapsed={collapsed} />
             <SidebarItem to="/admin/reviews" icon="fas fa-comment-dots" label="Đánh giá" collapsed={collapsed} />
             <SidebarItem to="/admin/vouchers" icon="fas fa-ticket-alt" label="Mã giảm giá" collapsed={collapsed} />
+            <SidebarItem to="/admin/faqs" icon="fas fa-question-circle" label="FAQ" collapsed={collapsed} />
           </ul>
         </nav>
       </div>
