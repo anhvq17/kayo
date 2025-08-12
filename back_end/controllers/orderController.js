@@ -2,6 +2,8 @@ import Order from '../models/OrderModel.js';
 import OrderItem from '../models/OrderItemModel.js';
 import VoucherModel from '../models/VoucherModel.js';
 import VoucherUserModel from '../models/VoucherUserModel.js';
+import User from '../models/UserModel.js';
+
 
 export const createOrder = async (req, res) => {
   try {
@@ -16,6 +18,9 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ message: "Invalid address format" });
     }
 
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "Người dùng không tồn tại" });
+
     let originalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     let totalAmount = originalAmount;
     let discount = 0;
@@ -24,12 +29,11 @@ export const createOrder = async (req, res) => {
     let appliedVoucher = null;
 
     if (voucherCode) {
-      // Tìm voucher hợp lệ
-      const voucher = await VoucherModel.findOne({ 
-        code: voucherCode.trim().toUpperCase(), 
-        deletedAt: null 
+      const voucher = await VoucherModel.findOne({
+        code: voucherCode.trim().toUpperCase(),
+        deletedAt: null
       });
-      
+
       const now = new Date();
       if (voucher && voucher.status === 'activated' &&
         (!voucher.startDate || now >= voucher.startDate) &&
@@ -37,17 +41,15 @@ export const createOrder = async (req, res) => {
         (!voucher.usageLimit || voucher.usedCount < voucher.usageLimit) &&
         (totalAmount >= (voucher.minOrderValue || 0))
       ) {
-        // Kiểm tra xem user đã lưu voucher này chưa
         const userVoucher = await VoucherUserModel.findOne({
           userId,
           voucherId: voucher._id
         });
-        
+
         if (!userVoucher) {
           return res.status(400).json({ message: "Bạn chưa lưu mã giảm giá này" });
         }
-        
-        // Tính discount
+
         discountType = voucher.discountType;
         discountValue = voucher.discountValue;
         if (voucher.discountType === 'percent') {
@@ -59,19 +61,15 @@ export const createOrder = async (req, res) => {
           discount = Math.min(voucher.discountValue, totalAmount);
         }
         appliedVoucher = voucher;
-        
-        // Tăng usedCount của voucher
+
         await VoucherModel.findByIdAndUpdate(voucher._id, { $inc: { usedCount: 1 } });
-        
-        // Xóa voucher khỏi tài khoản user sau khi sử dụng
-        await VoucherUserModel.deleteOne({
-          userId,
-          voucherId: voucher._id
-        });
+        await VoucherUserModel.deleteOne({ userId, voucherId: voucher._id });
       }
     }
+
     totalAmount = totalAmount - discount;
 
+    // Tạo order trước để lấy order._id
     const order = await Order.create({
       userId,
       fullName,
@@ -81,13 +79,31 @@ export const createOrder = async (req, res) => {
       totalAmount,
       originalAmount,
       orderStatus: 'Chờ xử lý',
-      paymentStatus: 'Chưa thanh toán',
+      paymentStatus: paymentMethod === 'wallet' ? 'Đã thanh toán' : 'Chưa thanh toán',
       voucherCode: appliedVoucher ? appliedVoucher.code : undefined,
       discount,
       discountType,
       discountValue,
     });
 
+    // Nếu thanh toán bằng ví, kiểm tra số dư rồi trừ tiền, lưu lịch sử
+    if (paymentMethod === 'wallet') {
+      if (user.wallet < totalAmount) {
+        // Xóa order vừa tạo để rollback
+        await Order.findByIdAndDelete(order._id);
+        return res.status(400).json({ message: "Số dư ví không đủ để thanh toán" });
+      }
+      user.wallet -= totalAmount;
+      user.walletHistory.push({
+        type: 'withdraw',
+        amount: totalAmount,
+        status: 'completed',
+        note: `Thanh toán đơn hàng #${order._id}`
+      });
+      await user.save();
+    }
+
+    // Tạo các OrderItem
     await Promise.all(items.map(item => OrderItem.create({
       orderId: order._id,
       variantId: item.variantId,
@@ -100,6 +116,8 @@ export const createOrder = async (req, res) => {
     return res.status(400).json({ error: err.message });
   }
 };
+
+
 
 
 export const getAllOrders = async (req, res) => {
@@ -167,17 +185,16 @@ export const getOrdersByUserWithItems = async (req, res) => {
 export const updateOrder = async (req, res) => {
   try {
     const updateData = { ...req.body };
-    
-    // Kiểm tra quy tắc cập nhật trạng thái tuần tự
-    if (req.body.orderStatus) {
-      const order = await Order.findById(req.params.id);
-      if (!order) {
-        return res.status(404).json({ error: 'Order not found' });
-      }
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
 
+    // ===== Quy tắc chuyển trạng thái =====
+    if (req.body.orderStatus) {
       const statusOrder = [
         'Chờ xử lý',
-        'Đã xử lý', 
+        'Đã xử lý',
         'Đang giao hàng',
         'Đã giao hàng',
         'Đã nhận hàng'
@@ -186,85 +203,153 @@ export const updateOrder = async (req, res) => {
       const currentIndex = statusOrder.indexOf(order.orderStatus);
       const newIndex = statusOrder.indexOf(req.body.orderStatus);
 
-      // Kiểm tra quy tắc chuyển đổi
-      let isValidTransition = 
-        currentIndex === newIndex || // Cùng trạng thái
-        newIndex === currentIndex + 1 || // Lên trạng thái tiếp theo
-        newIndex === currentIndex - 1; // Xuống trạng thái trước đó (để sửa lỗi)
+      let isValidTransition =
+        currentIndex === newIndex ||
+        newIndex === currentIndex + 1 ||
+        newIndex === currentIndex - 1;
 
-      // Kiểm tra hủy đơn hàng
       if (req.body.orderStatus === 'Đã huỷ đơn hàng') {
-        isValidTransition = order.orderStatus === 'Chờ xử lý' || order.orderStatus === 'Đã xử lý';
+        isValidTransition = ['Chờ xử lý', 'Đã xử lý'].includes(order.orderStatus);
       }
-
-      // Kiểm tra yêu cầu hoàn hàng
       if (req.body.orderStatus === 'Yêu cầu hoàn hàng') {
-        isValidTransition = order.orderStatus === 'Đã nhận hàng';
+        isValidTransition = ['Đã nhận hàng', 'Từ chối hoàn hàng', 'Yêu cầu hoàn hàng'].includes(order.orderStatus);
       }
-
-      // Kiểm tra xử lý hoàn hàng (chỉ admin mới có thể thực hiện)
-      if (req.body.orderStatus === 'Đã hoàn hàng' || req.body.orderStatus === 'Từ chối hoàn hàng') {
+      if (['Đã hoàn hàng', 'Từ chối hoàn hàng'].includes(req.body.orderStatus)) {
         isValidTransition = order.orderStatus === 'Yêu cầu hoàn hàng';
       }
-
-      // Kiểm tra xác nhận đã nhận hàng (người dùng có thể xác nhận từ "Đã giao hàng")
       if (req.body.orderStatus === 'Đã nhận hàng') {
         isValidTransition = order.orderStatus === 'Đã giao hàng';
       }
 
       if (!isValidTransition) {
-        if (req.body.orderStatus === 'Đã huỷ đơn hàng') {
-          return res.status(400).json({ 
-            error: 'Chỉ có thể hủy đơn hàng khi đang ở trạng thái "Chờ xử lý" hoặc "Đã xử lý"' 
+        return res.status(400).json({
+          error: 'Không thể cập nhật trạng thái theo thứ tự này'
+        });
+      }
+    }
+
+    // ===== Cập nhật thanh toán khi nhận hàng =====
+    if (req.body.orderStatus === 'Đã nhận hàng') {
+      updateData.paymentStatus = 'Đã thanh toán';
+      updateData.isPaid = true;
+      updateData.paidAt = new Date();
+    }
+
+    // ===== Xử lý thanh toán ví khi chưa trừ =====
+    if (updateData.paymentStatus === 'Đã thanh toán' && order.paymentMethod === 'wallet') {
+      const user = await User.findById(order.userId);
+      if (!user) return res.status(404).json({ message: "Người dùng không tồn tại" });
+
+      if (order.paymentStatus !== 'Đã thanh toán') { // tránh trừ 2 lần
+        if (user.wallet < order.totalAmount) {
+          return res.status(400).json({ error: 'Số dư ví không đủ' });
+        }
+        user.wallet -= order.totalAmount;
+        user.walletHistory.push({
+          type: 'withdraw',
+          amount: order.totalAmount,
+          status: 'completed',
+          note: `Thanh toán đơn hàng #${order._id}`
+        });
+        await user.save();
+      }
+    }
+
+    // ===== Hoàn tiền khi "Đã hoàn hàng" =====
+    if (req.body.orderStatus === 'Đã hoàn hàng') {
+      if (order.paymentStatus !== 'Đã hoàn tiền') { // tránh hoàn 2 lần
+        updateData.paymentStatus = 'Đã hoàn tiền';
+        updateData.isPaid = false;
+
+        const user = await User.findById(order.userId);
+        if (!user) return res.status(404).json({ message: "Người dùng không tồn tại" });
+
+        if (['vnpay', 'cod', 'wallet'].includes(order.paymentMethod)) {
+          user.wallet += order.totalAmount;
+          user.walletHistory.push({
+            type: 'refund',
+            amount: order.totalAmount,
+            status: 'completed',
+            note: `Hoàn tiền đơn hàng #${order._id}`
           });
-        } else if (req.body.orderStatus === 'Yêu cầu hoàn hàng') {
-          return res.status(400).json({ 
-            error: 'Chỉ có thể yêu cầu hoàn hàng khi đơn hàng đã được nhận' 
-          });
-        } else if (req.body.orderStatus === 'Đã hoàn hàng' || req.body.orderStatus === 'Từ chối hoàn hàng') {
-          return res.status(400).json({ 
-            error: 'Chỉ có thể xử lý hoàn hàng khi đơn hàng đang ở trạng thái "Yêu cầu hoàn hàng"' 
-          });
-        } else if (req.body.orderStatus === 'Đã nhận hàng') {
-          return res.status(400).json({ 
-            error: 'Chỉ có thể xác nhận đã nhận hàng khi đơn hàng đang ở trạng thái "Đã giao hàng"' 
-          });
-        } else {
-          return res.status(400).json({ 
-            error: 'Không thể chuyển từ trạng thái hiện tại sang trạng thái này. Vui lòng cập nhật theo thứ tự: Chờ xử lý → Đã xử lý → Đang giao hàng → Đã giao hàng → Đã nhận hàng' 
-          });
+          await user.save();
         }
       }
     }
-    
-    // Nếu trạng thái đơn hàng được cập nhật thành "Đã nhận hàng" 
-    // thì tự động cập nhật trạng thái thanh toán thành "Đã thanh toán"
-    // (Áp dụng cho cả COD và VNPAY - khi khách hàng đã nhận hàng thì coi như đã thanh toán)
-    if (req.body.orderStatus === 'Đã nhận hàng') {
-      updateData.paymentStatus = 'Đã thanh toán';
-    }
-    
-    // Nếu trạng thái đơn hàng được cập nhật thành "Đã hoàn hàng" 
-    // thì tự động cập nhật trạng thái thanh toán thành "Đã hoàn tiền" cho cả COD và VNPAY
-    if (req.body.orderStatus === 'Đã hoàn hàng') {
-      updateData.paymentStatus = 'Đã hoàn tiền';
-    }
 
-    // Nếu trạng thái đơn hàng được cập nhật thành "Đã huỷ đơn hàng" 
-    // và phương thức thanh toán là VNPAY thì tự động cập nhật trạng thái thanh toán thành "Đã hoàn tiền"
+    // ===== Hoàn tiền khi "Đã huỷ đơn hàng" =====
     if (req.body.orderStatus === 'Đã huỷ đơn hàng') {
-      const order = await Order.findById(req.params.id);
-      if (order && order.paymentMethod === 'vnpay') {
+      if (order.paymentStatus !== 'Đã hoàn tiền' && ['vnpay', 'wallet'].includes(order.paymentMethod)) {
         updateData.paymentStatus = 'Đã hoàn tiền';
+        updateData.isPaid = false;
+
+        const user = await User.findById(order.userId);
+        if (user) {
+          user.wallet += order.totalAmount;
+          user.walletHistory.push({
+            type: 'refund',
+            amount: order.totalAmount,
+            status: 'completed',
+            note: `Hoàn tiền đơn hàng (hủy) #${order._id}`
+          });
+          await user.save();
+        }
       }
     }
-    
+
     const updated = await Order.findByIdAndUpdate(req.params.id, updateData, { new: true });
     return res.status(200).json(updated);
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }
 };
+
+
+export const payOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const userId = req.user._id;
+    const paymentMethod = req.body.paymentMethod || "wallet";
+
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+
+    if (order.isPaid) {
+      return res.status(400).json({ message: 'Đơn hàng đã được thanh toán' });
+    }
+
+    if (paymentMethod === "wallet") {
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+
+      if (user.wallet < order.totalAmount) {
+        return res.status(400).json({ message: 'Số dư ví không đủ' });
+      }
+
+      user.wallet -= order.totalAmount;
+      user.walletHistory.push({
+        type: 'withdraw',
+        amount: order.totalAmount,
+        status: 'completed',
+        note: `Thanh toán đơn hàng #${order._id}`
+      });
+      await user.save();
+    }
+
+    order.isPaid = true;
+    order.paidAt = Date.now();
+    order.paymentMethod = paymentMethod;
+    order.paymentStatus = 'Đã thanh toán';
+    await order.save();
+
+    res.json({ message: 'Thanh toán thành công', order });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+};
+
+
 
 export const deleteOrder = async (req, res) => {
   try {
@@ -275,3 +360,5 @@ export const deleteOrder = async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 };
+
+

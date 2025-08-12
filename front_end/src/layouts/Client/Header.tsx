@@ -160,6 +160,7 @@ const ClientHeader = () => {
           <Link to="/newlist" className="hover:text-gray-700">Bài viết</Link>
           <Link to="/products" className="hover:text-gray-700">Thương hiệu</Link>
           <Link to="/vouchers" className="hover:text-gray-700">Mã giảm giá</Link>
+            <Link to="/faqs" className="hover:text-gray-700">FAQ</Link>  {/* Thêm dòng này */}
         </nav>
 
         <div className="flex items-center space-x-6 text-xl text-black">

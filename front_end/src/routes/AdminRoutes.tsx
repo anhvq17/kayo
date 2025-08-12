@@ -47,6 +47,10 @@ import DetailProduct from "../pages/Admin/Product/DetailProduct"
 import TrashVoucher from "../pages/Admin/Voucher/TrashVoucher"
 import DetailVoucher from "../pages/Admin/Voucher/DetailVoucher"
 
+import AddFaq from "../pages/Admin/Faq/AddFaq"
+import EditFaq from "../pages/Admin/Faq/EditFaq"
+import FaqManager from "../pages/Admin/Faq/FaqManager"
+
 
 
 const AdminRoutes = {
@@ -97,6 +101,9 @@ const AdminRoutes = {
     { path: 'vouchers/add', element: <AddVoucher /> },
     { path: 'vouchers/edit/:id', element: <EditVoucher /> },
     { path: 'vouchers/:id', element: <DetailVoucher /> },
+    { path: 'addfaqs', element: <AddFaq /> },
+    { path: 'faqs/:id', element: <EditFaq /> },
+    { path: 'faqs', element: <FaqManager /> },
 
     // Khi đường dẫn sai hoặc không tồn tại, dẫn đến trang NotFound
     { path: '*', element: <NotFound homePath="/admin" /> },

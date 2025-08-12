@@ -124,9 +124,10 @@ const OrderList = () => {
     return orderStatus === 'Chờ xử lý' || orderStatus === 'Đã xử lý';
   };
 
-  const canRequestReturn = (orderStatus: string) => {
-    return orderStatus === 'Đã nhận hàng';
-  };
+ const canRequestReturn = (orderStatus: string) => {
+  return orderStatus === 'Đã nhận hàng' || orderStatus === 'Từ chối hoàn hàng';
+};
+
 
   const canConfirmReceived = (orderStatus: string) => {
     return orderStatus === 'Đã giao hàng';
@@ -550,3 +551,4 @@ const OrderList = () => {
 };
 
 export default OrderList;
+  

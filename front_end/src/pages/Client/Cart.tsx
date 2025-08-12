@@ -55,14 +55,21 @@ const Cart = () => {
       const res = await axios.get(`http://localhost:3000/cart/user/${userId}`);
       const serverCart = res.data.cart;
 
+      // Ghi đè giỏ hàng local bằng giỏ hàng từ server
       localStorage.setItem("cart", JSON.stringify(serverCart));
 
       setCartItems(
         serverCart.map((item: any) => {
-          const imageSrc = typeof item.image === "string" ? item.image : item.image?.src || "/img/default.jpg";
+          const imageSrc =
+            typeof item.image === "string"
+              ? item.image
+              : item.image?.src || "/img/default.jpg";
+
           return {
             ...item,
-            id: item.variantId || `${item.productId}-${item.selectedScent}-${item.selectedVolume}`,
+            id:
+              item.variantId ||
+              `${item.productId}-${item.selectedScent}-${item.selectedVolume}`,
             volume: item.selectedVolume || item.volume,
             fragrance: item.selectedScent || item.fragrance,
             image: {
@@ -96,8 +103,13 @@ const Cart = () => {
         try {
           const cartData = JSON.parse(raw);
           const items: CartItem[] = cartData.map((item: any) => {
-            const variantId = item.variantId || `${item.productId}-${item.selectedScent}-${item.selectedVolume}`;
-            const imageSrc = typeof item.image === "string" ? item.image : item.image?.src || "/img/default.jpg";
+            const variantId =
+              item.variantId ||
+              `${item.productId}-${item.selectedScent}-${item.selectedVolume}`;
+            const imageSrc =
+              typeof item.image === "string"
+                ? item.image
+                : item.image?.src || "/img/default.jpg";
             return {
               _id: item._id || item.productId,
               productId: item.productId || item._id,
@@ -249,7 +261,9 @@ const Cart = () => {
               <div className="space-y-6">
                 {cartItems.map((item) => (
                   <div
-                    key={`${item.productId}-${item.variantId || ""}-${item.volume}-${item.fragrance || ""}`}
+                    key={`${item.productId}-${item.variantId || ""}-${
+                      item.volume
+                    }-${item.fragrance || ""}`}
                     className="flex border rounded-lg p-4 items-start"
                   >
                     <input

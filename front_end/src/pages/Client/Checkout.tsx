@@ -47,37 +47,37 @@ const Checkout = () => {
 
   const parseAddressFromString = (addressString: string) => {
     if (!addressString) return null;
-    
+
     const provinces = getProvinces();
-    
-    const province = provinces.find(p => 
-      addressString.includes(p.name) || 
+
+    const province = provinces.find(p =>
+      addressString.includes(p.name) ||
       addressString.includes(p.name.replace(/^(Tỉnh|Thành phố)\s*/, ""))
     );
-    
+
     if (!province) return null;
-    
+
     const districts = getDistrictsByProvinceCode(province.code);
-    
-    const district = districts.find(d => 
-      addressString.includes(d.name) || 
+
+    const district = districts.find(d =>
+      addressString.includes(d.name) ||
       addressString.includes(d.name.replace(/^(Quận|Huyện|Thị xã)\s*/, ""))
     );
-    
+
     if (!district) return null;
-    
+
     const wards = getWardsByDistrictCode(district.code);
-    
-    const ward = wards.find(w => 
-      addressString.includes(w.name) || 
+
+    const ward = wards.find(w =>
+      addressString.includes(w.name) ||
       addressString.includes(w.name.replace(/^(Phường|Xã|Thị trấn)\s*/, ""))
     );
-    
+
     if (!ward) return null;
-    
+
     const addressParts = addressString.split(',');
     const detail = addressParts[0]?.trim() || "";
-    
+
     return {
       province,
       district,
@@ -107,7 +107,7 @@ const Checkout = () => {
       setFullName(parsedUser.username || "");
       setPhone(parsedUser.phone || "");
       setUserAddress(parsedUser.address || "");
-      
+
       if (parsedUser.address) {
         const parsedAddress = parseAddressFromString(parsedUser.address);
         if (parsedAddress) {
@@ -212,11 +212,11 @@ const Checkout = () => {
 
   const fetchUserVouchers = async () => {
     if (!userInfo?._id) return;
-    
+
     try {
       // Trước tiên xóa những voucher hết hạn
       await axios.delete(`http://localhost:3000/voucher-user/remove-expired/${userInfo._id}`);
-      
+
       // Sau đó lấy danh sách voucher còn hiệu lực
       const res = await axios.get(`http://localhost:3000/voucher-user/saved/${userInfo._id}`);
       setUserVouchers(res.data);
@@ -290,32 +290,62 @@ const Checkout = () => {
           variantId: item.variantId,
         })),
         totalAmount: total,
-        paymentMethod,
+        paymentMethod, // ví, vnpay hoặc cod...
         voucherCode: selectedVoucher ? selectedVoucher.code : undefined,
         discount: discount,
       };
 
       const response = await fetch("http://localhost:3000/orders", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
       });
 
       if (!response.ok) {
-        throw new Error("Tạo đơn hàng thất bại");
+        const errorData = await response.json();
+        console.error("Lỗi từ server khi tạo đơn:", errorData);
+        alert(errorData.message || JSON.stringify(errorData) || "Tạo đơn hàng thất bại");
+        setIsLoading(false);
+        return;
       }
+
+
 
       const orderResult = await response.json();
       const orderId = orderResult.orderId;
 
-      if (paymentMethod === "vnpay") {
+      if (paymentMethod === "wallet") {
+        await fetch(`http://localhost:3000/orders/${orderId}/pay`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        });
+        // Thanh toán ví đã được xử lý trên backend rồi, chỉ cần xoá giỏ hàng và chuyển trang
+        const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+        const updatedCart = cart.filter(
+          (cartItem: any) => !cartItems.some((ordered) => ordered.id === cartItem.id)
+        );
+        localStorage.setItem("cart", JSON.stringify(updatedCart));
+        localStorage.removeItem("buyNowItem");
+
+        if (userInfo && userInfo._id) {
+          for (const item of cartItems) {
+            if (item.variantId) {
+              await removeFromServerCart(userInfo._id, item.variantId, item.name);
+            }
+          }
+        }
+
+        window.location.href = `ordersuccessfully?orderId=${orderId}`;
+      } else if (paymentMethod === "vnpay") {
         localStorage.setItem("lastOrderedItems", JSON.stringify(cartItems));
         const paymentRes = await fetch(`http://localhost:3000/payment/create_payment?amount=${total}&orderId=${orderId}`);
         const paymentData = await paymentRes.json();
         window.location.href = paymentData.paymentUrl;
       } else {
+        // Xử lý các phương thức thanh toán khác (ví dụ: COD)
         const cart = JSON.parse(localStorage.getItem("cart") || "[]");
         const updatedCart = cart.filter(
           (cartItem: any) => !cartItems.some((ordered) => ordered.id === cartItem.id)
@@ -339,6 +369,8 @@ const Checkout = () => {
       setIsLoading(false);
     }
   };
+
+
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -391,7 +423,7 @@ const Checkout = () => {
 
               <div className="space-y-4">
                 <h3 className="text-base font-bold text-gray-700">Địa chỉ giao hàng</h3>
-                
+
                 {!showAddressForm && userAddress && (
                   <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
                     <div className="flex justify-between items-start">
@@ -434,7 +466,7 @@ const Checkout = () => {
                         Hủy
                       </button>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -529,6 +561,19 @@ const Checkout = () => {
                       <span className="text-gray-700 font-medium">Thanh toán online (VNPAY)</span>
                     </div>
                   </label>
+
+                  <label className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="payment"
+                      checked={paymentMethod === "wallet"}
+                      onChange={() => setPaymentMethod("wallet")}
+                      className="w-4 h-4"
+                    />
+                    <div className="ml-3">
+                      <span className="text-gray-700 font-medium">Ví điện tử</span>
+                    </div>
+                  </label>
                 </div>
               </div>
             </div>
@@ -538,42 +583,42 @@ const Checkout = () => {
         <div className="lg:w-1/3">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 sticky top-6">
             <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-800">Đơn hàng của bạn</h2>
+              <h2 className="text-lg font-semibold text-gray-800">Đơn hàng của bạn</h2>
 
-          <div className="flex justify-between mt-2">
-            <div className="text-gray-600 flex items-center">
-              <span>Mã giảm giá:</span>
-              {selectedVoucher && !voucherError && (
-                <span className="text-[#5f518e] ml-1 flex items-center gap-1">
-                  {selectedVoucher.code}
-                  {selectedVoucher.discountType === 'percent'
-                    ? ` (-${selectedVoucher.discountValue}%)`
-                    : ` (-${discount.toLocaleString("vi-VN")})`}
-                </span>
-              )}
+              <div className="flex justify-between mt-2">
+                <div className="text-gray-600 flex items-center">
+                  <span>Mã giảm giá:</span>
+                  {selectedVoucher && !voucherError && (
+                    <span className="text-[#5f518e] ml-1 flex items-center gap-1">
+                      {selectedVoucher.code}
+                      {selectedVoucher.discountType === 'percent'
+                        ? ` (-${selectedVoucher.discountValue}%)`
+                        : ` (-${discount.toLocaleString("vi-VN")})`}
+                    </span>
+                  )}
+                </div>
+                {selectedVoucher ? (
+                  <button
+                    className="px-2 py-1 text-xs text-red-600 hover:text-white border border-red-400 rounded hover:bg-red-500 transition duration-200"
+                    onClick={() => setSelectedVoucher(null)}
+                  >
+                    Bỏ chọn
+                  </button>
+
+                ) : (
+                  <button
+                    className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium"
+                    onClick={() => {
+                      setShowVoucherModal(true);
+                      fetchUserVouchers();
+                    }}
+                  >
+                    Chọn mã giảm giá
+                  </button>
+                )}
+              </div>
+
             </div>
-            {selectedVoucher ? (
-              <button
-              className="px-2 py-1 text-xs text-red-600 hover:text-white border border-red-400 rounded hover:bg-red-500 transition duration-200"
-              onClick={() => setSelectedVoucher(null)}
-            >
-              Bỏ chọn
-            </button>
-
-            ) : (
-              <button
-                className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium"
-                onClick={() => {
-                  setShowVoucherModal(true);
-                  fetchUserVouchers();
-                }}
-              >
-                Chọn mã giảm giá
-              </button>
-            )}
-          </div>
-
-          </div>
 
             <div className="p-6 space-y-4">
               {cartItems.length === 0 ? (
@@ -584,7 +629,7 @@ const Checkout = () => {
                   </Link>
                 </div>
               ) : (
-                
+
                 <>
                   {cartItems.map((item) => (
                     <div key={item.id} className="flex items-center space-x-4">
@@ -606,7 +651,7 @@ const Checkout = () => {
                       </div>
                     </div>
                   ))}
-                  
+
 
                   <div className="border-t border-gray-200 pt-4 space-y-2">
                     <div className="flex justify-between text-sm items-center">
@@ -637,7 +682,7 @@ const Checkout = () => {
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                       <div className="bg-white w-full max-w-md rounded-lg shadow-lg p-6 relative">
                         <h2 className="text-lg font-semibold mb-4">Chọn mã giảm giá</h2>
-                        
+
                         <button
                           onClick={() => setShowVoucherModal(false)}
                           className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl"
@@ -662,7 +707,7 @@ const Checkout = () => {
                                 statusText = "Tạm dừng";
                                 statusClass = "bg-yellow-100 text-yellow-700";
                               }
-                              
+
                               return (
                                 <div
                                   key={voucher._id}

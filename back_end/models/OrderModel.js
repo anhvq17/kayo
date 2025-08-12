@@ -18,10 +18,10 @@ const orderSchema = new mongoose.Schema({
   },
 
   paymentMethod: {
-    type: String,
-    enum: ['cod', 'vnpay'],
-    default: 'cod',
-  },
+  type: String,
+  enum: ['cod', 'vnpay', 'wallet'],
+  default: 'cod',
+},
   orderStatus: {
     type: String,
     enum: [

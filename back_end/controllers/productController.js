@@ -1,6 +1,7 @@
 import VariantModel from "../models/VariantModel.js";
 import ProductModel from "../models/ProductModel.js";
 import { productSchema } from "../validations/product.js";
+import CartModel from "../models/CartModel.js";
 
 // Lấy tất cả sản phẩm chưa bị xóa mềm
 export const getAllProducts = async (req, res) => {
@@ -94,6 +95,7 @@ export const softDeleteProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: "Not Found" });
     }
+     await CartModel.deleteMany({ productId: req.params.id });
 
     // Soft delete tất cả biến thể của sản phẩm
     await VariantModel.updateMany(
@@ -143,8 +145,11 @@ export const hardDeleteProduct = async (req, res) => {
     // Hard delete tất cả biến thể thuộc sản phẩm
     await VariantModel.deleteMany({ productId: req.params.id });
 
+    // Xóa luôn tất cả item trong giỏ hàng có productId này
+    await CartModel.deleteMany({ productId: req.params.id });
+
     return res.status(200).json({
-      message: "Hard Deleted Product và các biến thể",
+      message: "Hard Deleted Product, các biến thể và item trong giỏ hàng",
       data: product,
     });
   } catch (error) {
