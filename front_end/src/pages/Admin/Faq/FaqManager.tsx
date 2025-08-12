@@ -74,22 +74,22 @@ const FaqManager: React.FC = () => {
           )}
 
           {!loading && faqs.length > 0 && (
-            <table className="min-w-full bg-white border text-sm text-center">
+            <table className="min-w-full bg-white border text-sm">
               <thead>
                 <tr className="bg-black text-white">
-                  <th className="px-4 py-2 text-center">STT</th>
-                  <th className="px-4 py-2 text-center">Câu hỏi</th>
-                  <th className="px-4 py-2 text-center max-w-[300px]">Câu trả lời</th>
-                  <th className="px-4 py-2 text-center">Hành động</th>
+                  <th className="px-4 py-2">STT</th>
+                  <th className="px-4 py-2">Câu hỏi</th>
+                  <th className="px-4 py-2 max-w-[300px]">Câu trả lời</th>
+                  <th className="px-4 py-2">Hành động</th>
                 </tr>
               </thead>
               <tbody>
                 {faqs.map((faq, index) => (
                   <tr key={faq._id} className="bg-white hover:bg-gray-50">
-                    <td className="px-4 py-2 text-center">{index + 1}</td>
-                    <td className="px-4 py-2 text-center">{faq.question}</td>
-                    <td className="px-4 py-2 text-center max-w-[300px] break-words whitespace-normal">{faq.answer}</td>
-                    <td className="px-4 py-2 text-center">
+                    <td className="px-4 py-2">{index + 1}</td>
+                    <td className="px-4 py-2">{faq.question}</td>
+                    <td className="px-4 py-2 max-w-[300px] break-words whitespace-normal">{faq.answer}</td>
+                    <td className="px-4 py-2">
                     <div className="inline-flex space-x-1 justify-center">
                       <button
                         onClick={() => navigate(`/admin/faqs/${faq._id}`)}

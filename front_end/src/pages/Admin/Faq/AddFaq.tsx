@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 
 const AddFaq = () => {
@@ -41,7 +41,7 @@ const AddFaq = () => {
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded shadow mt-10">
-      <h2 className="text-2xl font-bold mb-4">Thêm câu hỏi FAQ</h2>
+      <h2 className="text-2xl font-bold mb-4">Thêm câu hỏi mới</h2>
       {error && <p className="text-red-600 mb-4">{error}</p>}
       {message && <p className="text-green-600 mb-4">{message}</p>}
 
@@ -68,7 +68,7 @@ const AddFaq = () => {
           loading ? "bg-green-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
         }`}
       >
-        {loading ? "Đang thêm..." : "Thêm FAQ"}
+        {loading ? "Đang thêm mới..." : "Thêm mới"}
       </button>
     </div>
   );

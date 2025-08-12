@@ -23,7 +23,7 @@ const EditFaq: React.FC = () => {
     setLoading(true);
     fetch(`http://localhost:3000/api/faqs/${id}`)
       .then((res) => {
-        if (!res.ok) throw new Error("Không tìm thấy FAQ");
+        if (!res.ok) throw new Error("Không tìm thấy câu hỏi");
         return res.json();
       })
       .then((data) => {
@@ -31,7 +31,7 @@ const EditFaq: React.FC = () => {
         setQuestion(data.question);
         setAnswer(data.answer);
       })
-      .catch(() => setError("Không tìm thấy FAQ hoặc lỗi tải dữ liệu"))
+      .catch(() => setError("Không tìm thấy câu hỏi hoặc lỗi tải dữ liệu"))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -49,7 +49,7 @@ const EditFaq: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`http://localhost:3000/api/faqs/${id}`, {
-        method: "PUT", // hoặc PATCH tùy API bạn thiết kế
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token || ""}`,
@@ -59,12 +59,11 @@ const EditFaq: React.FC = () => {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || "Lỗi khi cập nhật FAQ");
+        throw new Error(errorData.message || "Lỗi khi cập nhật câu hỏi");
       }
 
-      setMessage("Cập nhật FAQ thành công!");
-      // Nếu muốn redirect sau khi sửa xong:
-      // navigate('/admin/faqs');
+      alert("Cập nhật câu hỏi thành công!");
+      navigate('/admin/faqs');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -77,7 +76,7 @@ const EditFaq: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded shadow mt-10">
-      <h2 className="text-2xl font-bold mb-4">Chỉnh sửa FAQ</h2>
+      <h2 className="text-2xl font-bold mb-4">Chỉnh sửa câu hỏi</h2>
 
       {error && <p className="text-red-600 mb-4">{error}</p>}
       {message && <p className="text-green-600 mb-4">{message}</p>}
@@ -108,7 +107,7 @@ const EditFaq: React.FC = () => {
               : "bg-green-600 hover:bg-green-700"
           }`}
         >
-          {loading ? "Đang cập nhật..." : "Cập nhật FAQ"}
+          {loading ? "Đang cập nhật..." : "Cập nhật"}
         </button>
       </form>
     </div>
