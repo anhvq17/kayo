@@ -103,20 +103,25 @@ export default function Dashboard() {
   }));
 
   // === Top 5 khách hàng ===
-  const topCustomers = Object.values(
-    orders.reduce((acc, order) => {
-      const id = order.userId._id;
-      const name = order.userId.username;
-      const total = order.originalAmount ?? order.totalAmount;
-      if (!acc[id]) {
-        acc[id] = { id, name, total: 0 };
-      }
-      acc[id].total += total;
-      return acc;
-    }, {} as Record<string, { id: string; name: string; total: number }>)
-  )
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5);
+const topCustomers = Object.values(
+  orders.reduce((acc, order) => {
+    if (!order.userId) return acc; // Bỏ qua đơn hàng không có thông tin user
+
+    const id = order.userId._id;
+    const name = order.userId.username;
+    const total = order.originalAmount ?? order.totalAmount ?? 0;
+
+    if (!acc[id]) {
+      acc[id] = { id, name, total: 0 };
+    }
+    acc[id].total += total;
+
+    return acc;
+  }, {} as Record<string, { id: string; name: string; total: number }>)
+)
+  .sort((a, b) => b.total - a.total)
+  .slice(0, 5);
+
 
   // === Top 5 sản phẩm ===
   const topProducts = Object.values(

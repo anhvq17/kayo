@@ -18,6 +18,7 @@ import MyVoucher from "../pages/Client/vourcher/myVoucher";
 import ReviewPage from "../pages/Client/ReviewPage";
 import NewsList from "../pages/Client/NewsList";
 import Wallet from "../pages/Client/Wallet";
+import FaqList from "../pages/Client/Chatbot";
 
 const ClientRoutes = {
   path: '/',
@@ -41,6 +42,7 @@ const ClientRoutes = {
     { path: 'payment-result', element: <CheckPayment /> },
     { path: 'newlist', element: <NewsList /> },
     { path: 'review/:productId/:orderItemId', element: <ReviewPage /> },
+    { path: 'faqs', element: <FaqList /> },
 
     // Khi đường dẫn sai hoặc không tồn tại, dẫn đến trang NotFound
     { path: '*', element: <NotFound homePath="/"/> },

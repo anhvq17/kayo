@@ -1,38 +1,77 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-type Tab = "balance" | "add" | "withdraw";
+type Tab = "balance" | "add" | "withdraw" | "history" | "refund";
+
+type Transaction = {
+  _id?: string;
+  type: "add" | "withdraw" | "refund";  // Thêm refund
+  amount: number;
+  date: string;
+  status?: "completed" | "failed";
+  note?: string; // Thêm ghi chú
+};
 
 const Wallet: React.FC = () => {
   const [balance, setBalance] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("balance");
-  const [amount, setAmount] = useState<string>(""); // dùng cho nạp/rút
+  const [amount, setAmount] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [history, setHistory] = useState<Transaction[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
-  // Lấy số dư
   useEffect(() => {
-    const fetchWallet = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setError("Bạn chưa đăng nhập");
-          return;
-        }
-        const res = await axios.get("http://localhost:3000/api/wallet", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setBalance(res.data.wallet);
-        setError(null);
-      } catch {
-        setError("Lỗi khi lấy dữ liệu ví");
-      }
-    };
-    fetchWallet();
-  }, []);
+    if (tab === "balance") {
+      fetchWallet();
+    }
+  }, [tab]);
 
-  // Xử lý nạp hoặc rút tiền
+  const fetchWallet = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Bạn chưa đăng nhập");
+        return;
+      }
+      const res = await axios.get("http://localhost:3000/api/wallet", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setBalance(res.data.wallet);
+      setError(null);
+    } catch {
+      setError("Lỗi khi lấy dữ liệu ví");
+    }
+  };
+
+  useEffect(() => {
+    if (tab === "history") {
+      fetchHistory();
+    }
+  }, [tab]);
+
+  const fetchHistory = async () => {
+    setLoadingHistory(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Bạn chưa đăng nhập");
+        setLoadingHistory(false);
+        return;
+      }
+      const res = await axios.get("http://localhost:3000/api/wallet/history", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setHistory(res.data.history);
+    } catch {
+      setError("Lỗi khi lấy lịch sử giao dịch");
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
   const handleSubmit = async () => {
     setError(null);
     setMessage(null);
@@ -54,7 +93,9 @@ const Wallet: React.FC = () => {
       const url =
         tab === "add"
           ? "http://localhost:3000/api/wallet/add"
-          : "http://localhost:3000/api/wallet/withdraw";
+          : tab === "withdraw"
+            ? "http://localhost:3000/api/wallet/withdraw"
+            : "http://localhost:3000/api/wallet/refund";
 
       const res = await axios.post(
         url,
@@ -83,11 +124,10 @@ const Wallet: React.FC = () => {
       {/* Menu */}
       <div className="flex justify-center mb-6 space-x-4 border-b border-gray-300">
         <button
-          className={`pb-2 px-4 font-semibold ${
-            tab === "balance"
+          className={`pb-2 px-4 font-semibold ${tab === "balance"
               ? "border-b-2 border-green-600 text-green-600"
               : "text-gray-600 hover:text-green-600"
-          }`}
+            }`}
           onClick={() => {
             setTab("balance");
             setError(null);
@@ -96,33 +136,19 @@ const Wallet: React.FC = () => {
         >
           Số dư
         </button>
+       
         <button
-          className={`pb-2 px-4 font-semibold ${
-            tab === "add"
+          className={`pb-2 px-4 font-semibold ${tab === "history"
               ? "border-b-2 border-green-600 text-green-600"
               : "text-gray-600 hover:text-green-600"
-          }`}
+            }`}
           onClick={() => {
-            setTab("add");
+            setTab("history");
             setError(null);
             setMessage(null);
           }}
         >
-          Nạp tiền
-        </button>
-        <button
-          className={`pb-2 px-4 font-semibold ${
-            tab === "withdraw"
-              ? "border-b-2 border-green-600 text-green-600"
-              : "text-gray-600 hover:text-green-600"
-          }`}
-          onClick={() => {
-            setTab("withdraw");
-            setError(null);
-            setMessage(null);
-          }}
-        >
-          Rút tiền
+          Lịch sử
         </button>
       </div>
 
@@ -149,7 +175,7 @@ const Wallet: React.FC = () => {
         </div>
       )}
 
-      {(tab === "add" || tab === "withdraw") && (
+      {(tab === "add" || tab === "withdraw" || tab === "refund") && (
         <div className="max-w-sm mx-auto">
           <label
             htmlFor="amount"
@@ -171,8 +197,71 @@ const Wallet: React.FC = () => {
             disabled={loading}
             className="mt-4 w-full bg-green-600 text-white font-semibold py-2 rounded hover:bg-green-700 disabled:bg-green-300 transition"
           >
-            {loading ? "Đang xử lý..." : tab === "add" ? "Nạp tiền" : "Rút tiền"}
+            {loading ? "Đang xử lý..." : tab === "add" ? "Nạp tiền" : tab === "withdraw" ? "Rút tiền" : "Hoàn tiền"}
           </button>
+        </div>
+      )}
+
+      {tab === "history" && (
+        <div className="max-w-3xl mx-auto">
+          {loadingHistory ? (
+            <p className="text-center text-gray-500">Đang tải lịch sử...</p>
+          ) : history.length === 0 ? (
+            <p className="text-center text-gray-500">Chưa có giao dịch nào</p>
+          ) : (
+            <table className="w-full border border-gray-300 rounded">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-3 border-b border-gray-300 text-left">Loại</th>
+                   <th className="p-3 border-b border-gray-300 text-left">Ghi chú</th> {/* Cột mới */}
+                  <th className="p-3 border-b border-gray-300 text-right">Số tiền (VNĐ)</th>
+                    <th className="p-3 border-b border-gray-300 text-left">Thời gian</th>
+                  <th className="p-3 border-b border-gray-300 text-left">Trạng thái</th>
+                
+                 
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((tx, i) => (
+                  <tr
+                    key={i}
+                    className={`border-b border-gray-300 ${tx.type === "add"
+                        ? "text-green-600"
+                        : tx.type === "withdraw"
+                          ? "text-red-600"
+                          : tx.type === "refund"
+                            ? "text-blue-600"
+                            : ""
+                      }`}
+                  >
+                    <td className="p-3 capitalize">
+                      {tx.type === "add"
+                        ? "Nạp tiền"
+                        : tx.type === "withdraw"
+                          ? "Thanh toán đơn hàng"
+                          : tx.type === "refund"
+                            ? "Hoàn tiền"
+                            : "Không xác định"}
+                    </td>
+                      <td className="p-3">{tx.note || "-"}</td> {/* Hiển thị ghi chú hoặc "-" nếu không có */}
+                    <td className="p-3 text-right">{tx.amount.toLocaleString()}</td>
+                    <td className="p-3">{new Date(tx.date).toLocaleString()}</td>
+                    <td className="p-3 capitalize">
+                      {tx.status === "completed" ? (
+                        <span className="text-green-600 font-semibold">Thành công</span>
+                      ) : tx.status === "failed" ? (
+                        <span className="text-red-600 font-semibold">Thất bại</span>
+                      ) : (
+                        "Chưa xác định"
+                      )}
+                    </td>
+                  
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+          )}
         </div>
       )}
     </div>
