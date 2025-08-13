@@ -52,7 +52,7 @@ export default function Dashboard() {
     }
   };
 
-  const paidStatuses = ["Đã giao hàng", "Đã nhận hàng"];
+  const paidStatuses = ["Đã nhận hàng"];
 
   const validRevenueOrders = orders.filter(
     (order) =>
@@ -85,17 +85,13 @@ export default function Dashboard() {
   const statusStats = {
     "Chờ xử lý": orders.filter((o) => o.orderStatus === "Chờ xử lý").length,
     "Đã xử lý": orders.filter((o) => o.orderStatus === "Đã xử lý").length,
-    "Đang giao hàng": orders.filter((o) => o.orderStatus === "Đang giao hàng")
-      .length,
-    "Đã giao hàng": orders.filter((o) => o.orderStatus === "Đã giao hàng")
-      .length,
-    "Đã nhận hàng": orders.filter((o) => o.orderStatus === "Đã nhận hàng")
-      .length,
-    "Đã huỷ đơn hàng": orders.filter((o) => o.orderStatus === "Đã huỷ đơn hàng")
-      .length,
+    "Đang giao hàng": orders.filter((o) => o.orderStatus === "Đang giao hàng").length,
+    "Đã giao hàng": orders.filter((o) => o.orderStatus === "Đã giao hàng").length,
+    "Đã nhận hàng": orders.filter((o) => o.orderStatus === "Đã nhận hàng").length,
+    "Đã huỷ đơn hàng": orders.filter((o) => o.orderStatus === "Đã huỷ đơn hàng").length,
   };
 
-  const revenueByDate = orders.reduce((acc: Record<string, number>, order) => {
+  const revenueByDate = validRevenueOrders.reduce((acc: Record<string, number>, order) => {
     const dateKey = new Date(order.createdAt).toLocaleDateString("vi-VN");
     acc[dateKey] =
       (acc[dateKey] || 0) + (order.originalAmount ?? order.totalAmount);
