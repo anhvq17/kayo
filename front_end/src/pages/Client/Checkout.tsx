@@ -315,6 +315,13 @@ const Checkout = () => {
       const orderId = orderResult.orderId;
 
       if (paymentMethod === "wallet") {
+        await fetch(`http://localhost:3000/orders/${orderId}/pay`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        });
         // Thanh toán ví đã được xử lý trên backend rồi, chỉ cần xoá giỏ hàng và chuyển trang
         const cart = JSON.parse(localStorage.getItem("cart") || "[]");
         const updatedCart = cart.filter(

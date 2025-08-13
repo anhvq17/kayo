@@ -220,6 +220,7 @@ const DetailOrder = () => {
     switch (method) {
       case 'cod': return 'Thanh toán khi nhận hàng (COD)';
       case 'vnpay': return 'Thanh toán qua VNPay';
+      case 'wallet': return 'Thanh toán bằng Ví điện tử';
       default: return method;
     }
   };
@@ -490,11 +491,18 @@ const DetailOrder = () => {
             </tbody>
           </table>
         </div>
-        <div className="p-6 border-t bg-gray-50">
+        <div className="p-6 border-t">
           <div className="flex justify-end">
             <div className="text-right">
               <div className="text-lg font-bold text-red-600">
-                Tổng tiền: <span>{order.totalAmount.toLocaleString()}</span>
+                Tổng tiền: <span>{order.totalAmount.toLocaleString()}
+                  {order.voucherCode && (order.discount ?? 0) > 0 && (
+                    <p className="text-sm text-gray-500 mt-1 font-medium">
+                      Đã áp dụng mã giảm giá
+                      <span className="font-semibold"> (-{(order.discount ?? 0).toLocaleString()})</span>
+                    </p>
+                  )}
+                </span>
               </div>
             </div>
           </div>

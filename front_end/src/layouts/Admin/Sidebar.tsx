@@ -26,7 +26,7 @@ const AdminSidebar = ({ collapsed, setCollapsed }: Props) => {
       <div className={`p-4 transition-all ${collapsed ? 'px-2' : 'px-6'}`}>
         <div className="mb-6">
           {!collapsed && (
-            <Link to={"/"} >
+            <Link to={"/admin"}>
               <img src="/img/logo.png" alt="Logo" className="mx-auto" />
             </Link>
           )}
@@ -90,6 +90,7 @@ const AdminSidebar = ({ collapsed, setCollapsed }: Props) => {
             <SidebarItem to="/admin/users" icon="fas fa-users" label="Người dùng" collapsed={collapsed} />
             <SidebarItem to="/admin/reviews" icon="fas fa-comment-dots" label="Đánh giá" collapsed={collapsed} />
             <SidebarItem to="/admin/vouchers" icon="fas fa-ticket-alt" label="Mã giảm giá" collapsed={collapsed} />
+            <SidebarItem to="/admin/faqs" icon="fas fa-question-circle" label="FAQ" collapsed={collapsed} />
           </ul>
         </nav>
       </div>

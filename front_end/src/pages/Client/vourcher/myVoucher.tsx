@@ -144,7 +144,6 @@ const MyVoucher = () => {
                   Mã: <span className="font-bold text-[#696faa]">{voucher.code}</span>
                 </p>
 
-                {/* 👉 THÊM DÒNG NÀY */}
                 {voucher.discountType === "percent" && maxDiscountValue !== null && (
                   <p className="text-gray-700 mt-1">
                     Giảm tối đa: {maxDiscountValue.toLocaleString("vi-VN")}

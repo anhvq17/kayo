@@ -1,7 +1,10 @@
-import express from "express";
 import dotenv from "dotenv";
+dotenv.config();
+import express from "express";
+
+
 import cors from "cors";
-import mongoose from "mongoose";
+
 import connectMongoDB from "./config/db.js";
 import path from "path";
 
@@ -26,9 +29,9 @@ import voucherUserRouter from "./routes/voucherUserRouter.js";
 
 import walletRoutes from "./routes/wallet.js";
 import cookieParser from "cookie-parser";
+import faqRouter from "./routes/FaqRoutes.js";
+ 
 
-
-dotenv.config();
 console.log("JWT_SECRET:", process.env.JWT_SECRET);
 connectMongoDB(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/datn");
 
@@ -85,10 +88,17 @@ app.use('/', authRouter);
 app.use('/uploads', express.static(path.join(path.resolve(), 'uploads')));
 
 app.use("/api/wallet", walletRoutes);
+app.use('/api/faqs', faqRouter);
+ 
+
+
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
+  console.log("=== ENV CHECK ===");
+console.log("EMAIL_USER:", process.env.EMAIL_USER || "❌ Không có giá trị");
+console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "✅ Có giá trị" : "❌ Không có giá trị");
 });
 
 export const viteNodeApp = app;

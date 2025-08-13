@@ -23,7 +23,6 @@ const ReviewManager = () => {
   const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
   const [reviewsMap, setReviewsMap] = useState<Record<string, Review[]>>({});
 
-  // Load danh sách sản phẩm
   useEffect(() => {
     const fetchProducts = async () => {
       try {
