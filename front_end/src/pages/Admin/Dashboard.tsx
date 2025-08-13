@@ -7,8 +7,6 @@ import {
 } from "lucide-react";
 import { getAllOrders } from "../../services/Order";
 import type { Order } from "../../types/Order";
-
-// Import các component của Recharts
 import {
   BarChart as ReBarChart,
   Bar,
@@ -52,9 +50,19 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
-  
+
+  // Các trạng thái đơn hàng được tính vào doanh thu
+  const paidStatuses = ["Đã giao hàng", "Đã nhận hàng"];
+
+  // Lọc đơn hợp lệ để tính doanh thu
+  const validRevenueOrders = orders.filter(
+    (order) =>
+      paidStatuses.includes(order.orderStatus) &&
+      (order.isPaid === true || order.paymentStatus === "Đã thanh toán")
+  );
+
   const today = new Date();
-  const todayOrders = orders.filter((order) => {
+  const todayOrders = validRevenueOrders.filter((order) => {
     const orderDate = new Date(order.createdAt);
     return orderDate.toDateString() === today.toDateString();
   });
@@ -63,17 +71,16 @@ export default function Dashboard() {
     (sum, order) => sum + (order.originalAmount ?? order.totalAmount),
     0
   );
-  const totalRevenue = orders.reduce(
+  const totalRevenue = validRevenueOrders.reduce(
     (sum, order) => sum + (order.originalAmount ?? order.totalAmount),
     0
   );
+
   const newOrders = orders.filter(
     (order) => order.orderStatus === "Chờ xử lý"
   ).length;
-  const completedOrders = orders.filter(
-    (order) =>
-      order.orderStatus === "Đã giao hàng" ||
-      order.orderStatus === "Đã nhận hàng"
+  const completedOrders = orders.filter((order) =>
+    paidStatuses.includes(order.orderStatus)
   ).length;
 
   const statusStats = {
@@ -89,22 +96,25 @@ export default function Dashboard() {
       .length,
   };
 
-  // === Tạo dữ liệu cho biểu đồ Bar ===
-  const revenueByDate = orders.reduce((acc: Record<string, number>, order) => {
-    const dateKey = new Date(order.createdAt).toLocaleDateString("vi-VN");
-    acc[dateKey] =
-      (acc[dateKey] || 0) + (order.originalAmount ?? order.totalAmount);
-    return acc;
-  }, {});
+  // === Tạo dữ liệu cho biểu đồ Bar từ đơn hợp lệ ===
+  const revenueByDate = validRevenueOrders.reduce(
+    (acc: Record<string, number>, order) => {
+      const dateKey = new Date(order.createdAt).toLocaleDateString("vi-VN");
+      acc[dateKey] =
+        (acc[dateKey] || 0) + (order.originalAmount ?? order.totalAmount);
+      return acc;
+    },
+    {}
+  );
 
   const chartData = Object.entries(revenueByDate).map(([date, revenue]) => ({
     date,
     revenue,
   }));
 
-  // === Top 5 khách hàng ===
+  // === Top 5 khách hàng (từ đơn hợp lệ) ===
   const topCustomers = Object.values(
-    orders.reduce((acc, order) => {
+    validRevenueOrders.reduce((acc, order) => {
       const id = order.userId._id;
       const name = order.userId.username;
       const total = order.originalAmount ?? order.totalAmount;
@@ -118,9 +128,9 @@ export default function Dashboard() {
     .sort((a, b) => b.total - a.total)
     .slice(0, 5);
 
-  // === Top 5 sản phẩm ===
+  // === Top 5 sản phẩm (từ đơn hợp lệ) ===
   const topProducts = Object.values(
-    orders.reduce((acc, order) => {
+    validRevenueOrders.reduce((acc, order) => {
       order.orderItems?.forEach(
         (item: {
           productId: {
@@ -258,7 +268,7 @@ export default function Dashboard() {
                 cy="50%"
                 outerRadius={100}
                 dataKey="value"
-                label={({ name, value }) => `${name} (${value})`}
+                // label={({ name, value }) => `${name} (${value})`}
               >
                 {Object.keys(statusStats).map((_, index) => (
                   <Cell
@@ -322,9 +332,7 @@ export default function Dashboard() {
                   <td className="py-2 font-medium">{order._id}</td>
                   <td className="py-2">{order.userId.username}</td>
                   <td className="py-2 text-red-600 font-semibold">
-                    {(
-                      order.originalAmount ?? order.totalAmount
-                    ).toLocaleString()}
+                    {(order.originalAmount ?? order.totalAmount).toLocaleString()}
                   </td>
                   <td className="py-2">{order.orderStatus}</td>
                   <td className="py-2">
@@ -342,7 +350,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Top 5 khách hàng & sản phẩm */}
+      {/* Top 5 khách hàng */}
       <div className="gap-6">
         <div className="rounded-xl border bg-white shadow p-4">
           <p className="text-lg font-semibold mb-4">
@@ -367,7 +375,6 @@ export default function Dashboard() {
             </tbody>
           </table>
         </div>
-
       </div>
     </div>
   );
