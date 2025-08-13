@@ -5,11 +5,11 @@ const orderSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
   phone: { type: String, required: true },
   address: {
-    fullAddress: { type: String }, // Địa chỉ đầy đủ từ user
-    province: { type: String }, // Tỉnh/Thành phố
-    district: { type: String }, // Quận/Huyện
-    ward: { type: String }, // Phường/Xã
-    detail: { type: String }, // Địa chỉ chi tiết
+    fullAddress: { type: String },
+    province: { type: String },
+    district: { type: String },
+    ward: { type: String },
+    detail: { type: String },
   },
     paymentStatus: { 
     type: String, 
@@ -39,12 +39,12 @@ const orderSchema = new mongoose.Schema({
   },
   totalAmount: { type: Number, required: true },
   originalAmount: { type: Number, required: true },
-  voucherCode: { type: String }, // Mã giảm giá đã áp dụng
-  discount: { type: Number, default: 0 }, // Số tiền giảm giá
-  discountType: { type: String, enum: ['percent', 'fixed'], default: undefined }, // Loại giảm giá
-  discountValue: { type: Number, default: undefined }, // Giá trị giảm giá
-  cancelReason: { type: String }, // Lý do hủy đơn hàng
-  returnReason: { type: String }, // Lý do hoàn hàng
+  voucherCode: { type: String },
+  discount: { type: Number, default: 0 },
+  discountType: { type: String, enum: ['percent', 'fixed'], default: undefined },
+  discountValue: { type: Number, default: undefined },
+  cancelReason: { type: String },
+  returnReason: { type: String },
 }, { timestamps: true });
 
 export default mongoose.model('orders', orderSchema);

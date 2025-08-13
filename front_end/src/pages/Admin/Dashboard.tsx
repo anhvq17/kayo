@@ -51,9 +51,17 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
-  
+
+  const paidStatuses = ["Đã nhận hàng"];
+
+  const validRevenueOrders = orders.filter(
+    (order) =>
+      paidStatuses.includes(order.orderStatus) &&
+      (order.isPaid === true || order.paymentStatus === "Đã thanh toán")
+  );
+
   const today = new Date();
-  const todayOrders = orders.filter((order) => {
+  const todayOrders = validRevenueOrders.filter((order) => {
     const orderDate = new Date(order.createdAt);
     return orderDate.toDateString() === today.toDateString();
   });
@@ -62,33 +70,28 @@ export default function Dashboard() {
     (sum, order) => sum + (order.originalAmount ?? order.totalAmount),
     0
   );
-  const totalRevenue = orders.reduce(
+  const totalRevenue = validRevenueOrders.reduce(
     (sum, order) => sum + (order.originalAmount ?? order.totalAmount),
     0
   );
+
   const newOrders = orders.filter(
     (order) => order.orderStatus === "Chờ xử lý"
   ).length;
-  const completedOrders = orders.filter(
-    (order) =>
-      order.orderStatus === "Đã giao hàng" ||
-      order.orderStatus === "Đã nhận hàng"
+  const completedOrders = orders.filter((order) =>
+    paidStatuses.includes(order.orderStatus)
   ).length;
 
   const statusStats = {
     "Chờ xử lý": orders.filter((o) => o.orderStatus === "Chờ xử lý").length,
     "Đã xử lý": orders.filter((o) => o.orderStatus === "Đã xử lý").length,
-    "Đang giao hàng": orders.filter((o) => o.orderStatus === "Đang giao hàng")
-      .length,
-    "Đã giao hàng": orders.filter((o) => o.orderStatus === "Đã giao hàng")
-      .length,
-    "Đã nhận hàng": orders.filter((o) => o.orderStatus === "Đã nhận hàng")
-      .length,
-    "Đã huỷ đơn hàng": orders.filter((o) => o.orderStatus === "Đã huỷ đơn hàng")
-      .length,
+    "Đang giao hàng": orders.filter((o) => o.orderStatus === "Đang giao hàng").length,
+    "Đã giao hàng": orders.filter((o) => o.orderStatus === "Đã giao hàng").length,
+    "Đã nhận hàng": orders.filter((o) => o.orderStatus === "Đã nhận hàng").length,
+    "Đã huỷ đơn hàng": orders.filter((o) => o.orderStatus === "Đã huỷ đơn hàng").length,
   };
 
-  const revenueByDate = orders.reduce((acc: Record<string, number>, order) => {
+  const revenueByDate = validRevenueOrders.reduce((acc: Record<string, number>, order) => {
     const dateKey = new Date(order.createdAt).toLocaleDateString("vi-VN");
     acc[dateKey] =
       (acc[dateKey] || 0) + (order.originalAmount ?? order.totalAmount);
@@ -256,12 +259,12 @@ const topCustomers = Object.values(
                     key={`cell-${index}`}
                     fill={
                       [
-                        "#f59e0b",
-                        "#3b82f6",
-                        "#10b981",
-                        "#8b5cf6",
-                        "#6b7280",
-                        "#ef4444",
+                        "#FFC107",
+                        "#17A2B8",
+                        "#9C27B0",
+                        "#4CAF50",
+                        "#2196F3",
+                        "#F44336",
                       ][index % 6]
                     }
                   />
@@ -300,9 +303,7 @@ const topCustomers = Object.values(
                   <td className="py-2">{order._id}</td>
                   <td className="py-2">{order.userId?.username}</td>
                   <td className="py-2 text-red-600 font-semibold">
-                    {(
-                      order.originalAmount ?? order.totalAmount
-                    ).toLocaleString()}
+                    {(order.originalAmount ?? order.totalAmount).toLocaleString()}
                   </td>
                   <td className="py-2">{order.orderStatus}</td>
                   <td className="py-2">

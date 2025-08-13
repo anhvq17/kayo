@@ -3,7 +3,7 @@ import OrderItem from '../models/OrderItemModel.js';
 import VoucherModel from '../models/VoucherModel.js';
 import VoucherUserModel from '../models/VoucherUserModel.js';
 import User from '../models/UserModel.js';
-
+import { sendMail } from "../config/mailer.js"; 
 
 export const createOrder = async (req, res) => {
   try {
@@ -13,7 +13,6 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Validate address format
     if (!address.fullAddress && (!address.province || !address.district || !address.ward || !address.detail)) {
       return res.status(400).json({ message: "Invalid address format" });
     }
@@ -69,7 +68,6 @@ export const createOrder = async (req, res) => {
 
     totalAmount = totalAmount - discount;
 
-    // Tạo order trước để lấy order._id
     const order = await Order.create({
       userId,
       fullName,
@@ -86,10 +84,8 @@ export const createOrder = async (req, res) => {
       discountValue,
     });
 
-    // Nếu thanh toán bằng ví, kiểm tra số dư rồi trừ tiền, lưu lịch sử
     if (paymentMethod === 'wallet') {
       if (user.wallet < totalAmount) {
-        // Xóa order vừa tạo để rollback
         await Order.findByIdAndDelete(order._id);
         return res.status(400).json({ message: "Số dư ví không đủ để thanh toán" });
       }
@@ -103,7 +99,6 @@ export const createOrder = async (req, res) => {
       await user.save();
     }
 
-    // Tạo các OrderItem
     await Promise.all(items.map(item => OrderItem.create({
       orderId: order._id,
       variantId: item.variantId,
@@ -116,9 +111,6 @@ export const createOrder = async (req, res) => {
     return res.status(400).json({ error: err.message });
   }
 };
-
-
-
 
 export const getAllOrders = async (req, res) => {
   try {
@@ -148,8 +140,6 @@ export const getOrderById = async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 };
-
-
 
 export const getOrdersByUser = async (req, res) => {
   try {
@@ -190,7 +180,6 @@ export const updateOrder = async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // ===== Quy tắc chuyển trạng thái =====
     if (req.body.orderStatus) {
       const statusOrder = [
         'Chờ xử lý',
@@ -228,19 +217,17 @@ export const updateOrder = async (req, res) => {
       }
     }
 
-    // ===== Cập nhật thanh toán khi nhận hàng =====
     if (req.body.orderStatus === 'Đã nhận hàng') {
       updateData.paymentStatus = 'Đã thanh toán';
       updateData.isPaid = true;
       updateData.paidAt = new Date();
     }
 
-    // ===== Xử lý thanh toán ví khi chưa trừ =====
     if (updateData.paymentStatus === 'Đã thanh toán' && order.paymentMethod === 'wallet') {
       const user = await User.findById(order.userId);
       if (!user) return res.status(404).json({ message: "Người dùng không tồn tại" });
 
-      if (order.paymentStatus !== 'Đã thanh toán') { // tránh trừ 2 lần
+      if (order.paymentStatus !== 'Đã thanh toán') {
         if (user.wallet < order.totalAmount) {
           return res.status(400).json({ error: 'Số dư ví không đủ' });
         }
@@ -255,9 +242,8 @@ export const updateOrder = async (req, res) => {
       }
     }
 
-    // ===== Hoàn tiền khi "Đã hoàn hàng" =====
     if (req.body.orderStatus === 'Đã hoàn hàng') {
-      if (order.paymentStatus !== 'Đã hoàn tiền') { // tránh hoàn 2 lần
+      if (order.paymentStatus !== 'Đã hoàn tiền') {
         updateData.paymentStatus = 'Đã hoàn tiền';
         updateData.isPaid = false;
 
@@ -277,7 +263,6 @@ export const updateOrder = async (req, res) => {
       }
     }
 
-    // ===== Hoàn tiền khi "Đã huỷ đơn hàng" =====
     if (req.body.orderStatus === 'Đã huỷ đơn hàng') {
       if (order.paymentStatus !== 'Đã hoàn tiền' && ['vnpay', 'wallet'].includes(order.paymentMethod)) {
         updateData.paymentStatus = 'Đã hoàn tiền';
@@ -298,12 +283,62 @@ export const updateOrder = async (req, res) => {
     }
 
     const updated = await Order.findByIdAndUpdate(req.params.id, updateData, { new: true });
+
+    const statusColors = {
+      'Chờ xử lý': '#FFC107',
+      'Đã xử lý': '#17A2B8',
+      'Đang giao hàng': '#9C27B0',
+      'Đã giao hàng': '#4CAF50',
+      'Đã nhận hàng': '#2196F3',
+      'Đã huỷ đơn hàng': '#F44336',
+      'Yêu cầu hoàn hàng': '#FF5722',
+      'Đã hoàn hàng': '#8BC34A',
+      'Từ chối hoàn hàng': '#607D8B'
+    };
+
+    const statusColor = statusColors[updated.orderStatus] || '#000';
+
+    const subject = `[Sevend Perfume] Cập nhật đơn hàng #${order._id}`;
+
+    const user = await User.findById(order.userId);
+    if (user?.email) {
+      const subject = `Cập nhật đơn hàng #${order._id}`;
+      const html = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <p>Xin chào <b>${user.username}</b>,</p>
+          <p>
+            Đơn hàng <b>#${order._id}</b> của bạn vừa được cập nhật trạng thái:
+            <span style="font-size: 14px; font-weight: bold; color: ${statusColor};">
+              ${updated.orderStatus}
+            </span>
+          </p>
+          <h4>Chi tiết đơn hàng:</h4>
+          <ul>
+            <li><b>Ngày đặt:</b> ${new Date(order.createdAt).toLocaleDateString('vi-VN')}</li>
+            <li><b>Tổng tiền:</b> ${order.totalAmount.toLocaleString()}</li>
+            <li><b>Phương thức thanh toán:</b> ${order.paymentMethod}</li>
+          </ul>
+          <p>Bạn có thể theo dõi chi tiết đơn hàng tại: 
+            <a href="http://localhost:5173/orders" style="color: #1a73e8;">Xem đơn hàng</a>
+          </p>
+            <p>
+            Cảm ơn vì đã tin tưởng và lựa chọn <b>Sevend</b>. <br /> 
+            Chúng tôi luôn sẵn sàng đồng hành và hỗ trợ bất cứ khi nào bạn cần.
+          </p>
+          <div style="background-color: #f7f7f7; padding: 15px; font-size: 12px; color: #888; text-align: center;">
+            Đây là email tự động, vui lòng không trả lời trực tiếp.<br>
+            Liên hệ hỗ trợ: <a href="mailto:support@sevend.vn">support@sevend.vn</a>
+          </div>
+        </div>
+      `;
+      await sendMail(user.email, subject, html);
+    }
+
     return res.status(200).json(updated);
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }
 };
-
 
 export const payOrder = async (req, res) => {
   try {
@@ -349,8 +384,6 @@ export const payOrder = async (req, res) => {
   }
 };
 
-
-
 export const deleteOrder = async (req, res) => {
   try {
     await OrderItem.deleteMany({ orderId: req.params.id });
@@ -360,5 +393,3 @@ export const deleteOrder = async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 };
-
-
