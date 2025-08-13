@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getOrdersByUserWithItems, updateOrder } from '../../services/Order';
 
-// Thêm type cho OrderItem
+
 interface OrderItem {
   _id: string;
   variantId: {
@@ -26,7 +26,23 @@ interface OrderItem {
   };
   quantity: number;
   price: number;
-  isReviewed?: boolean; // Add this property
+  isReviewed?: boolean;
+}
+
+interface Order {
+  _id: string;
+  userId?: { name: string; email: string };
+  status: string;
+  orderStatus: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  totalAmount: number;
+  createdAt: string;
+  items: OrderItem[];
+  voucherCode?: string;
+  discount?: number;
+  discountType?: string;
+  discountValue?: number;
 }
 
 const ORDER_TABS = [
@@ -40,7 +56,7 @@ const ORDER_TABS = [
 ];
 
 const OrderList = () => {
-  const [orderList, setOrderList] = useState<any[]>([]);
+  const [orderList, setOrderList] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState('all');
@@ -69,6 +85,8 @@ const OrderList = () => {
       setLoading(false);
     }
   };
+
+  // (Đã xoá hàm updateOrderStatus vì không sử dụng)
 
   useEffect(() => {
     fetchOrders();

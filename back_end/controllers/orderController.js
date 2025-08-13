@@ -3,6 +3,7 @@ import OrderItem from '../models/OrderItemModel.js';
 import VoucherModel from '../models/VoucherModel.js';
 import VoucherUserModel from '../models/VoucherUserModel.js';
 import User from '../models/UserModel.js';
+import { sendMail } from "../config/mailer.js"; 
 
 
 export const createOrder = async (req, res) => {
@@ -298,6 +299,20 @@ export const updateOrder = async (req, res) => {
     }
 
     const updated = await Order.findByIdAndUpdate(req.params.id, updateData, { new: true });
+
+    // ===== Gửi email thông báo =====
+    const user = await User.findById(order.userId);
+    if (user?.email) {
+      const subject = `Cập nhật đơn hàng #${order._id}`;
+      const html = `
+        <h3>Xin chào ${user.username},</h3>
+        <p>Đơn hàng của bạn đã được cập nhật trạng thái: <b>${updated.orderStatus}</b></p>
+        <p>Tổng tiền: ${order.totalAmount.toLocaleString()} VND</p>
+        <p>Cảm ơn bạn đã mua hàng tại shop!</p>
+      `;
+      await sendMail(user.email, subject, html);
+    }
+
     return res.status(200).json(updated);
   } catch (err) {
     return res.status(400).json({ error: err.message });

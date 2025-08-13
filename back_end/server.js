@@ -4,7 +4,7 @@ import express from "express";
 
 
 import cors from "cors";
-import mongoose from "mongoose";
+
 import connectMongoDB from "./config/db.js";
 import path from "path";
 
@@ -96,6 +96,9 @@ app.use('/api/faqs', faqRouter);
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
+  console.log("=== ENV CHECK ===");
+console.log("EMAIL_USER:", process.env.EMAIL_USER || "❌ Không có giá trị");
+console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "✅ Có giá trị" : "❌ Không có giá trị");
 });
 
 export const viteNodeApp = app;
