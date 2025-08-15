@@ -16,6 +16,7 @@ import authRouter from "./routes/authRoutes.js";
 import orderRouter from "./routes/orderRoutes.js";
 import paymentRouter from "./routes/paymentRoutes.js";
 import cartRoutes from './routes/cartRoutes.js';
+import chatbotRoute from './routes/chatbot.js';
 
 import userRoutes from './routes/authRoutes.js';
 import attributeRouter from "./routes/attributeRoutes.js";
@@ -86,6 +87,7 @@ app.use('/voucher',voucherRouter) ;
 app.use("/voucher-user", voucherUserRouter);
 app.use('/', authRouter);
 app.use('/uploads', express.static(path.join(path.resolve(), 'uploads')));
+app.use('/api/chatbot', chatbotRoute);
 
 app.use("/api/wallet", walletRoutes);
 app.use('/api/faqs', faqRouter);

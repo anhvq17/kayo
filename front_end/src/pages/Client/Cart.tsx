@@ -34,6 +34,8 @@ const Cart = () => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [user, setUserInfo] = useState<UserInfoType | null>(null);
   const navigate = useNavigate();
+  const MAX_QUANTITY = 50;
+
 
   const saveToLocalStorage = (items: CartItem[]) => {
     const formatted = items.map((item) => ({
@@ -135,42 +137,51 @@ const Cart = () => {
     }
   }, []);
 
-  const updateQuantity = async (id: string, newQuantity: number) => {
-    const targetItem = cartItems.find((item) => item.id === id);
-    if (!targetItem) return;
+const updateQuantity = async (id: string, newQuantity: number) => {
+  const targetItem = cartItems.find((item) => item.id === id);
+  if (!targetItem) return;
 
-    if (newQuantity < 1) {
-      if (window.confirm("Bạn có muốn xoá sản phẩm này khỏi giỏ hàng?")) {
-        const updated = cartItems.filter((item) => item.id !== id);
-        setCartItems(updated);
-        saveToLocalStorage(updated);
-        setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+  const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const newTotal = totalQuantity - targetItem.quantity + newQuantity;
 
-        if (user?._id && targetItem.variantId) {
-          await axios.delete("http://localhost:3000/cart", {
-            data: {
-              userId: user._id,
-              variantId: targetItem.variantId,
-            },
-          });
-        }
-      }
-    } else {
-      const updated = cartItems.map((item) =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      );
+  if (newTotal > MAX_QUANTITY) {
+    alert(`${MAX_QUANTITY} là số lượng lớn. Bạn chắc chắn muốn đặt hàng chứ?\nVui lòng liên hệ CSKH để được tư vấn trực tiếp: 0977907877`);
+    return;
+  }
+
+  if (newQuantity < 1) {
+    if (window.confirm("Bạn có muốn xoá sản phẩm này khỏi giỏ hàng?")) {
+      const updated = cartItems.filter((item) => item.id !== id);
       setCartItems(updated);
       saveToLocalStorage(updated);
+      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
 
       if (user?._id && targetItem.variantId) {
-        await axios.post("http://localhost:3000/cart", {
-          ...targetItem,
-          userId: user._id,
-          quantity: newQuantity,
+        await axios.delete("http://localhost:3000/cart", {
+          data: {
+            userId: user._id,
+            variantId: targetItem.variantId,
+          },
         });
       }
     }
-  };
+  } else {
+    const updated = cartItems.map((item) =>
+      item.id === id ? { ...item, quantity: newQuantity } : item
+    );
+    setCartItems(updated);
+    saveToLocalStorage(updated);
+
+    if (user?._id && targetItem.variantId) {
+      await axios.put("http://localhost:3000/cart", {
+        userId: user._id,
+        variantId: targetItem.variantId,
+        quantity: newQuantity,
+      });
+    }
+  }
+};
+
 
   const removeItem = async (id: string) => {
     const target = cartItems.find((item) => item.id === id);
@@ -198,16 +209,29 @@ const Cart = () => {
       alert("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
       return;
     }
+
+    const totalQuantity = cartItems
+      .filter((item) => selectedItems.includes(item.id))
+      .reduce((sum, item) => sum + item.quantity, 0);
+
+    if (totalQuantity > MAX_QUANTITY) {
+      alert(`Đơn hàng vượt quá ${MAX_QUANTITY} sản phẩm.\n📞 Vui lòng liên hệ Admin qua Zalo: 0123 456 789`);
+      return;
+    }
+
     const selected = cartItems.filter((item) =>
       selectedItems.includes(item.id)
     );
+
     if (!selected.every((item) => item.variantId)) {
       alert("Một số sản phẩm trong giỏ hàng thiếu thông tin biến thể.");
       return;
     }
+
     localStorage.setItem("checkoutItems", JSON.stringify(selected));
     navigate("/checkout");
   };
+
 
   const subtotal = cartItems.reduce(
     (total, item) =>
@@ -261,9 +285,8 @@ const Cart = () => {
               <div className="space-y-6">
                 {cartItems.map((item) => (
                   <div
-                    key={`${item.productId}-${item.variantId || ""}-${
-                      item.volume
-                    }-${item.fragrance || ""}`}
+                    key={`${item.productId}-${item.variantId || ""}-${item.volume
+                      }-${item.fragrance || ""}`}
                     className="flex border rounded-lg p-4 items-start"
                   >
                     <input
@@ -361,11 +384,10 @@ const Cart = () => {
 
             <button
               onClick={handleCheckout}
-              className={`w-full block text-center px-6 py-3 font-medium rounded ${
-                selectedItems.length === 0
+              className={`w-full block text-center px-6 py-3 font-medium rounded ${selectedItems.length === 0
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-[#5f518e] text-white hover:bg-[#696faa]"
-              }`}
+                }`}
               disabled={selectedItems.length === 0}
             >
               Tiến hành Thanh toán
