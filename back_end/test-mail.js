@@ -18,7 +18,7 @@ const sendTestEmail = async () => {
   try {
     await transporter.sendMail({
       from: `"Test Mailer" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER, // gửi chính cho mình
+      to: process.env.EMAIL_USER,
       subject: "Test email",
       text: "Xin chào, đây là email test!",
     });

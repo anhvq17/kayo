@@ -145,7 +145,7 @@ const updateQuantity = async (id: string, newQuantity: number) => {
   const newTotal = totalQuantity - targetItem.quantity + newQuantity;
 
   if (newTotal > MAX_QUANTITY) {
-    alert(`Bạn đã chọn quá ${MAX_QUANTITY} sản phẩm.\n📞 Vui lòng liên hệ Admin qua Zalo: 0123 456 789`);
+    alert(`${MAX_QUANTITY} là số lượng lớn. Bạn chắc chắn muốn đặt hàng chứ?\nVui lòng liên hệ CSKH để được tư vấn trực tiếp: 0977907877`);
     return;
   }
 

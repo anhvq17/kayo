@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios, { type AxiosResponse } from "axios";
 import "./ChatbotWidget.css";
-import { MessageOutlined } from '@ant-design/icons';
+import { MessageOutlined, SendOutlined, CloseOutlined } from '@ant-design/icons';
 
 interface ChatMessage {
   role: "user" | "bot";
@@ -21,7 +21,7 @@ export default function ChatbotWidget() {
     if (!message.trim()) return;
 
     setChat((prev) => [...prev, { role: "user", text: message }]);
-    const currentMessage = message; // lưu lại trước khi reset
+    const currentMessage = message;
     setMessage("");
 
     try {
@@ -36,7 +36,7 @@ export default function ChatbotWidget() {
       console.error("Lỗi khi gọi API chatbot:", err);
       setChat((prev) => [
         ...prev,
-        { role: "bot", text: "❌ Lỗi kết nối chatbot, vui lòng thử lại." },
+        { role: "bot", text: "Lỗi kết nối chatbot, vui lòng thử lại." },
       ]);
     }
   };
@@ -46,8 +46,8 @@ export default function ChatbotWidget() {
       {isOpen && (
         <div className="chat-window">
           <div className="chat-header">
-            <span><MessageOutlined/> Chat với Shop</span>
-            <button onClick={() => setIsOpen(false)}>✖</button>
+            <span><MessageOutlined/> Chat với Sevend</span>
+            <button onClick={() => setIsOpen(false)}><CloseOutlined /></button>
           </div>
           <div className="chat-body">
             {chat.map((c, i) => (
@@ -63,7 +63,7 @@ export default function ChatbotWidget() {
               placeholder="Nhập tin nhắn..."
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             />
-            <button onClick={sendMessage}>Gửi</button>
+            <button onClick={sendMessage}><SendOutlined /></button>
           </div>
         </div>
       )}

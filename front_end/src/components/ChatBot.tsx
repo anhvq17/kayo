@@ -24,8 +24,6 @@ export default function Chatbot() {
     setLoading(true);
 
     try {
-      // Nếu dùng proxy Vite: '/api/chatbot'
-      // Nếu gọi trực tiếp: 'http://localhost:3000/api/chatbot'
       const res: AxiosResponse<ChatbotResponse> = await axios.post(
         "/api/chatbot",
         { message: currentMessage },
@@ -37,7 +35,7 @@ export default function Chatbot() {
       console.error("Lỗi khi gọi API chatbot:", err);
       setChat((prev) => [
         ...prev,
-        { role: "bot", text: "❌ Không thể kết nối chatbot, vui lòng thử lại." },
+        { role: "bot", text: "Không thể kết nối chatbot, vui lòng thử lại." },
       ]);
     } finally {
       setLoading(false);
