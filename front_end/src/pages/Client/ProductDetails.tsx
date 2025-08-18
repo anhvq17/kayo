@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ShoppingCart } from "lucide-react";
+import { toast } from "sonner";
+
 import moment from "moment";
 
 
@@ -419,50 +421,87 @@ const ProductDetails = () => {
     }
   };
 
-  const handleAddToCart = () => {
-    if (!user) {
-      alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
-      return;
-    }
 
-    if (!selectedScent || !selectedVolume) {
-      alert("Vui lòng chọn hương và dung tích!");
-      return;
-    }
+const handleAddToCart = () => {
+  if (!user) {
+    toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+    return;
+  }
 
-    if (product) {
-      addToCart(product);
-      setAddedMessage("Đã thêm vào giỏ hàng!");
-      setQuantity(1);
-      setTimeout(() => setAddedMessage(""), 2000);
-    }
+  if (!selectedScent || !selectedVolume) {
+    toast.error("Vui lòng chọn hương và dung tích!");
+    return;
+  }
+
+  if (!selectedVariant || !product) {
+    toast.error("Không tìm thấy biến thể sản phẩm!");
+    return;
+  }
+
+  // ✅ Kiểm tra tồn kho
+  if (selectedVariant.stock_quantity <= 0) {
+    toast.error("Sản phẩm này đã hết hàng!");
+    return;
+  }
+
+  if (quantity > selectedVariant.stock_quantity) {
+    toast.error(`Chỉ còn ${selectedVariant.stock_quantity} sản phẩm trong kho!`);
+    return;
+  }
+
+  // Nếu còn hàng thì thêm vào giỏ
+  addToCart({
+    ...product,
+    variantId: selectedVariant._id,
+    selectedScent,
+    selectedVolume,
+    quantity,
+  });
+
+  setQuantity(1);
+  toast.success("Đã thêm vào giỏ hàng 🛒");
+};
+
+const handleBuyNow = () => {
+  if (!selectedScent || !selectedVolume) {
+    toast.error("Vui lòng chọn hương và dung tích!");
+    return;
+  }
+
+  if (!selectedVariant || !product) {
+    toast.error("Không tìm thấy biến thể phù hợp!");
+    return;
+  }
+
+  // ✅ Kiểm tra tồn kho
+  if (selectedVariant.stock_quantity <= 0) {
+    toast.error("Sản phẩm này đã hết hàng!");
+    return;
+  }
+
+  if (quantity > selectedVariant.stock_quantity) {
+    toast.error(`Chỉ còn ${selectedVariant.stock_quantity} sản phẩm trong kho!`);
+    return;
+  }
+
+  const buyNowItem = {
+    _id: product._id,
+    name: product.name,
+    image: selectedVariant.image,
+    price: selectedVariant.price,
+    quantity,
+    selectedScent,
+    selectedVolume,
+    variantId: selectedVariant._id,
   };
 
-  const handleBuyNow = () => {
-    if (!selectedScent || !selectedVolume) {
-      alert("Vui lòng chọn hương và dung tích!");
-      return;
-    }
+  localStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
 
-    if (!selectedVariant || !product) {
-      alert("Không tìm thấy biến thể phù hợp!");
-      return;
-    }
+  toast.success("Chuyển đến trang thanh toán 💳");
+  navigate("/checkout");
+};
 
-    const buyNowItem = {
-      _id: product._id,
-      name: product.name,
-      image: selectedVariant.image,
-      price: selectedVariant.price,
-      quantity,
-      selectedScent,
-      selectedVolume,
-      variantId: selectedVariant._id,
-    };
 
-    localStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
-    navigate("/checkout");
-  };
 
 
   if (!id)
