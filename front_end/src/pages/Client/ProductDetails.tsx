@@ -385,64 +385,71 @@ const ProductDetails = () => {
   }, [selectedVolume, selectedScent, variants]);
 
   const addToCart = async (
-  product: ProductDetailType,
-  selectedVariant: any,
-  quantity: number,
-  selectedScent: string,
-  selectedVolume: string,
-  user: any
-) => {
-  if (!selectedVariant || !user) return;
+    product: ProductDetailType,
+    selectedVariant: VariantType,
+    quantity: number,
+    selectedScent: string,
+    selectedVolume: string,
+    user: UserType
+  ) => {
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]") as any[];
+    const existing = cart.find((item) => item.variantId === selectedVariant._id);
 
-  const cart = JSON.parse(localStorage.getItem("cart") || "[]") as any[];
-  const existing = cart.find((item) => item.variantId === selectedVariant._id);
+    if (existing) {
+      // 🚫 Nếu giỏ hàng đã đạt tối đa tồn kho thì không cho thêm nữa
+      if (existing.quantity >= selectedVariant.stock_quantity) {
+        toast.error(
+          `Bạn đã có tối đa ${selectedVariant.stock_quantity} sản phẩm này trong giỏ hàng. Không thể thêm nữa!`
+        );
+        return;
+      }
 
-  if (existing) {
-    const newQuantity = existing.quantity + quantity;
+      const newQuantity = existing.quantity + quantity;
 
-    // ✅ Kiểm tra tổng số lượng trong giỏ không vượt quá tồn kho
-    if (newQuantity > selectedVariant.stock_quantity) {
-      toast.error(
-        `Trong kho chỉ còn ${selectedVariant.stock_quantity}. 
-        Hiện bạn đã có ${existing.quantity} trong giỏ, 
-        chỉ có thể thêm tối đa ${selectedVariant.stock_quantity - existing.quantity} nữa.`
-      );
-      return;
+      // Nếu cộng vào vượt tồn thì cũng không cho thêm
+      if (newQuantity > selectedVariant.stock_quantity) {
+        toast.error(
+          `Trong kho chỉ còn ${selectedVariant.stock_quantity}. 
+          Hiện bạn đã có ${existing.quantity} trong giỏ, 
+          không thể thêm ${quantity} sản phẩm nữa.`
+        );
+        return;
+      }
+
+      existing.quantity = newQuantity;
+    } else {
+      // Nếu thêm mới mà số lượng > tồn kho
+      if (quantity > selectedVariant.stock_quantity) {
+        toast.error(`Chỉ còn ${selectedVariant.stock_quantity} sản phẩm trong kho!`);
+        return;
+      }
+
+      const cartItem = {
+        userId: user._id,
+        variantId: selectedVariant._id,
+        productId: product._id,
+        name: product.name,
+        image: selectedVariant.image,
+        price: selectedVariant.price,
+        selectedScent,
+        selectedVolume,
+        quantity,
+      };
+
+      cart.push(cartItem);
+
+      try {
+        await axios.post("http://localhost:3000/cart", cartItem);
+        console.log("Sản phẩm đã được gửi lên server.");
+      } catch (error) {
+        console.error("Lỗi khi gửi sản phẩm lên server:", error);
+      }
     }
 
-    existing.quantity = newQuantity;
-  } else {
-    if (quantity > selectedVariant.stock_quantity) {
-      toast.error(`Chỉ còn ${selectedVariant.stock_quantity} sản phẩm trong kho!`);
-      return;
-    }
+    localStorage.setItem("cart", JSON.stringify(cart));
+    toast.success("Đã thêm vào giỏ hàng 🛒");
+  };
 
-    const cartItem = {
-      userId: user._id,
-      variantId: selectedVariant._id,
-      productId: product._id,
-      name: product.name,
-      image: selectedVariant.image,
-      price: selectedVariant.price,
-      selectedScent,
-      selectedVolume,
-      quantity,
-    };
-
-    cart.push(cartItem);
-
-    try {
-      console.log("Gửi cartItem:", cartItem);
-      await axios.post("http://localhost:3000/cart", cartItem);
-      console.log("Sản phẩm đã được gửi lên server.");
-    } catch (error) {
-      console.error("Lỗi khi gửi sản phẩm lên server:", error);
-    }
-  }
-
-  localStorage.setItem("cart", JSON.stringify(cart));
-  toast.success("Đã thêm vào giỏ hàng 🛒");
-};
 
 const handleAddToCart = () => {
   if (!user) {
