@@ -94,8 +94,14 @@ const OrderList = () => {
     fetchOrders();
     didMountRef.current = true;
 
-    // Connect socket to receive live order updates
-    const socket = io('http://localhost:3000', { transports: ['websocket'] });
+    // Connect directly to backend to avoid dev-proxy 404s
+    const socket = io('http://localhost:3000', { transports: ['websocket', 'polling'] });
+    socket.on('connect_error', (err) => {
+      console.error('socket connect_error:', (err && (err as any).message) || err);
+    });
+    socket.on('connect', () => {
+      console.log('socket connected:', socket.id);
+    });
     socketRef.current = socket;
 
     const user = JSON.parse(localStorage.getItem("user") || "{}");
