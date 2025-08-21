@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ShoppingCart } from "lucide-react";
+import { toast } from "sonner";
+
 import moment from "moment";
 
 
@@ -382,15 +384,17 @@ const ProductDetails = () => {
     }
   }, [selectedVolume, selectedScent, variants]);
 
-  const addToCart = async (product: ProductDetailType) => {
-    if (!selectedVariant || !user) return;
-
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]") as any[];
-    const existing = cart.find(
-      (item) => item.variantId === selectedVariant._id
-    );
-
-    const cartItem = {
+  const addToCart = async (
+  product: ProductDetailType,
+  selectedVariant: VariantType,
+  quantity: number,
+  selectedScent: string,
+  selectedVolume: string,
+  user: UserType
+) => {
+  try {
+    // ✅ Gửi request lên server để kiểm tra & thêm giỏ
+    const res = await axios.post("http://localhost:3000/cart", {
       userId: user._id,
       variantId: selectedVariant._id,
       productId: product._id,
@@ -400,69 +404,99 @@ const ProductDetails = () => {
       selectedScent,
       selectedVolume,
       quantity,
-    };
+    });
+
+    // ✅ Nếu thêm thành công thì cập nhật localStorage
+    const updatedItem = res.data.cartItem;
+    let cart = JSON.parse(localStorage.getItem("cart") || "[]") as any[];
+
+    const existing = cart.find((item) => item.variantId === updatedItem.variantId);
 
     if (existing) {
-      existing.quantity += quantity;
+      existing.quantity = updatedItem.quantity; // update lại theo DB
     } else {
-      cart.push(cartItem);
+      cart.push(updatedItem);
     }
 
     localStorage.setItem("cart", JSON.stringify(cart));
+    toast.success("Đã thêm vào giỏ hàng 🛒");
+  } catch (error: any) {
+    // ❌ Nếu server trả lỗi (vd vượt tồn kho) thì hiển thị
+    toast.error(error.response?.data?.message || "Không thể thêm vào giỏ hàng");
+  }
+};
 
-    try {
-      console.log("Gửi cartItem:", cartItem);
-      await axios.post("http://localhost:3000/cart", cartItem);
-      console.log("Sản phẩm đã được gửi lên server.");
-    } catch (error) {
-      console.error("Lỗi khi gửi sản phẩm lên server:", error);
-    }
+
+
+const handleAddToCart = () => {
+  if (!user) {
+    toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+    return;
+  }
+
+  if (!selectedScent || !selectedVolume) {
+    toast.error("Vui lòng chọn hương và dung tích!");
+    return;
+  }
+
+  if (!selectedVariant || !product) {
+    toast.error("Không tìm thấy biến thể sản phẩm!");
+    return;
+  }
+
+  // ✅ Kiểm tra tồn kho cơ bản
+  if (selectedVariant.stock_quantity <= 0) {
+    toast.error("Sản phẩm này đã hết hàng!");
+    return;
+  }
+
+  // Nếu còn hàng thì thêm vào giỏ
+  addToCart(product, selectedVariant, quantity, selectedScent, selectedVolume, user);
+
+  setQuantity(1);
+};
+
+
+const handleBuyNow = () => {
+  if (!selectedScent || !selectedVolume) {
+    toast.error("Vui lòng chọn hương và dung tích!");
+    return;
+  }
+
+  if (!selectedVariant || !product) {
+    toast.error("Không tìm thấy biến thể phù hợp!");
+    return;
+  }
+
+  // ✅ Kiểm tra tồn kho
+  if (selectedVariant.stock_quantity <= 0) {
+    toast.error("Sản phẩm này đã hết hàng!");
+    return;
+  }
+
+  if (quantity > selectedVariant.stock_quantity) {
+    toast.error(`Chỉ còn ${selectedVariant.stock_quantity} sản phẩm trong kho!`);
+    return;
+  }
+
+  const buyNowItem = {
+    _id: product._id,
+    name: product.name,
+    image: selectedVariant.image,
+    price: selectedVariant.price,
+    quantity,
+    selectedScent,
+    selectedVolume,
+    variantId: selectedVariant._id,
   };
 
-  const handleAddToCart = () => {
-    if (!user) {
-      alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
-      return;
-    }
+  localStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
 
-    if (!selectedScent || !selectedVolume) {
-      alert("Vui lòng chọn hương và dung tích!");
-      return;
-    }
+  toast.success("Chuyển đến trang thanh toán 💳");
+  navigate("/checkout");
+};
 
-    if (product) {
-      addToCart(product);
-      setAddedMessage("Đã thêm vào giỏ hàng!");
-      setQuantity(1);
-      setTimeout(() => setAddedMessage(""), 2000);
-    }
-  };
 
-  const handleBuyNow = () => {
-    if (!selectedScent || !selectedVolume) {
-      alert("Vui lòng chọn hương và dung tích!");
-      return;
-    }
-
-    if (!selectedVariant || !product) {
-      alert("Không tìm thấy biến thể phù hợp!");
-      return;
-    }
-
-    const buyNowItem = {
-      _id: product._id,
-      name: product.name,
-      image: selectedVariant.image,
-      price: selectedVariant.price,
-      quantity,
-      selectedScent,
-      selectedVolume,
-      variantId: selectedVariant._id,
-    };
-
-    localStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
-    navigate("/checkout");
-  };
 
 
   if (!id)

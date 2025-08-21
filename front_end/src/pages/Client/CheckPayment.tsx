@@ -1,6 +1,6 @@
 import { Button, Result } from "antd";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 function CheckPayment() {
@@ -9,6 +9,8 @@ function CheckPayment() {
   const [status, setStatus] = useState<"success" | "error">("error");
   const [title, setTitle] = useState<string>("");
   const [orderId, setOrderId] = useState<string>("");
+
+  const processedRef = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -20,38 +22,69 @@ function CheckPayment() {
         if (data.data.vnp_ResponseCode == "00") {
           setStatus("success");
           setTitle("Thanh toán thành công!");
-          const lastOrdered = JSON.parse(localStorage.getItem("lastOrderedItems") || "[]");
-          if (lastOrdered.length > 0) {
-            const cart: any[] = JSON.parse(localStorage.getItem("cart") || "[]");
-            const updatedCart = cart.filter(
-              (cartItem: any) => !lastOrdered.some((ordered: any) => ordered.id === cartItem.id)
-            );
-            localStorage.setItem("cart", JSON.stringify(updatedCart));
-            localStorage.removeItem("lastOrderedItems");
-
-            const user = JSON.parse(localStorage.getItem("user") || "null");
-            if (user && user._id) {
-              lastOrdered.forEach(async (item: any) => {
-                if (item.variantId) {
-                  await axios.delete("http://localhost:3000/cart", {
-                    data: {
-                      userId: user._id,
-                      variantId: item.variantId,
-                    },
-                  });
-                }
-              });
-            }
+          const txnRef: string | undefined = data?.data?.vnp_TxnRef;
+          const guardKey = txnRef ? `vnp_processed_${txnRef}` : `vnp_processed_default`;
+          if (processedRef.current || localStorage.getItem(guardKey)) {
+            // Đã xử lý trước đó, tránh tạo đơn lại
+            if (txnRef) setOrderId(txnRef);
+            return;
           }
-          if (data.data.vnp_TxnRef) {
-            setOrderId(data.data.vnp_TxnRef);
+          processedRef.current = true;
+          localStorage.setItem(guardKey, "1");
+          // Sau khi thanh toán thành công, tạo đơn hàng từ payload đã lưu
+          const pendingRaw = localStorage.getItem("pendingOrderPayload");
+          const lastOrdered = JSON.parse(localStorage.getItem("lastOrderedItems") || "[]");
+          if (pendingRaw) {
+            try {
+              const pending = JSON.parse(pendingRaw);
+              // Gắn cờ isPaid để backend đánh dấu đã thanh toán
+              const createRes = await axios.post("http://localhost:3000/orders", {
+                ...pending,
+                paymentMethod: 'vnpay',
+                isPaid: true,
+              });
+              const createdId = createRes.data?.orderId;
+              if (createdId) setOrderId(createdId);
+
+              // Dọn giỏ hàng local
+              if (lastOrdered.length > 0) {
+                const cart: any[] = JSON.parse(localStorage.getItem("cart") || "[]");
+                const updatedCart = cart.filter(
+                  (cartItem: any) => !lastOrdered.some((ordered: any) => ordered.id === cartItem.id)
+                );
+                localStorage.setItem("cart", JSON.stringify(updatedCart));
+                localStorage.removeItem("lastOrderedItems");
+
+                const user = JSON.parse(localStorage.getItem("user") || "null");
+                if (user && user._id) {
+                  for (const item of lastOrdered) {
+                    if (item.variantId) {
+                      try {
+                        await axios.delete("http://localhost:3000/cart", {
+                          data: { userId: user._id, variantId: item.variantId },
+                        });
+                      } catch (_) {}
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              console.error("Tạo đơn hàng sau khi VNPay thành công thất bại:", e);
+            } finally {
+              localStorage.removeItem("pendingOrderPayload");
+            }
           }
         } else if (data.data.vnp_ResponseCode == "24") {
           setStatus("error");
-          setTitle("Khách hàng hủy thanh toán");
+          setTitle("Đã hủy thanh toán");
+          // Huỷ thanh toán -> xoá payload tạm, không tạo đơn
+          localStorage.removeItem("pendingOrderPayload");
+          localStorage.removeItem("lastOrderedItems");
         } else {
           setStatus("error");
           setTitle(`Thanh toán thất bại (Mã lỗi: ${data.data.vnp_ResponseCode})!`);
+          localStorage.removeItem("pendingOrderPayload");
+          localStorage.removeItem("lastOrderedItems");
         }
       } catch (error) {
         console.error("Lỗi khi kiểm tra thanh toán VNPAY:", error);

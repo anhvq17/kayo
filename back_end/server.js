@@ -42,7 +42,7 @@ const server = http.createServer(app); // Tạo HTTP server từ Express
 //  Tạo socket.io server
 export const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // Cho phép kết nối từ FE
+    origin: true, // chấp nhận mọi origin (thuận tiện khi dùng dev proxy)
     methods: ["GET", "POST"],
   },
 });
@@ -57,8 +57,8 @@ io.on("connection", (socket) => {
 });
 
 //  Hàm gọi từ controller khi cập nhật đơn hàng
-export const notifyOrderStatus = (orderId, status) => {
-  io.emit("orderStatusChanged", { orderId, status });
+export const notifyOrderStatus = (orderId, status, userId) => {
+  io.emit("orderStatusChanged", { orderId, status, userId });
 };
 
 // Middleware

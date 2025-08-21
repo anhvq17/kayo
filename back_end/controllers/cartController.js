@@ -1,4 +1,5 @@
 import Cart from '../models/CartModel.js';
+import ProductVariant from "../models/VariantModel.js";
 import mongoose from 'mongoose';
 
 export const addToCart = async (req, res) => {
@@ -15,12 +16,27 @@ export const addToCart = async (req, res) => {
       quantity,
     } = req.body;
 
+    // ✅ Lấy variant từ DB để check tồn kho
+    const variant = await ProductVariant.findById(variantId);
+    if (!variant) {
+      return res.status(404).json({ message: "Variant không tồn tại" });
+    }
+
     const existingItem = await Cart.findOne({ userId, variantId });
+    const currentQty = existingItem ? existingItem.quantity : 0;
+    const newQty = currentQty + quantity;
+
+    // ❌ Nếu số lượng mới > tồn kho → chặn
+    if (newQty > variant.stock_quantity) {
+      return res.status(400).json({
+        message: `Chỉ còn ${variant.stock_quantity} sản phẩm trong kho. Bạn đã có ${currentQty} trong giỏ.`,
+      });
+    }
 
     if (existingItem) {
-      existingItem.quantity += quantity;
+      existingItem.quantity = newQty;
       await existingItem.save();
-      return res.status(200).json({ message: 'Quantity updated', cartItem: existingItem });
+      return res.status(200).json({ message: "Quantity updated", cartItem: existingItem });
     }
 
     const newItem = await Cart.create({
@@ -35,9 +51,9 @@ export const addToCart = async (req, res) => {
       quantity,
     });
 
-    res.status(201).json({ message: 'Item added to cart', cartItem: newItem });
+    res.status(201).json({ message: "Item added to cart", cartItem: newItem });
   } catch (err) {
-    res.status(500).json({ message: 'Error adding to cart', error: err.message });
+    res.status(500).json({ message: "Error adding to cart", error: err.message });
   }
 };
 
@@ -77,7 +93,19 @@ export const updateCartItemQuantity = async (req, res) => {
     const { userId, variantId, quantity } = req.body;
 
     if (quantity <= 0) {
-      return res.status(400).json({ message: 'Quantity must be at least 1' });
+      return res.status(400).json({ message: "Quantity must be at least 1" });
+    }
+
+    // ✅ Lấy tồn kho để check
+    const variant = await ProductVariant.findById(variantId);
+    if (!variant) {
+      return res.status(404).json({ message: "Variant không tồn tại" });
+    }
+
+    if (quantity > variant.stock_quantity) {
+      return res.status(400).json({
+        message: `Chỉ còn ${variant.stock_quantity} sản phẩm trong kho`,
+      });
     }
 
     const updatedItem = await Cart.findOneAndUpdate(
@@ -87,12 +115,12 @@ export const updateCartItemQuantity = async (req, res) => {
     );
 
     if (!updatedItem) {
-      return res.status(404).json({ message: 'Item not found in cart' });
+      return res.status(404).json({ message: "Item not found in cart" });
     }
 
-    res.status(200).json({ message: 'Quantity updated', cartItem: updatedItem });
+    res.status(200).json({ message: "Quantity updated", cartItem: updatedItem });
   } catch (err) {
-    res.status(500).json({ message: 'Error updating quantity', error: err.message });
+    res.status(500).json({ message: "Error updating quantity", error: err.message });
   }
 };
 
