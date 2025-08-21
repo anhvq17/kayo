@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { io, Socket } from 'socket.io-client';
 import { Link } from 'react-router-dom';
 import { getOrdersByUserWithItems, updateOrder } from '../../services/Order';
 
@@ -70,6 +71,7 @@ const OrderList = () => {
   const [confirmingReceivedId, setConfirmingReceivedId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const didMountRef = useRef(false);
+  const socketRef = useRef<Socket | null>(null);
 
   const fetchOrders = async () => {
     try {
@@ -91,14 +93,37 @@ const OrderList = () => {
   useEffect(() => {
     fetchOrders();
     didMountRef.current = true;
+
+    // Connect directly to backend to avoid dev-proxy 404s
+    const socket = io('http://localhost:3000', { transports: ['websocket', 'polling'] });
+    socket.on('connect_error', (err) => {
+      console.error('socket connect_error:', (err && (err as any).message) || err);
+    });
+    socket.on('connect', () => {
+      console.log('socket connected:', socket.id);
+    });
+    socketRef.current = socket;
+
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const handleRealtime = (payload: { orderId: string; status: string; userId?: string }) => {
+      // If the event relates to current user, refetch orders
+      if (!user?._id || (payload.userId && payload.userId !== user._id)) return;
+      fetchOrders();
+    };
+    socket.on('orderStatusChanged', handleRealtime);
+
     const handleVisibility = () => {
       if (document.visibilityState === "visible" && didMountRef.current) {
         fetchOrders();
       }
     };
     document.addEventListener("visibilitychange", handleVisibility);
+
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
+      socket.off('orderStatusChanged', handleRealtime);
+      socket.disconnect();
+      socketRef.current = null;
     };
   }, []);
   console.log(orderList);
@@ -345,22 +370,22 @@ const OrderList = () => {
                   <div className="flex flex-col gap-2 mt-4">
                     <p className="text-base text-gray-500 flex items-center gap-2">
                       <i className="fas fa-wallet text-gray-600"></i>
-                      Tổng tiền thanh toán:
+                      Tổng tiền:
                       <span className="text-red-500 font-bold">
-                        {item.totalAmount.toLocaleString()}
+                        {item.totalAmount.toLocaleString("vi-VN")}
                       </span>
-                      {item.voucherCode && item.discount > 0 && (
+
+                      {item.voucherCode && (item.discount ?? 0) > 0 && (
                         <span className="ml-2 text-sm font-semibold text-gray-800">
                           (Giảm giá:
                           <span className="text-red-500 font-semibold ml-1">
-                            {item.discountType === 'percent' && typeof item.discountValue === 'number'
+                            {item.discountType === "percent" && typeof item.discountValue === "number"
                               ? `-${item.discountValue}%`
-                              : `-${item.discount?.toLocaleString()}`}
+                              : `-${(item.discount ?? 0).toLocaleString("vi-VN")}`}
                           </span>)
                         </span>
                       )}
                     </p>
-
                     <p className="text-base text-gray-500 flex items-center gap-2">
                       <i className="fas fa-credit-card text-gray-600"></i>
                       Phương thức thanh toán: <span className="font-semibold text-gray-800">{getPaymentMethodText(item.paymentMethod)}</span>

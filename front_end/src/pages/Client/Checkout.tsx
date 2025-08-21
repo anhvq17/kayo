@@ -40,6 +40,7 @@ const Checkout = () => {
   const [discount, setDiscount] = useState(0);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [userAddress, setUserAddress] = useState<string>("");
+  const [touchedFields, setTouchedFields] = useState<{ fullName: boolean; phone: boolean }>({ fullName: false, phone: false });
 
   const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   const shippingFee = 0;
@@ -203,11 +204,16 @@ const Checkout = () => {
 
   const { province: selectedProvince, district: selectedDistrict, ward: selectedWard } = address;
 
+  const phoneDigits = phone.replace(/\s+/g, "");
+  const isPhoneValid = /^0\d{9,}$/.test(phoneDigits);
+  const isFullNameValid = fullName.trim().length > 0;
+
   const isFormValid = () => {
+    const basicInfoValid = isFullNameValid && isPhoneValid;
     if (userAddress && !showAddressForm) {
-      return fullName && phone && cartItems.length > 0;
+      return basicInfoValid && cartItems.length > 0;
     }
-    return fullName && phone && selectedProvince && selectedDistrict && selectedWard && detailAddress && cartItems.length > 0;
+    return basicInfoValid && selectedProvince && selectedDistrict && selectedWard && detailAddress && cartItems.length > 0;
   };
 
   const fetchUserVouchers = async () => {
@@ -247,6 +253,7 @@ const Checkout = () => {
   };
 
   const handleSubmit = async () => {
+    setTouchedFields({ fullName: true, phone: true });
     if (!isFormValid()) {
       alert("Vui lòng điền đầy đủ thông tin!");
       return;
@@ -295,6 +302,18 @@ const Checkout = () => {
         discount: discount,
       };
 
+      if (paymentMethod === "vnpay") {
+        // Lưu payload tạm để tạo đơn sau khi thanh toán thành công
+        localStorage.setItem("pendingOrderPayload", JSON.stringify(orderPayload));
+        localStorage.setItem("lastOrderedItems", JSON.stringify(cartItems));
+        // Lấy URL thanh toán VNPay (không kèm orderId)
+        const paymentRes = await fetch(`http://localhost:3000/payment/create_payment?amount=${total}`);
+        const paymentData = await paymentRes.json();
+        window.location.href = paymentData.paymentUrl;
+        return;
+      }
+
+      // Các phương thức khác sẽ tạo đơn trước
       const response = await fetch("http://localhost:3000/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -308,8 +327,6 @@ const Checkout = () => {
         setIsLoading(false);
         return;
       }
-
-
 
       const orderResult = await response.json();
       const orderId = orderResult.orderId;
@@ -339,11 +356,6 @@ const Checkout = () => {
         }
 
         window.location.href = `ordersuccessfully?orderId=${orderId}`;
-      } else if (paymentMethod === "vnpay") {
-        localStorage.setItem("lastOrderedItems", JSON.stringify(cartItems));
-        const paymentRes = await fetch(`http://localhost:3000/payment/create_payment?amount=${total}&orderId=${orderId}`);
-        const paymentData = await paymentRes.json();
-        window.location.href = paymentData.paymentUrl;
       } else {
         // Xử lý các phương thức thanh toán khác (ví dụ: COD)
         const cart = JSON.parse(localStorage.getItem("cart") || "[]");
@@ -401,9 +413,13 @@ const Checkout = () => {
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
+                      onBlur={() => setTouchedFields((prev) => ({ ...prev, fullName: true }))}
                       placeholder="Nhập họ tên"
-                      className="w-full p-3 border border-gray-300 rounded-md"
+                      className={`w-full p-3 border rounded-md ${touchedFields.fullName && !isFullNameValid ? 'border-red-500' : 'border-gray-300'}`}
                     />
+                    {touchedFields.fullName && !isFullNameValid && (
+                      <p className="text-sm text-red-500 mt-1">Họ và tên không được bỏ trống</p>
+                    )}
                   </div>
 
                   <div>
@@ -413,10 +429,14 @@ const Checkout = () => {
                     <input
                       type="tel"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                      onBlur={() => setTouchedFields((prev) => ({ ...prev, phone: true }))}
                       placeholder="Nhập số điện thoại"
-                      className="w-full p-3 border border-gray-300 rounded-md"
+                      className={`w-full p-3 border rounded-md ${touchedFields.phone && !isPhoneValid ? 'border-red-500' : 'border-gray-300'}`}
                     />
+                    {touchedFields.phone && !isPhoneValid && (
+                      <p className="text-sm text-red-500 mt-1">Số điện thoại phải bắt đầu bằng số 0 và có ít nhất 10 chữ số</p>
+                    )}
                   </div>
                 </div>
               </div>

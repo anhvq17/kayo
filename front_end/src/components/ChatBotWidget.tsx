@@ -24,6 +24,7 @@ export default function ChatbotWidget() {
     if (!message.trim() || isSending) return;
 
     const currentMessage = message.trim();
+
     setMessage("");
     setIsSending(true);
 
@@ -112,6 +113,7 @@ export default function ChatbotWidget() {
               <MessageOutlined /> Chat với Shop
             </span>
             <button onClick={() => setIsOpen(false)}>✖</button>
+
           </div>
 
           <div className="chat-body">

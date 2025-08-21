@@ -22,6 +22,8 @@ const orderSchema = new mongoose.Schema({
   enum: ['cod', 'vnpay', 'wallet'],
   default: 'cod',
 },
+  // Tham chiếu giao dịch của cổng thanh toán (ví dụ: VNPay vnp_TxnRef)
+  paymentTransactionRef: { type: String, unique: true, sparse: true },
   orderStatus: {
     type: String,
     enum: [

@@ -2,7 +2,7 @@ import { Router } from "express";
 import qs from "querystring";
 import crypto from "crypto";
 import moment from "moment";
-import Order from "../models/OrderModel.js";
+// No need to import Order here because we only verify VNPay result.
 
 const paymentRouter = Router();
 
@@ -73,40 +73,12 @@ paymentRouter.get("/check_payment", (req, res) => {
   const hmac = crypto.createHmac("sha512", secretKey);
   const checkSum = hmac.update(signData).digest("hex");
   console.log("VNPay response:", query);
-  console.log("vnp_TxnRef (orderId):", query.vnp_TxnRef);
+  console.log("vnp_TxnRef:", query.vnp_TxnRef);
   console.log("vnp_ResponseCode:", query.vnp_ResponseCode);
-
-  let originalOrderId = query.vnp_TxnRef ? query.vnp_TxnRef.split("-")[0] : null;
 
   if (vnp_SecureHash === checkSum) {
     if (query.vnp_ResponseCode === "00") {
-      if (originalOrderId) {
-        console.log("Attempting to update order with ID:", originalOrderId);
-        Order.findByIdAndUpdate(
-          originalOrderId,
-          { 
-            paymentStatus: 'Đã thanh toán',
-            totalAmount: 0
-          },
-          { new: true }
-        ).then(updatedOrder => {
-          if (updatedOrder) {
-            console.log('Order payment status updated successfully:', updatedOrder._id);
-            console.log('Updated order details:', {
-              _id: updatedOrder._id,
-              paymentStatus: updatedOrder.paymentStatus,
-              orderStatus: updatedOrder.orderStatus
-            });
-          } else {
-            console.log('Order not found with ID:', originalOrderId);
-          }
-        }).catch(err => {
-          console.error('Error updating order payment status:', err);
-        });
-      } else {
-        console.log('No vnp_TxnRef found in VNPay response');
-      }
-      
+      // Payment verified successfully. The frontend will create the order now.
       res.json({ message: "Thanh toán thành công", data: query });
     } else {
       console.log('Payment failed with response code:', query.vnp_ResponseCode);
