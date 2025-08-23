@@ -18,7 +18,7 @@ import MyVoucher from "../pages/Client/vourcher/myVoucher";
 import ReviewPage from "../pages/Client/ReviewPage";
 import NewsList from "../pages/Client/NewsList";
 import Wallet from "../pages/Client/Wallet";
-import FaqList from "../pages/Client/Chatbot";
+import FaqList from "../components/ChatBot";
 
 const ClientRoutes = {
   path: '/',

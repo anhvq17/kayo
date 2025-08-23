@@ -2,6 +2,8 @@ import { Link } from "react-router-dom"
 import { ArrowRight, Package, Shield, CreditCard } from "lucide-react"
 import ProductMale from "../../../components/home/productMale";
 import ProductFemale from "../../../components/home/productFemale";
+import ChatbotWidget from "../../../components/ChatBotWidget";
+import { Toaster } from "sonner";
 
 const Homepage = () => {
   return (
@@ -73,6 +75,8 @@ const Homepage = () => {
         </div>
       </section>
     </div>
+    
+    
   )
 }
 
