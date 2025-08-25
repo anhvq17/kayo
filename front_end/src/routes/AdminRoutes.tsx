@@ -13,7 +13,7 @@ import EditCategory from "../pages/Admin/Category/EditCategory"
 
 import OrderManager from "../pages/Admin/Order/OrderManager"
 import DetailOrder from "../pages/Admin/Order/DetailOrder"
-import OrderReport from "../pages/Admin/Order/OrderReport"
+
 
 import ProductManager from "../pages/Admin/Product/ProductManager"
 import AddProduct from "../pages/Admin/Product/AddProduct"
@@ -70,7 +70,7 @@ const AdminRoutes = {
 
     { path: 'orders', element: <OrderManager /> },
     { path: 'orderDetails/:id', element: <DetailOrder /> },
-    { path: 'orderReport', element: <OrderReport /> },
+
 
     { path: 'products', element: <ProductManager /> },
     { path: 'products/trash', element: <TrashProduct /> },

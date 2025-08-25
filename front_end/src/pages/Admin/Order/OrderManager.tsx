@@ -318,13 +318,14 @@ const OrderManager = () => {
         <table className="min-w-full bg-white border text-sm rounded-xl shadow-lg">
           <thead>
             <tr className="bg-black text-white text-left">
+              <th className="px-4 py-2">Mã đơn hàng</th>
               <th className="px-4 py-2">Khách hàng</th>
               <th className="px-4 py-2">Trạng thái đơn hàng</th>
 
               <th className="px-4 py-2">Trạng thái thanh toán</th>
               <th className="px-4 py-2">Tổng tiền</th>
               <th className="px-4 py-2">Phương thức thanh toán</th>
-              <th className="px-4 py-2">Ngày tạo</th>
+              
               <th className="px-4 py-2">Lý do hủy</th>
               <th className="px-4 py-2">Hành động</th>
             </tr>
@@ -333,6 +334,7 @@ const OrderManager = () => {
             {sortedOrders.length > 0 ? (
               sortedOrders.map((order) => (
                 <tr key={order._id} className="hover:bg-gray-50 transition">
+                  <td className="px-4 py-2">{order._id}</td>
                   <td className="px-4 py-2">
                     <div>
                       <div className="font-medium">{order.fullName}</div>
@@ -347,9 +349,7 @@ const OrderManager = () => {
                   <td className="px-4 py-2 text-xs">
                     {getPaymentMethodText(order.paymentMethod)}
                   </td>
-                  <td className="px-4 py-2 text-xs">
-                    {new Date(order.createdAt).toLocaleString("vi-VN")}
-                  </td>
+                  
                   <td className="px-4 py-2">
                     {order.orderStatus === 'Đã huỷ đơn hàng' && order.cancelReason ? (
                       <div className="max-w-xs">
