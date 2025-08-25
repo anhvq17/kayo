@@ -86,7 +86,6 @@ const AdminSidebar = ({ collapsed, setCollapsed }: Props) => {
             <SidebarItem to="/admin/categories" icon="fas fa-th-list" label="Danh mục" collapsed={collapsed} />
             <SidebarItem to="/admin/brands" icon="fas fa-gem" label="Thương hiệu" collapsed={collapsed} />
             <SidebarItem to="/admin/orders" icon="fas fa-receipt" label="Đơn hàng" collapsed={collapsed} />
-            <SidebarItem to="/admin/orderReport" icon="fas fa-chart-bar" label="Báo cáo đơn hàng" collapsed={collapsed} />
             <SidebarItem to="/admin/users" icon="fas fa-users" label="Người dùng" collapsed={collapsed} />
             <SidebarItem to="/admin/reviews" icon="fas fa-comment-dots" label="Đánh giá" collapsed={collapsed} />
             <SidebarItem to="/admin/vouchers" icon="fas fa-ticket-alt" label="Mã giảm giá" collapsed={collapsed} />

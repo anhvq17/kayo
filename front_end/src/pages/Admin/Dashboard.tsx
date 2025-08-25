@@ -31,10 +31,25 @@ interface OrderWithUser extends Omit<Order, "userId"> {
   };
 }
 
+type FilterType = "day" | "month" | "year";
+
 export default function Dashboard() {
   const [orders, setOrders] = useState<OrderWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [chartFilter, setChartFilter] = useState<FilterType>("day");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  
+  // Khởi tạo giá trị mặc định
+  useEffect(() => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    
+    setStartDate(yesterday.toISOString().split('T')[0]);
+    setEndDate(today.toISOString().split('T')[0]);
+  }, []);
 
   useEffect(() => {
     fetchOrders();
@@ -91,21 +106,146 @@ export default function Dashboard() {
     "Đã huỷ đơn hàng": orders.filter((o) => o.orderStatus === "Đã huỷ đơn hàng").length,
   };
 
-  const revenueByDate = validRevenueOrders.reduce((acc: Record<string, number>, order) => {
-    const dateKey = new Date(order.createdAt).toLocaleDateString("vi-VN");
-    acc[dateKey] =
-      (acc[dateKey] || 0) + (order.originalAmount ?? order.totalAmount);
-    return acc;
-  }, {});
+  // Hàm lọc đơn hàng theo khoảng thời gian
+  const getFilteredOrders = () => {
+    if (!startDate || !endDate) return validRevenueOrders;
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999); // Đặt thời gian cuối ngày
+    
+    return validRevenueOrders.filter((order) => {
+      const orderDate = new Date(order.createdAt);
+      return orderDate >= start && orderDate <= end;
+    });
+  };
 
-  const chartData = Object.entries(revenueByDate).map(([date, revenue]) => ({
-    date,
-    revenue,
-  }));
+    // Tạo dữ liệu cho biểu đồ theo khoảng thời gian
+  const generateChartData = () => {
+    const filteredOrders = getFilteredOrders();
+    
+    if (chartFilter === "day") {
+      // Theo ngày trong khoảng thời gian
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      
+      const dailyData = Array.from({ length: daysDiff }, (_, index) => {
+        const currentDate = new Date(start);
+        currentDate.setDate(start.getDate() + index);
+        return {
+          date: currentDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
+          revenue: 0
+        };
+      });
+      
+      filteredOrders.forEach(order => {
+        const orderDate = new Date(order.createdAt);
+        const dayIndex = Math.floor((orderDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        if (dayIndex >= 0 && dayIndex < daysDiff) {
+          dailyData[dayIndex].revenue += order.originalAmount ?? order.totalAmount;
+        }
+      });
+      
+      return dailyData;
+    } else if (chartFilter === "month") {
+      // Theo tháng trong khoảng thời gian
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const monthsDiff = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
+      
+      const monthlyData = Array.from({ length: monthsDiff }, (_, index) => {
+        const currentDate = new Date(start);
+        currentDate.setMonth(start.getMonth() + index);
+        return {
+          month: currentDate.toLocaleDateString("vi-VN", { month: "long", year: "numeric" }),
+          revenue: 0
+        };
+      });
+      
+      filteredOrders.forEach(order => {
+        const orderDate = new Date(order.createdAt);
+        const monthIndex = (orderDate.getFullYear() - start.getFullYear()) * 12 + (orderDate.getMonth() - start.getMonth());
+        if (monthIndex >= 0 && monthIndex < monthsDiff) {
+          monthlyData[monthIndex].revenue += order.originalAmount ?? order.totalAmount;
+        }
+      });
+      
+      return monthlyData;
+    } else {
+      // Theo năm trong khoảng thời gian
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const yearsDiff = end.getFullYear() - start.getFullYear() + 1;
+      
+      const yearlyData = Array.from({ length: yearsDiff }, (_, index) => {
+        const currentYear = start.getFullYear() + index;
+        return {
+          year: `Năm ${currentYear}`,
+          revenue: 0
+        };
+      });
+      
+      filteredOrders.forEach(order => {
+        const orderYear = new Date(order.createdAt).getFullYear();
+        const yearIndex = orderYear - start.getFullYear();
+        if (yearIndex >= 0 && yearIndex < yearsDiff) {
+          yearlyData[yearIndex].revenue += order.originalAmount ?? order.totalAmount;
+        }
+      });
+      
+      return yearlyData;
+    }
+  };
+
+  const chartData = generateChartData();
+
+  const getChartTitle = () => {
+    const start = startDate ? new Date(startDate).toLocaleDateString("vi-VN") : "";
+    const end = endDate ? new Date(endDate).toLocaleDateString("vi-VN") : "";
+    
+    switch (chartFilter) {
+      case "day":
+        return `Biểu đồ doanh thu theo ngày (${start} - ${end})`;
+      case "month":
+        return `Biểu đồ doanh thu theo tháng (${start} - ${end})`;
+      case "year":
+        return `Biểu đồ doanh thu theo năm (${start} - ${end})`;
+      default:
+        return "Biểu đồ doanh thu";
+    }
+  };
+
+  const getXAxisLabel = () => {
+    switch (chartFilter) {
+      case "day":
+        return "Ngày";
+      case "month":
+        return "Tháng";
+      case "year":
+        return "Năm";
+      default:
+        return "";
+    }
+  };
+
+  const getPaymentMethodText = (method?: string) => {
+    if (method === "cod") return "Thanh toán khi nhận hàng";
+    if (method === "wallet") return "Thanh toán bằng Ví điện tử";
+    if (method === "vnpay") return "Thanh toán qua VNPay";
+    return "Không xác định";
+  };
 
 const topCustomers = Object.values(
   orders.reduce((acc, order) => {
     if (!order.userId) return acc;
+    // Bỏ qua các đơn đã hoàn hàng/đã hoàn tiền khi tính tổng chi tiêu
+    if (
+      order.orderStatus === "Đã hoàn hàng" ||
+      order.paymentStatus === "Đã hoàn tiền"
+    ) {
+      return acc;
+    }
 
     const id = order.userId._id;
     const name = order.userId.username;
@@ -218,20 +358,90 @@ const topCustomers = Object.values(
       </div>
 
       <div className="rounded-xl border bg-white shadow p-4">
-        <p className="text-lg font-semibold mb-2">Biểu đồ doanh thu</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+          <p className="text-lg font-semibold">{getChartTitle()}</p>
+          
+          <div className="flex flex-wrap gap-3 mt-2 sm:mt-0">
+            {/* Filter buttons */}
+            <div className="flex border rounded-lg overflow-hidden">
+              <button
+                onClick={() => setChartFilter("day")}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  chartFilter === "day"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                Ngày
+              </button>
+              <button
+                onClick={() => setChartFilter("month")}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  chartFilter === "month"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                Tháng
+              </button>
+              <button
+                onClick={() => setChartFilter("year")}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  chartFilter === "year"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                Năm
+              </button>
+            </div>
+
+            {/* Date range inputs */}
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <span className="text-gray-500">đến</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="h-[420px]">
           <ResponsiveContainer width="100%" height="100%">
-            <ReBarChart data={chartData}>
+            <ReBarChart data={chartData} margin={{ top: 10, right: 20, bottom: 40, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
+              <XAxis 
+                dataKey={chartFilter === "day" ? "date" : chartFilter === "month" ? "month" : "year"} 
+                label={{ value: getXAxisLabel(), position: "bottom", offset: 20 }}
+              />
               <YAxis
                 tickFormatter={(value) => value.toLocaleString("vi-VN")}
                 width={110}
+                label={{ value: "Doanh thu (VNĐ)", angle: -90, position: "insideLeft" }}
               />
               <Tooltip
                 formatter={(value) => value.toLocaleString("vi-VN")}
+                labelFormatter={(label) => {
+                  if (chartFilter === "day") return `Ngày ${label}`;
+                  if (chartFilter === "month") return `Tháng ${label}`;
+                  return `Năm ${label}`;
+                }}
               />
-              <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={69}/>
+              <Bar 
+                dataKey="revenue" 
+                fill="#3b82f6" 
+                radius={[4, 4, 0, 0]} 
+                barSize={50}
+              />
             </ReBarChart>
           </ResponsiveContainer>
         </div>
@@ -298,7 +508,10 @@ const topCustomers = Object.values(
               </tr>
             </thead>
             <tbody>
-              {orders.slice(0, 5).map((order) => (
+              {[...orders]
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .slice(0, 5)
+                .map((order) => (
                 <tr key={order._id} className="border-b hover:bg-gray-50">
                   <td className="py-2">{order._id}</td>
                   <td className="py-2">{order.userId?.username}</td>
@@ -307,9 +520,7 @@ const topCustomers = Object.values(
                   </td>
                   <td className="py-2">{order.orderStatus}</td>
                   <td className="py-2">
-                    {order.paymentMethod === "cod"
-                      ? "Thanh toán khi nhận hàng"
-                      : "Thanh toán qua VNPay"}
+                    {getPaymentMethodText(order.paymentMethod)}
                   </td>
                   <td className="py-2 text-gray-500">
                     {new Date(order.createdAt).toLocaleDateString("vi-VN")}
