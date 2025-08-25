@@ -35,11 +35,12 @@ export default function ChatbotWidget() {
 
     try {
       const history = [...chat, { role: "user", text: currentMessage }];
-
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      const userId = user?._id
       const res = await fetch("http://localhost:3000/api/chatbot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: currentMessage, history }),
+        body: JSON.stringify({ message: currentMessage, history, userId }),
       });
 
       if (!res.ok || !res.body) {
