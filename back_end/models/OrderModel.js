@@ -22,7 +22,6 @@ const orderSchema = new mongoose.Schema({
   enum: ['cod', 'vnpay', 'wallet'],
   default: 'cod',
 },
-  // Tham chiếu giao dịch của cổng thanh toán (ví dụ: VNPay vnp_TxnRef)
   paymentTransactionRef: { type: String, unique: true, sparse: true },
   orderStatus: {
     type: String,
@@ -47,7 +46,6 @@ const orderSchema = new mongoose.Schema({
   discountValue: { type: Number, default: undefined },
   cancelReason: { type: String },
   returnReason: { type: String },
-  // Lưu các sản phẩm/biến thể và số lượng yêu cầu hoàn hàng
   returnItems: [
     {
       orderItemId: { type: mongoose.Schema.Types.ObjectId, ref: 'order_items' },
@@ -55,7 +53,6 @@ const orderSchema = new mongoose.Schema({
       quantity: { type: Number, min: 1 },
     },
   ],
-  // Ảnh minh chứng hoàn hàng (cấp đơn)
   returnImages: [{ type: String }],
 }, { timestamps: true });
 
