@@ -1,12 +1,15 @@
+// backend/routes/chatbot.js
 import express from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import Product from '../models/ProductModel.js';
+import Order from '../models/OrderModel.js'; // ⚡ Import model đơn hàng
 
 const router = express.Router();
 
 // Lấy API key từ biến môi trường
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
-// System prompt (giống file AI Studio bạn gửi)
+// System prompt
 const systemInstruction = `Bạn là một trợ lý hỗ trợ khách hàng thân thiện và chuyên nghiệp cho một cửa hàng nước hoa trực tuyến.
 Mục tiêu của bạn là giúp khách hàng tìm được loại nước hoa hoàn hảo.
 - Luôn giao tiếp bằng Tiếng Việt, trừ khi người dùng nhắn bằng ngôn ngữ khác.
@@ -23,10 +26,68 @@ Mục tiêu của bạn là giúp khách hàng tìm được loại nước hoa 
 // Route streaming
 router.post('/', async (req, res) => {
   try {
-    const { message } = req.body;
-
+    const { message, userId } = req.body;
+    console.log(req.body)
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ error: 'Tin nhắn không hợp lệ' });
+    }
+
+    // ⚡ Query dữ liệu thật từ DB khi người dùng hỏi
+    let productContext = '';
+
+    // Sản phẩm bán chạy
+    if (message.includes('bán chạy') || message.includes('top')) {
+      const products = await Product.find().sort({ sold: -1 }).limit(5);
+      productContext = "Danh sách 5 sản phẩm bán chạy nhất hiện tại:\n" +
+        products.map((p, i) => {
+          const price = typeof p.price === "number" ? p.price.toLocaleString() : "Liên hệ";
+          return `${i + 1}. ${p.name} - ${price}đ`;
+        }).join("\n");
+    }
+
+    // Sản phẩm mới nhất
+    if (message.includes('mới nhất')) {
+      const products = await Product.find().sort({ createdAt: -1 }).limit(5);
+      productContext = "5 sản phẩm mới nhất trong cửa hàng:\n" +
+        products.map((p, i) => {
+          const price = typeof p.price === "number" ? p.price.toLocaleString() : "Liên hệ";
+          return `${i + 1}. ${p.name} - ${price}đ`;
+        }).join("\n");
+    }
+
+    // Sản phẩm giá rẻ
+    if (message.includes('giá rẻ')) {
+      const products = await Product.find().sort({ price: 1 }).limit(5);
+      productContext = "5 sản phẩm giá rẻ nhất hiện tại:\n" +
+        products.map((p, i) => {
+          const price = typeof p.price === "number" ? p.price.toLocaleString() : "Liên hệ";
+          return `${i + 1}. ${p.name} - ${price}đ`;
+        }).join("\n");
+    }
+
+    // ⚡ Đơn hàng gần nhất
+    if (message.includes('đơn hàng gần nhất') || message.includes('đơn cuối')) {
+      if (userId) {
+        const latestOrder = await Order.findOne({ userId })
+          .sort({ createdAt: -1 })
+          .populate("items.product");
+
+        if (latestOrder) {
+          productContext = `Đơn hàng gần nhất của anh/chị:
+Mã đơn: ${latestOrder._id}
+Ngày đặt: ${latestOrder.createdAt.toLocaleString()}
+Tổng tiền: ${typeof latestOrder.totalPrice === "number" ? latestOrder.totalPrice.toLocaleString() : "Liên hệ"}đ
+Trạng thái: ${latestOrder.status}
+Sản phẩm:
+${latestOrder.items.map((it, i) =>
+            `${i + 1}. ${it.product?.name || "Sản phẩm"} x${it.quantity} - ${(it.price || 0).toLocaleString()}đ`
+          ).join("\n")}`;
+        } else {
+          productContext = "Anh/chị chưa có đơn hàng nào.";
+        }
+      } else {
+        productContext = "Anh/chị cần đăng nhập để kiểm tra đơn hàng gần nhất nhé.";
+      }
     }
 
     // Lấy model Gemini
@@ -35,8 +96,12 @@ router.post('/', async (req, res) => {
       systemInstruction,
     });
 
-    // Streaming trả lời
-    const result = await model.generateContentStream(message);
+    // Gửi message + dữ liệu thật (nếu có)
+    const result = await model.generateContentStream(
+      productContext
+        ? `${message}\n\nThông tin dữ liệu thật của cửa hàng:\n${productContext}`
+        : message
+    );
 
     // Thiết lập header cho streaming
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');

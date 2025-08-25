@@ -8,7 +8,7 @@ export const protect = async (req, res, next) => {
     return res.status(401).json({ message: 'Token không hợp lệ hoặc thiếu Bearer' });
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = req.cookies.jwt || (authHeader && authHeader.split(' ')[1]);
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
