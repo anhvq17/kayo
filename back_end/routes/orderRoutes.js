@@ -10,6 +10,7 @@ import {
   payOrder,
 } from '../controllers/orderController.js';
 import { protect } from '../middlewares/authMiddleware.js'; // nhớ import middleware bảo vệ
+import upload from '../middlewares/uploadMiddleware.js';
 
 const router = Router();
 
@@ -31,8 +32,8 @@ router.put('/:orderId/pay', protect, payOrder);
 // Route lấy chi tiết đơn hàng theo id
 router.get('/:id', getOrderById);
 
-// Route cập nhật đơn hàng
-router.put('/:id', updateOrder);
+// Route cập nhật đơn hàng (hỗ trợ upload ảnh hoàn hàng)
+router.put('/:id', upload.array('returnImages', 6), updateOrder);
 
 // Route xóa đơn hàng
 router.delete('/:id', deleteOrder);

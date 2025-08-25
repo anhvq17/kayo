@@ -44,6 +44,7 @@ interface Order {
   discount?: number;
   discountType?: string;
   discountValue?: number;
+  returnItems?: { orderItemId: string; variantId?: string; quantity: number }[];
 }
 
 const ORDER_TABS = [
@@ -67,9 +68,11 @@ const OrderList = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [returnReason, setReturnReason] = useState('');
+  const [returnSelections, setReturnSelections] = useState<Record<string, number>>({});
   const [requestingReturnId, setRequestingReturnId] = useState<string | null>(null);
   const [confirmingReceivedId, setConfirmingReceivedId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [returnImages, setReturnImages] = useState<File[]>([]);
   const didMountRef = useRef(false);
   const socketRef = useRef<Socket | null>(null);
 
@@ -225,10 +228,30 @@ const OrderList = () => {
 
     try {
       setRequestingReturnId(selectedOrderId);
-      await updateOrder(selectedOrderId, { 
-        orderStatus: 'Yêu cầu hoàn hàng',
-        returnReason: returnReason.trim()
-      });
+      const order = orderList.find(o => o._id === selectedOrderId);
+      const returnItems = (order?.items || [])
+        .filter(it => (returnSelections[it._id] || 0) > 0)
+        .map(it => ({
+          orderItemId: it._id,
+          variantId: it.variantId?._id,
+          quantity: Math.min(returnSelections[it._id] || 0, it.quantity)
+        }));
+
+      if (returnImages.length > 0) {
+        const form = new FormData();
+        form.append('orderStatus', 'Yêu cầu hoàn hàng');
+        form.append('returnReason', returnReason.trim());
+        form.append('returnItems', JSON.stringify(returnItems));
+        returnImages.forEach((file) => form.append('returnImages', file));
+        await updateOrder(selectedOrderId, form as any);
+      } else {
+        await updateOrder(selectedOrderId, { 
+          orderStatus: 'Yêu cầu hoàn hàng',
+          returnReason: returnReason.trim(),
+          // @ts-ignore
+          returnItems
+        } as any);
+      }
       
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const data = await getOrdersByUserWithItems(user._id);
@@ -239,6 +262,8 @@ const OrderList = () => {
       setShowReturnModal(false);
       setSelectedOrderId(null);
       setReturnReason('');
+      setReturnSelections({});
+      setReturnImages([]);
     } catch (err: any) {
       setError(err.message || 'Đã xảy ra lỗi khi yêu cầu hoàn hàng.');
     } finally {
@@ -277,6 +302,11 @@ const OrderList = () => {
   const openReturnModal = (orderId: string) => {
     setSelectedOrderId(orderId);
     setReturnReason('');
+    const order = orderList.find(o => o._id === orderId);
+    const initial: Record<string, number> = {};
+    order?.items?.forEach(it => { initial[it._id] = 0; });
+    setReturnSelections(initial);
+    setReturnImages([]);
     setShowReturnModal(true);
   };
 
@@ -430,7 +460,10 @@ const OrderList = () => {
               </div>
               <div className="border-t pt-4 mt-4">
                 {item.items && item.items.length > 0 ? (
-                  item.items.map((prod: OrderItem) => (
+                  item.items.map((prod: OrderItem) => {
+                    const returnedQty = (item.returnItems || []).find(ri => ri.orderItemId === prod._id)?.quantity || 0;
+                    const isReturned = item.orderStatus === 'Đã hoàn hàng' && returnedQty > 0;
+                    return (
                     <div key={prod._id} className="flex items-center gap-4 py-2 border-b last:border-b-0">
                       <img src={ prod.variantId?.image} alt={prod.variantId?.productId?.name} className="w-20 h-20 object-cover rounded border" />
                       <div className="flex-1">
@@ -441,6 +474,11 @@ const OrderList = () => {
                           ))}
                         </div>
                         <div className="text-xs text-gray-500">Số lượng: {prod.quantity}</div>
+                        {isReturned && (
+                          <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                            Đã hoàn: {returnedQty}
+                          </div>
+                        )}
                       </div>
                       <div className="text-right">
                         <div className="text-base font-bold text-red-500">{prod.price.toLocaleString()}</div>
@@ -457,7 +495,8 @@ const OrderList = () => {
                           )}
                       </div>
                     </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="text-gray-400 text-sm">Không có sản phẩm</div>
                 )}
@@ -500,7 +539,7 @@ const OrderList = () => {
                 Lưu ý: Hành động này không thể hoàn tác!
               </div>
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-1">
               <button 
                 type="button" 
                 onClick={() => {
@@ -532,8 +571,63 @@ const OrderList = () => {
             <h3 className="text-lg font-semibold mb-4 text-orange-600">Yêu cầu hoàn hàng</h3>
             <div className="mb-4">
               <p className="text-gray-700 mb-4">
-                Bạn có chắc chắn muốn yêu cầu hoàn hàng cho đơn hàng này không?
+                Vui lòng chọn sản phẩm bạn muốn hoàn trả hàng
               </p>
+
+              <div className="mb-4 max-h-64 overflow-auto border rounded-md">
+                {(orderList.find(o => o._id === selectedOrderId)?.items || []).map((it) => {
+                  const isChecked = (returnSelections[it._id] || 0) > 0;
+                  return (
+                    <div key={it._id} className="flex items-center justify-between gap-2 p-2 border-b last:border-b-0">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setReturnSelections(prev => ({
+                              ...prev,
+                              [it._id]: checked ? Math.max(1, Math.min(it.quantity, prev[it._id] || 1)) : 0
+                            }));
+                          }}
+                          className="w-4 h-4"
+                        />
+                        <img src={it.variantId?.image} alt="" className="w-12 h-12 object-cover rounded border" />
+                        <div className="text-sm">
+                          <div className="font-medium">{it.variantId?.productId?.name}</div>
+                          <div className="text-gray-500">Số lượng: {it.quantity}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="px-2 py-1 border rounded disabled:opacity-50"
+                          disabled={!isChecked}
+                          onClick={() => setReturnSelections(prev => ({...prev, [it._id]: Math.max(0, (prev[it._id]||0) - 1)}))}
+                        >-</button>
+                        <input
+                          type="text"
+                          min={0}
+                          max={it.quantity}
+                          value={returnSelections[it._id] || 0}
+                          onChange={(e) => {
+                            const parsed = Number(e.target.value);
+                            const v = Number.isFinite(parsed) ? parsed : 0;
+                            const clamped = Math.max(0, Math.min(it.quantity, v));
+                            setReturnSelections(prev => ({...prev, [it._id]: clamped}));
+                          }}
+                          disabled={!isChecked}
+                          className="w-16 border rounded px-2 py-1 text-center disabled:bg-gray-100 disabled:text-gray-400"
+                        />
+                        <button
+                          className="px-2 py-1 border rounded disabled:opacity-50"
+                          disabled={!isChecked}
+                          onClick={() => setReturnSelections(prev => ({...prev, [it._id]: Math.min(it.quantity, (prev[it._id]||0) + 1)}))}
+                        >+</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -547,11 +641,37 @@ const OrderList = () => {
                   rows={4}
                   required
                 />
-                {!returnReason.trim() && (
-                  <p className="text-red-500 text-xs mt-1">Vui lòng nhập lý do hoàn hàng</p>
+                {(!returnReason.trim() || Object.values(returnSelections).every(v => (v||0) === 0)) && (
+                  <p className="text-red-500 text-xs mt-1">Chọn ít nhất 1 sản phẩm & bắt buộc nhập lý do hoàn hàng</p>
                 )}
               </div>
-
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ảnh minh chứng (tối đa 6 ảnh)
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []).slice(0, 6);
+                    setReturnImages(files as File[]);
+                  }}
+                  className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                />
+                {returnImages.length > 0 && (
+                  <div className="mt-2 grid grid-cols-5 gap-2">
+                    {returnImages.map((file, idx) => (
+                      <div key={idx} className="w-16 h-16 border rounded overflow-hidden">
+                        <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700 mb-2">
+                Lưu ý: Chọn kĩ sản phẩm bạn mong muốn. Mỗi đơn hàng chỉ được yêu cầu xử lý hoàn trả duy nhất một lần.
+              </div>
               <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
                 Yêu cầu hoàn hàng sẽ được gửi đến admin để xem xét và phê duyệt. Nếu được chấp thuận, bạn sẽ được hoàn tiền về Ví điện tử.
               </div>
@@ -563,6 +683,7 @@ const OrderList = () => {
                   setShowReturnModal(false);
                   setSelectedOrderId(null);
                   setReturnReason('');
+                  setReturnSelections({});
                 }}
                 disabled={requestingReturnId !== null}
                 className="border bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm transition duration-200 disabled:opacity-50"
@@ -572,7 +693,7 @@ const OrderList = () => {
               <button 
                 type="button"
                 onClick={handleRequestReturn}
-                disabled={requestingReturnId !== null || !returnReason.trim()}
+                disabled={requestingReturnId !== null || !returnReason.trim() || Object.values(returnSelections).every(v => (v||0) === 0)}
                 className="border bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md text-sm transition duration-200 disabled:opacity-50"
               >
                 {requestingReturnId ? 'Đang gửi...' : 'Gửi yêu cầu'}

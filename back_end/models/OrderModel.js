@@ -47,6 +47,16 @@ const orderSchema = new mongoose.Schema({
   discountValue: { type: Number, default: undefined },
   cancelReason: { type: String },
   returnReason: { type: String },
+  // Lưu các sản phẩm/biến thể và số lượng yêu cầu hoàn hàng
+  returnItems: [
+    {
+      orderItemId: { type: mongoose.Schema.Types.ObjectId, ref: 'order_items' },
+      variantId: { type: mongoose.Schema.Types.ObjectId, ref: 'product_variants' },
+      quantity: { type: Number, min: 1 },
+    },
+  ],
+  // Ảnh minh chứng hoàn hàng (cấp đơn)
+  returnImages: [{ type: String }],
 }, { timestamps: true });
 
 export default mongoose.model('orders', orderSchema);

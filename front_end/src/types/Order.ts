@@ -53,6 +53,8 @@ export interface Order {
   paymentStatus: 'Đã thanh toán' | 'Chưa thanh toán' | 'Đã hoàn tiền';
   cancelReason?: string;
   returnReason?: string;
+  returnItems?: { orderItemId: string; variantId?: string; quantity: number }[];
+  returnImages?: string[];
   createdAt: string;
   updatedAt: string;
   voucherCode?: string;

@@ -28,8 +28,11 @@ export const getOrdersByUserWithItems = async (userId: string) => {
   return res.data;
 };
 
-export const updateOrder = async (orderId: string, updateData: Partial<Order>) => {
-  const res = await axios.put(`${API_URL}/orders/${orderId}`, updateData);
+export const updateOrder = async (orderId: string, updateData: Partial<Order> | FormData) => {
+  const isForm = typeof FormData !== 'undefined' && updateData instanceof FormData;
+  const res = await axios.put(`${API_URL}/orders/${orderId}`, updateData, {
+    headers: isForm ? { 'Content-Type': 'multipart/form-data' } : undefined,
+  });
   return res.data;
 };
 

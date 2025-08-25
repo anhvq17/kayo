@@ -56,6 +56,12 @@ const DetailOrder = () => {
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [returnAction, setReturnAction] = useState<'approve' | 'reject'>('approve');
 
+  const API_URL = 'http://localhost:3000';
+  const resolveImageUrl = (url?: string) => {
+    if (!url) return '';
+    return url.startsWith('http') ? url : `${API_URL}${url}`;
+  };
+
   useEffect(() => {
     if (id) {
       fetchOrderDetails();
@@ -414,14 +420,26 @@ const DetailOrder = () => {
               </div>
             )}
             
-            {(order.orderStatus === 'Yêu cầu hoàn hàng' || order.orderStatus === 'Đã hoàn hàng' || order.orderStatus === 'Từ chối hoàn hàng') && order.returnReason && (
+            {(order.orderStatus === 'Yêu cầu hoàn hàng' || order.orderStatus === 'Đã hoàn hàng' || order.orderStatus === 'Từ chối hoàn hàng') && (
               <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-md">
-                <div className="flex items-start">
-                  <div>
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
                     <p className="text-sm font-medium text-orange-800 mb-1">Lý do hoàn hàng:</p>
-                    <p className="text-sm text-orange-700">{order.returnReason}</p>
+                    <p className="text-sm text-orange-700">{order.returnReason || '—'}</p>
                   </div>
                 </div>
+                {Array.isArray((order as any).returnImages) && (order as any).returnImages.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-sm font-medium text-gray-800 mb-2">Ảnh minh chứng:</p>
+                    <div className="grid grid-cols-6 gap-2">
+                      {(order as any).returnImages.map((img: string, idx: number) => (
+                        <a key={idx} href={resolveImageUrl(img)} target="_blank" rel="noreferrer" className="block w-16 h-16 border rounded overflow-hidden">
+                          <img src={resolveImageUrl(img)} alt="return" className="w-full h-full object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

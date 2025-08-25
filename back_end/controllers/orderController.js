@@ -248,26 +248,88 @@ export const updateOrder = async (req, res) => {
       updateData.paidAt = new Date();
     }
 
-    // ✅ Hoàn hàng -> cộng lại kho + hoàn tiền
-    if (req.body.orderStatus === 'Đã hoàn hàng') {
-      if (order.paymentStatus !== 'Đã hoàn tiền') {
-        updateData.paymentStatus = 'Đã hoàn tiền';
-        updateData.isPaid = false;
+    // ✅ Lưu yêu cầu hoàn hàng ở cấp item + ảnh minh chứng
+    if (req.body.orderStatus === 'Yêu cầu hoàn hàng') {
+      // Cho phép client gửi danh sách returnItems: [{ orderItemId, variantId, quantity }]
+      let incomingReturnItems = req.body.returnItems;
+      if (typeof incomingReturnItems === 'string') {
+        try {
+          incomingReturnItems = JSON.parse(incomingReturnItems);
+        } catch (_) {
+          incomingReturnItems = [];
+        }
+      }
+      if (Array.isArray(incomingReturnItems) && incomingReturnItems.length > 0) {
+        updateData.returnItems = incomingReturnItems.map((ri) => ({
+          orderItemId: ri.orderItemId,
+          variantId: ri.variantId,
+          quantity: Math.max(1, Number(ri.quantity || 1)),
+        }));
+      }
 
+      // Lưu đường dẫn ảnh upload nếu có
+      if (Array.isArray(req.files) && req.files.length > 0) {
+        updateData.returnImages = req.files.map(f => `/uploads/${f.filename}`);
+      }
+    }
+
+    // ✅ Hoàn hàng -> cộng lại kho + hoàn tiền (hỗ trợ hoàn 1 phần)
+    if (req.body.orderStatus === 'Đã hoàn hàng') {
+      // Tính số tiền hoàn dựa trên returnItems nếu có, ngược lại hoàn toàn bộ
+      let refundAmount = 0;
+      const orderItems = await OrderItem.find({ orderId: order._id });
+
+      if (Array.isArray(order.returnItems) && order.returnItems.length > 0) {
+        for (const ri of order.returnItems) {
+          const matched = orderItems.find((oi) => oi._id.toString() === ri.orderItemId?.toString());
+          if (!matched) continue;
+          const quantityToReturn = Math.min(ri.quantity || 0, matched.quantity);
+          if (quantityToReturn <= 0) continue;
+          refundAmount += quantityToReturn * matched.price;
+        }
+      } else {
+        // Không có returnItems -> hoàn toàn bộ
+        for (const item of orderItems) {
+          refundAmount += item.quantity * item.price;
+        }
+      }
+
+      // ✅ Hoàn tiền (chỉ số tiền của sản phẩm đã hoàn)
+      if (refundAmount > 0) {
         const user = await User.findById(order.userId);
         if (user) {
-          user.wallet += order.totalAmount;
+          user.wallet += refundAmount;
           user.walletHistory.push({
             type: 'refund',
-            amount: order.totalAmount,
+            amount: refundAmount,
             status: 'completed',
             note: `Hoàn tiền đơn hàng #${order._id}`,
           });
           await user.save();
         }
 
-        // ✅ cộng lại kho
-        const orderItems = await OrderItem.find({ orderId: order._id });
+        // Nếu hoàn toàn bộ số tiền đơn hàng -> đánh dấu đã hoàn tiền, ngược lại giữ trạng thái thanh toán hiện tại
+        if (refundAmount >= order.totalAmount) {
+          updateData.paymentStatus = 'Đã hoàn tiền';
+          updateData.isPaid = false;
+        } else {
+          // Giữ nguyên thanh toán là 'Đã thanh toán' với các đơn đã nhận hàng
+          updateData.paymentStatus = order.paymentStatus;
+          updateData.isPaid = true;
+        }
+      }
+
+      // ✅ Cộng lại kho theo returnItems nếu có, ngược lại cộng toàn bộ
+      if (Array.isArray(order.returnItems) && order.returnItems.length > 0) {
+        for (const ri of order.returnItems) {
+          if (!ri.variantId || !ri.quantity) continue;
+          await VariantModel.findByIdAndUpdate(
+            ri.variantId,
+            { $inc: { stock_quantity: ri.quantity } },
+            { new: true }
+          );
+        }
+      } else {
         for (const item of orderItems) {
           await VariantModel.findByIdAndUpdate(
             item.variantId,
