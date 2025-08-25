@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import "./ChatbotWidget.css";
-import { MessageOutlined } from "@ant-design/icons";
+import { MessageOutlined, SendOutlined } from "@ant-design/icons";
 import { marked } from "marked";
 
 interface ChatMessage {
@@ -28,15 +28,12 @@ export default function ChatbotWidget() {
     setMessage("");
     setIsSending(true);
 
-    // 1) push user message
     setChat((prev) => [...prev, { role: "user", text: currentMessage }]);
 
-    // 2) push empty bot placeholder (để stream lấp đầy)
     const placeholderIndex = chat.length + 1;
     setChat((prev) => [...prev, { role: "bot", text: "" }]);
 
     try {
-      // Gửi lịch sử để có ngữ cảnh (tùy chọn)
       const history = [...chat, { role: "user", text: currentMessage }];
 
       const res = await fetch("http://localhost:3000/api/chatbot", {
@@ -53,7 +50,6 @@ export default function ChatbotWidget() {
       const decoder = new TextDecoder("utf-8");
 
       let botResponse = "";
-      // Hiển thị typing indicator trong lúc stream
       let typingShown = true;
       setChat((prev) =>
         prev.map((m, i) =>
@@ -67,7 +63,6 @@ export default function ChatbotWidget() {
         const chunk = decoder.decode(value, { stream: true });
         botResponse += chunk;
 
-        // Lần đầu có nội dung, bỏ typing indicator
         if (typingShown) {
           typingShown = false;
           setChat((prev) =>
@@ -84,7 +79,6 @@ export default function ChatbotWidget() {
         }
       }
 
-      // đảm bảo có nội dung cuối
       setChat((prev) =>
         prev.map((m, i) =>
           i === placeholderIndex ? { ...m, text: botResponse.trim() } : m
@@ -110,7 +104,7 @@ export default function ChatbotWidget() {
         <div className="chat-window">
           <div className="chat-header">
             <span>
-              <MessageOutlined /> Chat với Shop
+              <MessageOutlined /> Chat với Sevend
             </span>
             <button onClick={() => setIsOpen(false)}>✖</button>
 
@@ -127,7 +121,6 @@ export default function ChatbotWidget() {
                         <div className="dot" /><div className="dot" /><div className="dot" />
                       </div>
                     ) : (
-                      // render markdown cho bot
                       <div
                         className="markdown"
                         dangerouslySetInnerHTML={{ __html: marked.parse(c.text) as string }}
@@ -150,7 +143,7 @@ export default function ChatbotWidget() {
               disabled={isSending}
             />
             <button onClick={sendMessage} disabled={isSending}>
-              {isSending ? "Đang gửi..." : "Gửi"}
+              {isSending ? <SendOutlined /> : <SendOutlined />}
             </button>
           </div>
         </div>

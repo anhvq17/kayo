@@ -3,10 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
-
 import moment from "moment";
-
-
 
 interface ProductDetailType {
   priceDefault: number | undefined;
@@ -34,6 +31,12 @@ interface VariantType {
     attributeId: { name: string };
     valueId: { value: string };
   }[];
+}
+interface UserType {
+  _id: string;
+  username: string;
+  email?: string;
+  role?: string;
 }
 
 interface CommentType {
@@ -86,7 +89,7 @@ const ProductDetails = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUserInfo] = useState<UserInfoType | null>(null);
   const [error] = useState<string | null>(null);
-  const [addedMessage, setAddedMessage] = useState("");
+  const [addedMessage] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [attributes, setAttributes] = useState<AttributeType[]>([]);
   const [attributeValues, setAttributeValues] = useState<AttributeValueType[]>(
@@ -393,7 +396,6 @@ const ProductDetails = () => {
   user: UserType
 ) => {
   try {
-    // ✅ Gửi request lên server để kiểm tra & thêm giỏ
     const res = await axios.post("http://localhost:3000/cart", {
       userId: user._id,
       variantId: selectedVariant._id,
@@ -404,29 +406,29 @@ const ProductDetails = () => {
       selectedScent,
       selectedVolume,
       quantity,
+      stock_quantity: selectedVariant.stock_quantity,
     });
 
-    // ✅ Nếu thêm thành công thì cập nhật localStorage
     const updatedItem = res.data.cartItem;
     let cart = JSON.parse(localStorage.getItem("cart") || "[]") as any[];
 
     const existing = cart.find((item) => item.variantId === updatedItem.variantId);
 
     if (existing) {
-      existing.quantity = updatedItem.quantity; // update lại theo DB
+      existing.quantity = updatedItem.quantity;
+      existing.stock_quantity = selectedVariant.stock_quantity;
     } else {
-      cart.push(updatedItem);
+      cart.push({
+        ...updatedItem,
+        stock_quantity: selectedVariant.stock_quantity,
+      });
     }
-
     localStorage.setItem("cart", JSON.stringify(cart));
     toast.success("Đã thêm vào giỏ hàng 🛒");
   } catch (error: any) {
-    // ❌ Nếu server trả lỗi (vd vượt tồn kho) thì hiển thị
     toast.error(error.response?.data?.message || "Không thể thêm vào giỏ hàng");
   }
 };
-
-
 
 const handleAddToCart = () => {
   if (!user) {
@@ -444,13 +446,11 @@ const handleAddToCart = () => {
     return;
   }
 
-  // ✅ Kiểm tra tồn kho cơ bản
   if (selectedVariant.stock_quantity <= 0) {
     toast.error("Sản phẩm này đã hết hàng!");
     return;
   }
 
-  // Nếu còn hàng thì thêm vào giỏ
   addToCart(product, selectedVariant, quantity, selectedScent, selectedVolume, user);
 
   setQuantity(1);
@@ -468,7 +468,6 @@ const handleBuyNow = () => {
     return;
   }
 
-  // ✅ Kiểm tra tồn kho
   if (selectedVariant.stock_quantity <= 0) {
     toast.error("Sản phẩm này đã hết hàng!");
     return;
@@ -496,9 +495,6 @@ const handleBuyNow = () => {
   navigate("/checkout");
 };
 
-
-
-
   if (!id)
     return <div className="text-center py-10">Không có ID sản phẩm.</div>;
   if (loading) return <div className="text-center py-10">Đang tải...</div>;
@@ -525,9 +521,7 @@ const thumbnails = [product.image, ...Array.from(imageMap.values())].filter(Bool
 
 console.log("Thumbnails:", thumbnails);
 
-
 console.log("productId detail:", productId);
-
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -564,8 +558,6 @@ console.log("productId detail:", productId);
               />
             ))}
           </div>
-
-
           </div>
 
           <div className="w-full md:w-1/2">

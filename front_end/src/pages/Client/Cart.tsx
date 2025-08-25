@@ -20,6 +20,7 @@ interface CartItem {
     height?: number;
   };
   id: string;
+  stock_quantity?: number;
 }
 
 interface UserInfoType {
@@ -57,7 +58,6 @@ const Cart = () => {
       const res = await axios.get(`http://localhost:3000/cart/user/${userId}`);
       const serverCart = res.data.cart;
 
-      // Ghi đè giỏ hàng local bằng giỏ hàng từ server
       localStorage.setItem("cart", JSON.stringify(serverCart));
 
       setCartItems(
@@ -104,28 +104,21 @@ const Cart = () => {
       if (raw) {
         try {
           const cartData = JSON.parse(raw);
+
           const items: CartItem[] = cartData.map((item: any) => {
-            const variantId =
-              item.variantId ||
-              `${item.productId}-${item.selectedScent}-${item.selectedVolume}`;
-            const imageSrc =
-              typeof item.image === "string"
-                ? item.image
-                : item.image?.src || "/img/default.jpg";
             return {
               _id: item._id || item.productId,
               productId: item.productId || item._id,
-              id: variantId,
+              id: item.variantId || `${item.productId}-${item.selectedScent}-${item.selectedVolume}`,
               name: item.name,
               price: item.price,
               quantity: item.quantity,
               volume: item.selectedVolume,
               fragrance: item.selectedScent,
-              variantId: variantId,
+              variantId: item.variantId,
+              stock_quantity: item.stock_quantity ?? 0,
               image: {
-                src: imageSrc,
-                width: 100,
-                height: 100,
+                src: typeof item.image === "string" ? item.image : item.image?.src || "/img/default.jpg",
               },
             };
           });
@@ -137,51 +130,47 @@ const Cart = () => {
     }
   }, []);
 
-const updateQuantity = async (id: string, newQuantity: number) => {
-  const targetItem = cartItems.find((item) => item.id === id);
-  if (!targetItem) return;
+  const updateQuantity = async (id: string, newQuantity: number) => {
+    const targetItem = cartItems.find((item) => item.id === id);
+    if (!targetItem) return;
 
-  const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const newTotal = totalQuantity - targetItem.quantity + newQuantity;
+    if (targetItem.stock_quantity && newQuantity > targetItem.stock_quantity) {
+      alert(`Số lượng tồn kho chỉ còn ${targetItem.stock_quantity}.`);
+      return;
+    }
 
-  if (newTotal > MAX_QUANTITY) {
-    alert(`${MAX_QUANTITY} là số lượng lớn. Bạn chắc chắn muốn đặt hàng chứ?\nVui lòng liên hệ CSKH để được tư vấn trực tiếp: 0977907877`);
-    return;
-  }
+    if (newQuantity < 1) {
+      if (window.confirm("Bạn có muốn xoá sản phẩm này khỏi giỏ hàng?")) {
+        const updated = cartItems.filter((item) => item.id !== id);
+        setCartItems(updated);
+        saveToLocalStorage(updated);
+        setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
 
-  if (newQuantity < 1) {
-    if (window.confirm("Bạn có muốn xoá sản phẩm này khỏi giỏ hàng?")) {
-      const updated = cartItems.filter((item) => item.id !== id);
+        if (user?._id && targetItem.variantId) {
+          await axios.delete("http://localhost:3000/cart", {
+            data: {
+              userId: user._id,
+              variantId: targetItem.variantId,
+            },
+          });
+        }
+      }
+    } else {
+      const updated = cartItems.map((item) =>
+        item.id === id ? { ...item, quantity: newQuantity } : item
+      );
       setCartItems(updated);
       saveToLocalStorage(updated);
-      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
 
       if (user?._id && targetItem.variantId) {
-        await axios.delete("http://localhost:3000/cart", {
-          data: {
-            userId: user._id,
-            variantId: targetItem.variantId,
-          },
+        await axios.put("http://localhost:3000/cart", {
+          userId: user._id,
+          variantId: targetItem.variantId,
+          quantity: newQuantity,
         });
       }
     }
-  } else {
-    const updated = cartItems.map((item) =>
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    );
-    setCartItems(updated);
-    saveToLocalStorage(updated);
-
-    if (user?._id && targetItem.variantId) {
-      await axios.put("http://localhost:3000/cart", {
-        userId: user._id,
-        variantId: targetItem.variantId,
-        quantity: newQuantity,
-      });
-    }
-  }
-};
-
+  };
 
   const removeItem = async (id: string) => {
     const target = cartItems.find((item) => item.id === id);
@@ -344,13 +333,27 @@ const updateQuantity = async (id: string, newQuantity: number) => {
                           >
                             <Minus className="w-4 h-4" />
                           </button>
-                          <div className="px-4 py-1 text-black text-sm border-l border-r">
-                            {item.quantity}
-                          </div>
+                          <input
+                            type="text"
+                            min={1}
+                            max={25}
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const newVal = Number(e.target.value);
+                              if (!isNaN(newVal) && newVal >= 1 && newVal <= 50) {
+                                updateQuantity(item.id, newVal);
+                              }
+                            }}
+                            className="w-12 h-6 text-center text-black text-sm border-l border-r outline-none"
+                          />
                           <button
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity + 1)
-                            }
+                            onClick={() => {
+                              if (item.stock_quantity && item.quantity >= item.stock_quantity) {
+                                alert(`Chỉ còn ${item.stock_quantity} sản phẩm trong kho!`);
+                                return;
+                              }
+                              updateQuantity(item.id, item.quantity + 1);
+                            }}
                             className="px-3 py-1 text-black hover:bg-gray-200"
                           >
                             <Plus className="w-4 h-4" />
