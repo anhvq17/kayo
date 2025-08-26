@@ -16,7 +16,6 @@ export const addToCart = async (req, res) => {
       quantity,
     } = req.body;
 
-    // ✅ Lấy variant từ DB để check tồn kho
     const variant = await ProductVariant.findById(variantId);
     if (!variant) {
       return res.status(404).json({ message: "Variant không tồn tại" });
@@ -87,7 +86,6 @@ export const getCart = async (req, res) => {
   }
 };
 
-// 🔁 Cập nhật số lượng sản phẩm trong giỏ
 export const updateCartItemQuantity = async (req, res) => {
   try {
     const { userId, variantId, quantity } = req.body;
@@ -96,7 +94,6 @@ export const updateCartItemQuantity = async (req, res) => {
       return res.status(400).json({ message: "Quantity must be at least 1" });
     }
 
-    // ✅ Lấy tồn kho để check
     const variant = await ProductVariant.findById(variantId);
     if (!variant) {
       return res.status(404).json({ message: "Variant không tồn tại" });
@@ -157,7 +154,6 @@ export const removeOrderedItems = async (req, res) => {
     const userObjectId = new mongoose.Types.ObjectId(userId);
     const objectVariantIds = variantIds.map((id) => new mongoose.Types.ObjectId(id));
 
-    // 🧪 Thử xóa bằng cả 2 cách: variantId và variantId._id
     const result = await Cart.deleteMany({
       userId: userObjectId,
       $or: [

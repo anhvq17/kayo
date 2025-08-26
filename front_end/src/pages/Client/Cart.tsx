@@ -2,8 +2,13 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Minus, X } from "lucide-react";
 import { toast } from "sonner";
-
 import axios from "axios";
+
+interface Variant {
+  _id: string;
+  stock_quantity: number;
+  size: string;
+}
 
 interface CartItem {
   _id: string;
@@ -13,7 +18,7 @@ interface CartItem {
   quantity: number;
   volume: string;
   fragrance?: string;
-  variantId?: string;
+  variantId: string | Variant;
   selectedScent?: string;
   selectedVolume?: string;
   image: {
@@ -22,7 +27,7 @@ interface CartItem {
     height?: number;
   };
   id: string;
-  stock_quantity?: number;
+  stock_quantity: number;
 }
 
 interface UserInfoType {
@@ -30,17 +35,13 @@ interface UserInfoType {
   username: string;
 }
 
-
-
 const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [user, setUserInfo] = useState<UserInfoType | null>(null);
   const navigate = useNavigate();
-  // Removed global 50-product checkout notification
-  const HIGH_VALUE_LIMIT = 50000000; // 50,000,000
+  const HIGH_VALUE_LIMIT = 50000000;
   const [showVerifyModal, setShowVerifyModal] = useState(false);
-
 
   const saveToLocalStorage = (items: CartItem[]) => {
     const formatted = items.map((item) => ({
@@ -135,43 +136,45 @@ const Cart = () => {
   }, []);
 
   const updateQuantity = async (id: string, newQuantity: number) => {
-  const targetItem = cartItems.find((item) => item.id === id);
-  if (!targetItem) return;
+    const targetItem = cartItems.find((item) => item.id === id);
+    if (!targetItem) return;
 
-  // ✅ Lấy stock từ variant
-  const stock = typeof targetItem.variantId === "object"
-    ? targetItem.variantId.stock_quantity
-    : targetItem.stock_quantity; // fallback nếu chưa populate
+    if (newQuantity <= 0) {
+      await removeItem(id);
+      return;
+    }
 
-  if (newQuantity > stock) {
-    toast.error(`Chỉ còn ${stock} sản phẩm trong kho`);
-    return; // ❌ không gọi API nữa
-  }
+    const stock = typeof targetItem.variantId === "object"
+      ? targetItem.variantId.stock_quantity
+      : targetItem.stock_quantity;
 
-  try {
-    const variantId =
-      typeof targetItem.variantId === "object"
-        ? targetItem.variantId._id
-        : targetItem.variantId;
+    if (newQuantity > stock) {
+      toast.error(`Chỉ còn ${stock} sản phẩm trong kho`);
+      return;
+    }
 
-    await axios.put("http://localhost:3000/cart", {
-      userId: user._id,
-      variantId,
-      quantity: newQuantity,
-    });
+    try {
+      const variantId =
+        typeof targetItem.variantId === "object"
+          ? targetItem.variantId._id
+          : targetItem.variantId;
 
-    // nếu thành công thì cập nhật UI
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  } catch (err) {
-    console.error("❌ updateQuantity error:", err);
-    toast.error("Cập nhật số lượng thất bại");
-  }
-};
+      await axios.put("http://localhost:3000/cart", {
+        userId: (user as UserInfoType)._id,
+        variantId,
+        quantity: newQuantity,
+      });
 
+      setCartItems((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, quantity: newQuantity } : item
+        )
+      );
+    } catch (err) {
+      console.error("❌ updateQuantity error:", err);
+      toast.error("Cập nhật số lượng thất bại");
+    }
+  };
 
   const removeItem = async (id: string) => {
     const target = cartItems.find((item) => item.id === id);
@@ -191,7 +194,6 @@ const Cart = () => {
           },
         });
       }
-      
     }
   };
 
@@ -200,8 +202,6 @@ const Cart = () => {
       alert("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
       return;
     }
-
-    // Bỏ giới hạn và thông báo 50 sản phẩm
 
     const selected = cartItems.filter((item) =>
       selectedItems.includes(item.id)
@@ -221,7 +221,6 @@ const Cart = () => {
     localStorage.setItem("checkoutItems", JSON.stringify(selected));
     navigate("/checkout");
   };
-
 
   const subtotal = cartItems.reduce(
     (total, item) =>

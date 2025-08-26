@@ -61,6 +61,10 @@ const ProductList = () => {
     setCurrentPage(1);
   }, [selectedCategory, selectedBrand, selectedPriceRange]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage]);
+
   const filteredProducts = products.filter((product) => {
     const matchCategory = selectedCategory
       ? product.categoryId.name === selectedCategory

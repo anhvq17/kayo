@@ -4,6 +4,7 @@ import axios from 'axios';
 interface Product {
   _id: string;
   name: string;
+  image: string;
 }
 
 interface Review {
@@ -22,6 +23,8 @@ const ReviewManager = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
   const [reviewsMap, setReviewsMap] = useState<Record<string, Review[]>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -40,7 +43,6 @@ const ReviewManager = () => {
       setExpandedRowKeys((prev) => prev.filter((id) => id !== productId));
     } else {
       setExpandedRowKeys((prev) => [...prev, productId]);
-
       if (!reviewsMap[productId]) {
         try {
           const res = await axios.get(`http://localhost:3000/comments/product/${productId}`);
@@ -56,7 +58,6 @@ const ReviewManager = () => {
     try {
       const res = await axios.put(`http://localhost:3000/comments/${reviewId}/hide`);
       const updatedHidden = res.data.hidden;
-
       setReviewsMap((prev) => {
         const updated = prev[productId]?.map((r) =>
           r._id === reviewId ? { ...r, hidden: updatedHidden } : r
@@ -68,24 +69,42 @@ const ReviewManager = () => {
     }
   };
 
+  const getImageUrl = (image?: string) => {
+    if (!image) return "/no-image.png";
+    if (image.startsWith("http")) return image;
+    if (image.startsWith("/uploads")) return `http://localhost:3000${image}`;
+    return `http://localhost:3000/uploads/${image}`;
+  };
+
+  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const paginatedProducts = products.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   return (
     <div className="p-4">
       <h1 className="text-2xl font-semibold mb-6">Danh sách đánh giá</h1>
       <table className="min-w-full bg-white border text-sm">
         <thead>
           <tr className="bg-black text-white text-left">
-            <th className="px-4 py-2">ID</th>
+            <th className="px-4 py-2">STT</th>
             <th className="px-4 py-2">Tên sản phẩm</th>
+            <th className="px-4 py-2">Ảnh sản phẩm</th>
             <th className="px-4 py-2">Thao tác</th>
           </tr>
         </thead>
         <tbody>
-          {Array.isArray(products) &&
-            products.map((product) => (
+          {Array.isArray(paginatedProducts) &&
+            paginatedProducts.map((product, index) => (
               <React.Fragment key={product._id}>
                 <tr>
-                  <td className="px-3 py-2 border-b">{product._id}</td>
+                  <td className="px-3 py-2 border-b">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                   <td className="px-3 py-2 border-b">{product.name}</td>
+                  <td className="px-3 py-2 border-b">
+                    <img
+                      src={getImageUrl(product.image)}
+                      alt={product.name}
+                      className="w-16 h-16 object-cover rounded-md border"
+                    />
+                  </td>
                   <td className="px-3 py-2 border-b">
                     <button
                       onClick={() => toggleExpand(product._id)}
@@ -95,68 +114,71 @@ const ReviewManager = () => {
                     </button>
                   </td>
                 </tr>
-
                 {expandedRowKeys.includes(product._id) && (
                   <tr>
-                    <td colSpan={3} className="p-4 bg-gray-50">
-                      <table className="w-full border text-sm">
-                        <thead>
-                          <tr className="bg-gray-200 text-left">
-                            <th className="px-2 py-1">Người dùng</th>
-                            <th className="px-2 py-1">Sao</th>
-                            <th className="px-2 py-1">Nội dung</th>
-                            <th className="px-2 py-1">Ảnh</th>
-                            <th className="px-2 py-1">Thao tác</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {reviewsMap[product._id]?.map((r) => (
-                            <tr key={r._id} className="border-t">
-                              <td className="px-2 py-1">
-                                {r.hidden ? 'Đã ẩn' : r.userId.username}
-                              </td>
-                              <td className="px-2 py-1">{r.rating} ⭐</td>
-                              <td className="px-2 py-1">
-                                {r.hidden ? 'Đã bị ẩn' : r.content}
-                              </td>
-                              <td className="px-2 py-1">
-                                {r.hidden
-                                  ? 'Đã ẩn'
-                                  : Array.isArray(r.image)
-                                  ? r.image.map((img, idx) => (
-                                      <img
-                                        key={idx}
-                                        src={`http://localhost:3000${img}`}
-                                        alt="ảnh"
-                                        className="w-10 h-10 inline-block mr-1 object-cover"
-                                      />
-                                    ))
-                                  : r.image
-                                  ? (
-                                    <img
-                                      src={`http://localhost:3000${r.image}`}
-                                      alt="ảnh"
-                                      className="w-10 h-10 object-cover"
-                                    />
-                                  )
-                                  : 'Không có ảnh'}
-                              </td>
-                              <td className="px-2 py-1">
-                                <button
-                                  onClick={() => toggleHideReview(r._id, product._id)}
-                                  className={`px-3 py-1 rounded-md text-xs text-white ${
-                                    r.hidden
-                                      ? 'bg-green-600 hover:bg-green-700'
-                                      : 'bg-red-600 hover:bg-red-700'
-                                  }`}
-                                >
-                                  {r.hidden ? 'Hiện' : 'Ẩn'}
-                                </button>
-                              </td>
+                    <td colSpan={4} className="p-4 bg-gray-50">
+                      {reviewsMap[product._id] && reviewsMap[product._id].length > 0 ? (
+                        <table className="w-full border text-sm">
+                          <thead>
+                            <tr className="bg-gray-200 text-left">
+                              <th className="px-2 py-1">STT</th>
+                              <th className="px-2 py-1">Người dùng</th>
+                              <th className="px-2 py-1">Tỷ lệ</th>
+                              <th className="px-2 py-1">Nội dung</th>
+                              <th className="px-2 py-1">Ảnh đánh giá</th>
+                              <th className="px-2 py-1">Thao tác</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {reviewsMap[product._id].map((r, rIndex) => (
+                              <tr key={r._id} className="border-t">
+                                <td className="px-2 py-1">{rIndex + 1}</td>
+                                <td className="px-2 py-1">{r.hidden ? 'Đã ẩn' : r.userId.username}</td>
+                                <td className="px-2 py-1">{r.rating} ⭐</td>
+                                <td className="px-2 py-1 max-w-xs whitespace-normal break-words">
+                                  {r.hidden ? 'Đã bị ẩn' : r.content}
+                                </td>
+                                <td className="px-2 py-1">
+                                  {r.hidden
+                                    ? 'Đã ẩn'
+                                    : Array.isArray(r.image)
+                                    ? r.image.map((img, idx) => (
+                                        <img
+                                          key={idx}
+                                          src={getImageUrl(img)}
+                                          alt="ảnh"
+                                          className="w-10 h-10 inline-block mr-1 object-cover"
+                                        />
+                                      ))
+                                    : r.image
+                                    ? (
+                                      <img
+                                        src={getImageUrl(r.image)}
+                                        alt="ảnh"
+                                        className="w-10 h-10 object-cover"
+                                      />
+                                    )
+                                    : 'Không có ảnh'}
+                                </td>
+                                <td className="px-2 py-1">
+                                  <button
+                                    onClick={() => toggleHideReview(r._id, product._id)}
+                                    className={`px-3 py-1 rounded-md text-xs text-white ${
+                                      r.hidden ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
+                                    }`}
+                                  >
+                                    {r.hidden ? 'Hiện' : 'Ẩn'}
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="text-center py-4 text-gray-500">
+                          Sản phẩm này chưa có đánh giá nào
+                        </div>
+                      )}
                     </td>
                   </tr>
                 )}
@@ -164,6 +186,23 @@ const ReviewManager = () => {
             ))}
         </tbody>
       </table>
+      <div className="flex justify-center items-center mt-4 space-x-2">
+        <button
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="px-3 py-1 rounded-md border bg-gray-200 disabled:opacity-50"
+        >
+          Trước
+        </button>
+        <span>{currentPage} / {totalPages}</span>
+        <button
+          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1 rounded-md border bg-gray-200 disabled:opacity-50"
+        >
+          Sau
+        </button>
+      </div>
     </div>
   );
 };
