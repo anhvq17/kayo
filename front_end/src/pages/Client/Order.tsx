@@ -389,7 +389,7 @@ const OrderList = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 mt-4">
+                  <div className="flex flex-col gap-2 mt-2">
                     <p className="text-base text-gray-500 flex items-center gap-2">
                       <i className="fas fa-wallet text-gray-600"></i>
                       Tổng tiền:
@@ -409,7 +409,7 @@ const OrderList = () => {
                       )}
                     </p>
                     <p className="text-base text-gray-500 flex items-center gap-2">
-                      <i className="fas fa-credit-card text-gray-600"></i>
+                      <i className="fas fa-credit-card text-sm text-gray-600"></i>
                       Phương thức thanh toán: <span className="font-semibold text-gray-800">{getPaymentMethodText(item.paymentMethod)}</span>
                     </p>
                   </div>
