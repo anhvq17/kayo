@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Minus, X } from "lucide-react";
+import { toast } from "sonner";
+
 import axios from "axios";
 
 interface CartItem {
@@ -133,46 +135,43 @@ const Cart = () => {
   }, []);
 
   const updateQuantity = async (id: string, newQuantity: number) => {
-    const targetItem = cartItems.find((item) => item.id === id);
-    if (!targetItem) return;
+  const targetItem = cartItems.find((item) => item.id === id);
+  if (!targetItem) return;
 
-    if (targetItem.stock_quantity && newQuantity > targetItem.stock_quantity) {
-      alert(`Số lượng tồn kho chỉ còn ${targetItem.stock_quantity}.`);
-      return;
-    }
+  // ✅ Lấy stock từ variant
+  const stock = typeof targetItem.variantId === "object"
+    ? targetItem.variantId.stock_quantity
+    : targetItem.stock_quantity; // fallback nếu chưa populate
 
-    if (newQuantity < 1) {
-      if (window.confirm("Bạn có muốn xoá sản phẩm này khỏi giỏ hàng?")) {
-        const updated = cartItems.filter((item) => item.id !== id);
-        setCartItems(updated);
-        saveToLocalStorage(updated);
-        setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
+  if (newQuantity > stock) {
+    toast.error(`Chỉ còn ${stock} sản phẩm trong kho`);
+    return; // ❌ không gọi API nữa
+  }
 
-        if (user?._id && targetItem.variantId) {
-          await axios.delete("http://localhost:3000/cart", {
-            data: {
-              userId: user._id,
-              variantId: targetItem.variantId,
-            },
-          });
-        }
-      }
-    } else {
-      const updated = cartItems.map((item) =>
+  try {
+    const variantId =
+      typeof targetItem.variantId === "object"
+        ? targetItem.variantId._id
+        : targetItem.variantId;
+
+    await axios.put("http://localhost:3000/cart", {
+      userId: user._id,
+      variantId,
+      quantity: newQuantity,
+    });
+
+    // nếu thành công thì cập nhật UI
+    setCartItems((prev) =>
+      prev.map((item) =>
         item.id === id ? { ...item, quantity: newQuantity } : item
-      );
-      setCartItems(updated);
-      saveToLocalStorage(updated);
+      )
+    );
+  } catch (err) {
+    console.error("❌ updateQuantity error:", err);
+    toast.error("Cập nhật số lượng thất bại");
+  }
+};
 
-      if (user?._id && targetItem.variantId) {
-        await axios.put("http://localhost:3000/cart", {
-          userId: user._id,
-          variantId: targetItem.variantId,
-          quantity: newQuantity,
-        });
-      }
-    }
-  };
 
   const removeItem = async (id: string) => {
     const target = cartItems.find((item) => item.id === id);
@@ -192,6 +191,7 @@ const Cart = () => {
           },
         });
       }
+      
     }
   };
 
@@ -350,10 +350,12 @@ const Cart = () => {
                           <button
                             onClick={() => {
                               if (item.stock_quantity && item.quantity >= item.stock_quantity) {
-                                alert(`Chỉ còn ${item.stock_quantity} sản phẩm trong kho!`);
-                                return;
-                              }
-                              updateQuantity(item.id, item.quantity + 1);
+                              toast.error(`Chỉ còn ${item.stock_quantity} sản phẩm trong kho!`);
+                              return;
+                            }
+                            updateQuantity(item.id, item.quantity + 1);
+                            
+
                             }}
                             className="px-3 py-1 text-black hover:bg-gray-200"
                           >

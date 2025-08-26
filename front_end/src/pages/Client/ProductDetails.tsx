@@ -623,19 +623,20 @@ console.log("productId detail:", productId);
                     className="w-8 h-8 text-center border-x border-gray-300 text-sm focus:outline-none flex items-center justify-center"
                     style={{ lineHeight: "normal" }}
                   />
-                  <button
-                    onClick={() =>
-                      setQuantity((prev) =>
-                        Math.min(
-                          prev + 1,
-                          selectedVariant?.stock_quantity || prev + 1
-                        )
-                      )
-                    }
-                    className="w-8 h-8 text-lg font-semibold text-gray-700 hover:bg-gray-100 flex items-center justify-center"
-                  >
-                    +
-                  </button>
+                 <button
+                  onClick={() => {
+                    setQuantity((prev) => {
+                      if (selectedVariant?.stock_quantity && prev >= selectedVariant.stock_quantity) {
+                        toast.error(`Chỉ còn ${selectedVariant.stock_quantity} sản phẩm trong kho`);
+                        return prev; // không tăng thêm
+                      }
+                      return prev + 1;
+                    });
+                  }}
+                  className="w-8 h-8 text-lg font-semibold text-gray-700 hover:bg-gray-100 flex items-center justify-center"
+                >
+                  +
+                </button>
                 </div>
               </div>
             </div>

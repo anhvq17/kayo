@@ -3,6 +3,8 @@ import "./ChatbotWidget.css";
 import { MessageOutlined, SendOutlined } from "@ant-design/icons";
 import { marked } from "marked";
 
+
+
 interface ChatMessage {
   role: "user" | "bot";
   text: string;
@@ -124,8 +126,9 @@ export default function ChatbotWidget() {
                     ) : (
                       <div
                         className="markdown"
-                        dangerouslySetInnerHTML={{ __html: marked.parse(c.text) as string }}
+                        dangerouslySetInnerHTML={{ __html: marked.parse(c.text) }}
                       />
+
                     )
                 ) : (
                   c.text
