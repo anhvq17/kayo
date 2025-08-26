@@ -6,27 +6,17 @@ import OrderProgressBar from "../../../components/OrderProgressBar";
 
 interface OrderItem {
   _id: string;
-  variantId: {
-    _id: string;
-    image: string;
-    productId: {
-      _id: string;
-      name: string;
-      image: string;
-    };
-    attributes?: {
-      attributeId: {
-        _id: string;
-        name: string;
-      };
-      valueId: {
-        _id: string;
-        value: string;
-      };
-    }[];
-  };
+  variantId: string;
   quantity: number;
   price: number;
+  snapshot: {
+    productName: string;
+    productImage?: string;
+    attributes?: {
+      name: string;
+      value: string;
+    }[];
+  };
 }
 
 interface OrderWithItems {
@@ -469,7 +459,6 @@ const DetailOrder = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Tên sản phẩm</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Thuộc tính</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Số lượng</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Đơn giá</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Thành tiền</th>
@@ -481,23 +470,16 @@ const DetailOrder = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <img 
-                        src={item.variantId?.productId?.image || item.variantId?.image} 
-                        alt={item.variantId?.productId?.name}
+                        src={item.snapshot.productImage}
+                        alt={item.snapshot.productName}
                         className="w-12 h-12 object-cover rounded border mr-3"
                       />
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {item.variantId?.productId?.name || 'Sản phẩm'}
+                          {item.snapshot?.productName || 'Sản phẩm'}
                         </div>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {item.variantId?.attributes?.map((attr, i) => (
-                      <span key={i} className="mr-2">
-                        {attr.attributeId?.name}: {attr.valueId?.value}
-                      </span>
-                    ))}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.price.toLocaleString()}</td>
