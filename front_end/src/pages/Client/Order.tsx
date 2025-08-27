@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { getOrderStatusBadgeClass, getPaymentStatusBadgeClass } from '../../utils/statusStyles';
 import { Link } from 'react-router-dom';
 import { getOrdersByUserWithItems, updateOrder } from '../../services/Order';
 
@@ -370,21 +371,10 @@ const OrderList = () => {
                       </p>
                     </div>
                     <div className="flex flex-col gap-1 mt-2 md:mt-0">
-                      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${
-                        item.orderStatus === 'Đã xử lý' ? 'bg-green-100 text-green-800' :
-                        item.orderStatus === 'Chờ xử lý' ? 'bg-yellow-100 text-yellow-800' :
-                        item.orderStatus === 'Đang giao hàng' ? 'bg-blue-100 text-blue-800' :
-                        item.orderStatus === 'Đã giao hàng' ? 'bg-green-100 text-green-800' :
-                        item.orderStatus === 'Đã nhận hàng' ? 'bg-green-200 text-green-900' :
-                        'bg-red-100 text-red-800'
-                      }`}>
+                      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${getOrderStatusBadgeClass(item.orderStatus)}`}>
                         {getStatusText(item.orderStatus)}
                       </span>
-                      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                        getPaymentStatusText(item.paymentStatus) === 'Đã thanh toán' ? 'bg-green-100 text-green-800' :
-                        getPaymentStatusText(item.paymentStatus) === 'Đã hoàn tiền' ? 'bg-blue-100 text-blue-800' :
-                        'bg-yellow-100 text-yellow-800'}`}
-                      >
+                      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusBadgeClass(getPaymentStatusText(item.paymentStatus))}`}>
                         {getPaymentStatusText(item.paymentStatus)}
                       </span>
                     </div>
@@ -485,15 +475,30 @@ const OrderList = () => {
                               "Sản phẩm"}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {snap.variantName ? (
-                              <span>{snap.variantName}</span>
-                            ) : (
-                              prod.variantId?.attributes?.map((attr: any, i: number) => (
-                                <span key={i} className="mr-2">
-                                  {attr.attributeId?.name}: {attr.valueId?.value}
+                            {(() => {
+                              const attrs = (prod.variantId?.attributes || []) as any[];
+                              const byName = (n: string) => attrs.find(a => (a.attributeId?.name || '').toLowerCase() === n);
+                              let fragrance = byName('mùi hương')?.valueId?.value as string | undefined;
+                              let capacity = byName('dung tích')?.valueId?.value as string | undefined;
+                              if ((!fragrance || !capacity) && typeof snap.variantName === 'string' && snap.variantName.includes('/')) {
+                                const parts = snap.variantName.split('/').map((s: string) => s.trim());
+                                if (!fragrance && parts[0]) fragrance = parts[0];
+                                if (!capacity && parts[1]) capacity = parts[1];
+                              }
+                              if (fragrance || capacity) {
+                                return (
+                                  <span>
+                                    {fragrance && <>Mùi hương: {fragrance} </>} /
+                                    {capacity && <> Dung tích: {capacity}</>}
+                                  </span>
+                                );
+                              }
+                              return (
+                                <span>
+                                  {(attrs || []).map((attr: any) => `${attr.attributeId?.name}: ${attr.valueId?.value}`).join(', ')}
                                 </span>
-                              ))
-                            )}
+                              );
+                            })()}
                           </div>
                           <div className="text-xs text-gray-500">
                             Số lượng: {prod.quantity}

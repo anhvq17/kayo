@@ -2,9 +2,10 @@ import React from 'react';
 
 interface OrderProgressBarProps {
   currentStatus: string;
+  theme?: 'default' | 'green';
 }
 
-const OrderProgressBar: React.FC<OrderProgressBarProps> = ({ currentStatus }) => {
+const OrderProgressBar: React.FC<OrderProgressBarProps> = ({ currentStatus, theme = 'default' }) => {
   const statuses = [
     'Chờ xử lý',
     'Đã xử lý',
@@ -66,20 +67,25 @@ const OrderProgressBar: React.FC<OrderProgressBarProps> = ({ currentStatus }) =>
   };
 
   const getStatusColor = (statusIndex: number, currentIndex: number) => {
+    const completedClass = theme === 'green' ? 'bg-green-600 text-white' : 'bg-[#5f518e] text-white';
+    const currentClass = theme === 'green' ? 'bg-green-400 text-white' : 'bg-[#b4acd9] text-white';
+    const upcomingClass = 'bg-gray-300 text-gray-500';
     if (statusIndex < currentIndex) {
-      return 'bg-[#5f518e] text-white';
+      return completedClass;
     } else if (statusIndex === currentIndex) {
-      return 'bg-[#b4acd9] text-white';
+      return currentClass;
     } else {
-      return 'bg-gray-300 text-gray-500';
+      return upcomingClass;
     }
   };
 
   const getLineColor = (statusIndex: number, currentIndex: number) => {
+    const completedLine = theme === 'green' ? 'bg-green-600' : 'bg-[#5f518e]';
+    const upcomingLine = 'bg-gray-300';
     if (statusIndex < currentIndex) {
-      return 'bg-[#5f518e]';
+      return completedLine;
     } else {
-      return 'bg-gray-300';
+      return upcomingLine;
     }
   };
 

@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { getOrderById, updateOrder } from "../../../services/Order";
 import type { Order } from "../../../types/Order";
 import OrderProgressBar from "../../../components/OrderProgressBar";
+import { getOrderStatusBadgeClass, getPaymentStatusBadgeClass } from "../../../utils/statusStyles";
 
 interface OrderItem {
   _id: string;
@@ -189,28 +190,9 @@ const DetailOrder = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    let color = '';
-    switch (status) {
-      case 'Đã giao hàng': 
-      case 'Đã nhận hàng': 
-        color = 'bg-green-100 text-green-800'; 
-        break;
-      case 'Chờ xử lý': 
-      case 'Đã xử lý': 
-        color = 'bg-yellow-100 text-yellow-800'; 
-        break;
-      case 'Đang giao hàng': 
-        color = 'bg-blue-100 text-blue-800'; 
-        break;
-      case 'Đã huỷ đơn hàng': 
-        color = 'bg-red-100 text-red-800'; 
-        break;
-      default: 
-        color = 'bg-gray-100 text-gray-800';
-    }
-    return <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${color}`}>{status}</span>;
-  };
+  const getStatusBadge = (status: string) => (
+    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getOrderStatusBadgeClass(status)}`}>{status}</span>
+  );
 
   const getPaymentMethodText = (method: string) => {
     switch (method) {
@@ -230,16 +212,8 @@ const DetailOrder = () => {
 
   const getPaymentBadge = (paymentStatus: string) => {
     const statusText = getPaymentStatusText(paymentStatus);
-    let badgeClass = 'bg-yellow-100 text-yellow-800';
-    
-    if (statusText === 'Đã thanh toán') {
-      badgeClass = 'bg-green-100 text-green-800';
-    } else if (statusText === 'Đã hoàn tiền') {
-      badgeClass = 'bg-blue-100 text-blue-800';
-    }
-    
     return (
-      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${badgeClass}`}>
+      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusBadgeClass(statusText)}`}>
         {statusText}
       </span>
     );
@@ -379,7 +353,7 @@ const DetailOrder = () => {
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
           Tiến trình đơn hàng
         </h3>
-        <OrderProgressBar currentStatus={order.orderStatus} />
+        <OrderProgressBar currentStatus={order.orderStatus} theme="green" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -484,6 +458,7 @@ const DetailOrder = () => {
                           {item.snapshot?.productName || 'Sản phẩm'}
                         </div>
                       </div>
+                      
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>

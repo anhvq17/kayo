@@ -194,7 +194,7 @@ const OrderDetail = () => {
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             Tiến trình đơn hàng
           </h2>
-          <OrderProgressBar currentStatus={order.orderStatus} />
+          <OrderProgressBar currentStatus={order.orderStatus} theme="green" />
         </div>
       
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
