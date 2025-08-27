@@ -70,9 +70,18 @@ export default function Dashboard() {
   const paidStatuses = ["Đã nhận hàng"];
 
   const validRevenueOrders = orders.filter(
-    (order) =>
-      paidStatuses.includes(order.orderStatus) &&
-      (order.isPaid === true || order.paymentStatus === "Đã thanh toán")
+    (order) => {
+      // Đơn hàng đã hoàn tiền thì không tính
+      if (order.paymentStatus === "Đã hoàn tiền") return false;
+      
+      // Đơn hàng VNPay đã thanh toán thành công
+      if (order.paymentMethod === "vnpay" && order.paymentStatus === "Đã thanh toán") return true;
+      
+      // Đơn hàng COD đã nhận hàng
+      if (paidStatuses.includes(order.orderStatus) && (order.isPaid === true || order.paymentStatus === "Đã thanh toán")) return true;
+      
+      return false;
+    }
   );
 
   const today = new Date();
@@ -104,7 +113,37 @@ export default function Dashboard() {
     "Đã giao hàng": orders.filter((o) => o.orderStatus === "Đã giao hàng").length,
     "Đã nhận hàng": orders.filter((o) => o.orderStatus === "Đã nhận hàng").length,
     "Đã huỷ đơn hàng": orders.filter((o) => o.orderStatus === "Đã huỷ đơn hàng").length,
+    "Đã hoàn hàng": orders.filter((o) => o.orderStatus === "Đã hoàn hàng").length,
+    "Từ chối hoàn hàng": orders.filter((o) => o.orderStatus === "Từ chối hoàn hàng").length,
   };
+
+  const STATUS_ORDER = [
+    "Chờ xử lý",
+    "Đã xử lý",
+    "Đang giao hàng",
+    "Đã giao hàng",
+    "Đã nhận hàng",
+    "Đã huỷ đơn hàng",
+    "Đã hoàn hàng",
+    "Từ chối hoàn hàng",
+  ];
+
+  const PIE_COLORS = [
+    "#F59E0B",
+    "#14B8A6", 
+    "#8B5CF6", 
+    "#22C55E", 
+    "#3B82F6", 
+    "#EF4444",
+    "#10B981", 
+    "#64748B", 
+  ];
+
+  const pieData = STATUS_ORDER.map((status, index) => ({
+    name: status,
+    value: statusStats[status as keyof typeof statusStats] || 0,
+    fill: PIE_COLORS[index],
+  }));
 
   // Hàm lọc đơn hàng theo khoảng thời gian
   const getFilteredOrders = () => {
@@ -455,28 +494,16 @@ const topCustomers = Object.values(
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={Object.entries(statusStats).map(([status, count]) => ({
-                  name: status,
-                  value: count,
-                }))}
+                data={pieData}
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
                 dataKey="value"
               >
-                {Object.keys(statusStats).map((_, index) => (
+                {pieData.map((_, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={
-                      [
-                        "#FFC107",
-                        "#17A2B8",
-                        "#9C27B0",
-                        "#4CAF50",
-                        "#2196F3",
-                        "#F44336",
-                      ][index % 6]
-                    }
+                    fill={PIE_COLORS[index % PIE_COLORS.length]}
                   />
                 ))}
               </Pie>
@@ -484,8 +511,18 @@ const topCustomers = Object.values(
                 formatter={(value: any, name: any) => [`${value} đơn`, name]}
               />
               <Legend
-                formatter={(value) => (
-                  <span style={{ marginRight: 20, marginTop: 30, display: "inline-block" }}>{value}</span>
+                content={() => (
+                  <div className="flex flex-wrap justify-center gap-4 mt-4">
+                    {STATUS_ORDER.map((status, index) => (
+                      <div key={status} className="flex items-center gap-2">
+                        <div
+                          className="w-4 h-4 rounded"
+                          style={{ backgroundColor: PIE_COLORS[index] }}
+                        />
+                        <span className="text-sm text-gray-700">{status}</span>
+                      </div>
+                    ))}
+                  </div>
                 )}
               />
             </PieChart>
@@ -552,7 +589,7 @@ const topCustomers = Object.values(
                   <tr key={c.id} className="border-b">
                     <td className="py-2">{c.name}</td>
                     <td className="py-2 text-red-600 font-bold">
-                      {c.total.toLocaleString()}
+                      {totalRevenue.toLocaleString()}
                     </td>
                     <td className={`py-2 ${getRankColorClass(rank)}`}>{rank}</td>
                   </tr>

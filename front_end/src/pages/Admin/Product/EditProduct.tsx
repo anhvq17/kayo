@@ -357,7 +357,7 @@ const EditProduct = () => {
       const productData = {
         name: data.name,
         description: data.description,
-        priceDefault: Number.parseFloat(data.priceDefault),
+        priceDefault: Number(String(data.priceDefault).replace(/\./g, "")),
         categoryId: data.categoryId,
         brandId: data.brandId,
         image: productImageUrl,

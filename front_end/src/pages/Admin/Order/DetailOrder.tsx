@@ -75,6 +75,10 @@ const DetailOrder = () => {
 
   const handleUpdateStatus = async () => {
     if (!newStatus || !orderData || !id) return;
+    if (newStatus === 'Đã nhận hàng') {
+      setStatusError('Admin không thể chuyển trạng thái sang "Đã nhận hàng". Trạng thái này chỉ do khách hàng xác nhận.');
+      return;
+    }
     if (orderData.order.orderStatus === 'Đã huỷ đơn hàng') {
       setStatusError('Đơn hàng đã bị huỷ, không thể cập nhật trạng thái.');
       return;
@@ -270,7 +274,10 @@ const DetailOrder = () => {
 
     // Only offer the next status when current status is inside the main flow
     if (currentIndex >= 0 && currentIndex < statusOrder.length - 1) {
-      availableStatuses.push(statusOrder[currentIndex + 1]);
+      const nextStatus = statusOrder[currentIndex + 1];
+      if (nextStatus !== 'Đã nhận hàng') {
+        availableStatuses.push(nextStatus);
+      }
     }
 
     if (canCancelOrder(currentStatus)) {
@@ -339,10 +346,10 @@ const DetailOrder = () => {
           )}
           <button
             onClick={() => {
-              if (order.orderStatus !== 'Đã huỷ đơn hàng' && order.orderStatus !== 'Yêu cầu hoàn hàng') setIsModalOpen(true);
+              if (order.orderStatus !== 'Đã huỷ đơn hàng' && order.orderStatus !== 'Yêu cầu hoàn hàng' && order.orderStatus !== 'Đã nhận hàng') setIsModalOpen(true);
             }}
-            className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm transition duration-200${(order.orderStatus === 'Đã huỷ đơn hàng' || order.orderStatus === 'Yêu cầu hoàn hàng') ? ' opacity-50 cursor-not-allowed' : ''}`}
-            disabled={order.orderStatus === 'Đã huỷ đơn hàng' || order.orderStatus === 'Yêu cầu hoàn hàng'}
+            className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm transition duration-200${(order.orderStatus === 'Đã huỷ đơn hàng' || order.orderStatus === 'Yêu cầu hoàn hàng' || order.orderStatus === 'Đã nhận hàng') ? ' opacity-50 cursor-not-allowed' : ''}`}
+            disabled={order.orderStatus === 'Đã huỷ đơn hàng' || order.orderStatus === 'Yêu cầu hoàn hàng' || order.orderStatus === 'Đã nhận hàng'}
           >
             Cập nhật trạng thái
           </button>

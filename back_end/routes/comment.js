@@ -4,7 +4,8 @@ import {
   getCommentsByProduct,
   getCommentById,
   deleteComment,
-  toggleCommentHidden
+  toggleCommentHidden,
+  getCommentsByUser
 } from "../controllers/commentController.js";
 
 import { protect } from "../middlewares/authMiddleware.js";
@@ -17,6 +18,9 @@ router.post("/", protect ,  upload.array('image', 3) , createComment);
 
 // Lấy tất cả bình luận theo sản phẩm
 router.get("/product/:productId", getCommentsByProduct);
+
+// Lấy tất cả bình luận theo người dùng (admin)
+router.get("/user/:userId", getCommentsByUser);
 
 // Lấy chi tiết một bình luận theo ID
 router.get("/:id", getCommentById);

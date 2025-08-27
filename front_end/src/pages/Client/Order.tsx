@@ -73,6 +73,8 @@ const OrderList = () => {
   const [confirmingReceivedId, setConfirmingReceivedId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [returnImages, setReturnImages] = useState<File[]>([]);
+  const [returnListPage, setReturnListPage] = useState(1);
+  const itemsPerReturnPage = 2;
   const didMountRef = useRef(false);
   const socketRef = useRef<Socket | null>(null);
 
@@ -301,6 +303,7 @@ const OrderList = () => {
     order?.items?.forEach(it => { initial[it._id] = 0; });
     setReturnSelections(initial);
     setReturnImages([]);
+    setReturnListPage(1);
     setShowReturnModal(true);
   };
 
@@ -447,7 +450,7 @@ const OrderList = () => {
                       (ri: any) => ri.orderItemId === prod._id
                     );
                     const returnedQty = returnedItem?.quantity || 0;
-                    const isReturned = returnedQty > 0;
+                    const fullyReturned = returnedQty >= prod.quantity;
                     const snap = prod.snapshot || {};
                     return (
                       <div
@@ -504,14 +507,13 @@ const OrderList = () => {
                             Số lượng: {prod.quantity}
                           </div>
 
-                          {isReturned && item.orderStatus === 'Đã hoàn hàng' && (
+                          {returnedQty > 0 && item.orderStatus === 'Đã hoàn hàng' && (
                             <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
                               Đã hoàn hàng:{returnedQty > 0 ? ` (${returnedQty}/${prod.quantity})` : ''} đơn
                             </div>
                           )}
-                          <br />
-                          {isReturned && item.orderStatus === 'Đã hoàn hàng' && (
-                            <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-800">
+                          {returnedQty > 0 && item.orderStatus === 'Đã hoàn hàng' && (
+                            <div className="mt-1 ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-800">
                               Đã hoàn tiền
                             </div>
                           )}
@@ -520,7 +522,12 @@ const OrderList = () => {
                           <div className="text-base font-bold text-red-500">
                             {(snap.variantPrice ?? prod.price).toLocaleString()}
                           </div>
-                          {item.orderStatus === "Đã nhận hàng" && !prod.isReviewed && (
+                          {(
+                            (!prod.isReviewed) && (
+                              item.orderStatus === "Đã nhận hàng" ||
+                              (item.orderStatus === "Đã hoàn hàng" && !fullyReturned)
+                            )
+                          ) && (
                             <Link
                               to={`/review/${snap.productId || prod.variantId?.productId?._id}/${prod._id}`}
                               className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition text-sm"
@@ -614,8 +621,14 @@ const OrderList = () => {
                 Vui lòng chọn sản phẩm bạn muốn hoàn trả hàng
               </p>
 
-              <div className="mb-4 max-h-64 overflow-auto border rounded-md">
-                {(orderList.find(o => o._id === selectedOrderId)?.items || []).map((it: any) => {
+              <div className="mb-4 max-h-80 overflow-y-auto border rounded-md pr-2">
+                {(() => {
+                  const allItems = (orderList.find(o => o._id === selectedOrderId)?.items || []) as any[];
+                  const totalPages = Math.max(1, Math.ceil(allItems.length / itemsPerReturnPage));
+                  const safePage = Math.min(returnListPage, totalPages);
+                  const startIdx = (safePage - 1) * itemsPerReturnPage;
+                  const paginated = allItems.slice(startIdx, startIdx + itemsPerReturnPage);
+                  return paginated.map((it: any) => {
                   const isChecked = (returnSelections[it._id] || 0) > 0;
                   const snap = it.snapshot || {};
                   return (
@@ -667,8 +680,37 @@ const OrderList = () => {
                       </div>
                     </div>
                   );
-                })}
+                  });
+                })()}
               </div>
+              {(() => {
+                const count = (orderList.find(o => o._id === selectedOrderId)?.items || []).length;
+                const totalPages = Math.max(1, Math.ceil(count / itemsPerReturnPage));
+                if (totalPages <= 1) return null;
+                return (
+                  <div className="flex items-center justify-between mb-4 text-sm">
+                    <button
+                      type="button"
+                      onClick={() => setReturnListPage(p => Math.max(1, p - 1))}
+                      disabled={returnListPage <= 1}
+                      className="px-3 py-1 border rounded disabled:opacity-50"
+                    >
+                      Trước
+                    </button>
+                    <div>
+                      Trang {Math.min(returnListPage, totalPages)} / {totalPages}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setReturnListPage(p => Math.min(totalPages, p + 1))}
+                      disabled={returnListPage >= totalPages}
+                      className="px-3 py-1 border rounded disabled:opacity-50"
+                    >
+                      Sau
+                    </button>
+                  </div>
+                );
+              })()}
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -719,10 +761,7 @@ const OrderList = () => {
                 )}
               </div>
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700 mb-2">
-                Lưu ý: Chọn kĩ sản phẩm bạn mong muốn. Mỗi đơn hàng chỉ được yêu cầu xử lý hoàn trả duy nhất một lần.
-              </div>
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
-                Yêu cầu hoàn hàng sẽ được gửi đến admin để xem xét và phê duyệt. Nếu được chấp thuận, bạn sẽ được hoàn tiền về Ví điện tử.
+                Lưu ý: Vui lòng chọn kĩ sản phẩm bạn mong muốn. Mỗi đơn hàng chỉ được yêu cầu xử lý hoàn trả duy nhất một lần.
               </div>
             </div>
             <div className="flex justify-end space-x-1">

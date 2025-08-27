@@ -126,3 +126,21 @@ export const toggleCommentHidden = async (req, res) => {
     res.status(500).json({ message: 'Lỗi khi cập nhật trạng thái', error: error.message });
   }
 };
+
+// [GET] Lấy bình luận theo người dùng (dùng cho admin)
+export const getCommentsByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const comments = await Comment.find({ userId })
+      .populate('userId', 'username')
+      .populate('productId', 'name image')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(comments);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Lỗi khi lấy danh sách bình luận theo người dùng.',
+      error: error.message,
+    });
+  }
+};
