@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import { toast } from "sonner";
 
 type FormData = {
   code: string;
@@ -57,7 +58,6 @@ const EditVoucher = () => {
           ...rest
         } = res.data.data;
 
-        // Chuyển ngày về định dạng YYYY-MM-DD
         const cleanData = {
           ...rest,
           startDate: startDate?.slice(0, 10),
@@ -65,26 +65,28 @@ const EditVoucher = () => {
         };
 
         reset(cleanData);
-      } catch (error) {
-        console.error("Không lấy được dữ liệu voucher", error);
-        alert("Không tìm thấy voucher");
+      } catch (error: unknown) {
+        console.error("Không lấy được dữ liệu voucher:", error);
+        const msg =
+          error instanceof Error && "response" in error
+            ? (error as any).response?.data?.message || "Không tìm thấy voucher"
+            : "Không tìm thấy voucher";
+        toast.error(msg, { duration: 2000 });
         navigate("/admin/vouchers");
       }
     };
     fetchVoucher();
-  }, []);
-
+  }, [id, reset, navigate]);
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      // Nếu là fixed, loại maxDiscountValue
       if (data.discountType === "fixed") {
         data.maxDiscountValue = null;
       }
 
       await axios.put(`http://localhost:3000/voucher/${id}`, data);
-      alert("Cập nhật voucher thành công!");
+      toast.success("Cập nhật voucher thành công!", { duration: 2000 });
       navigate("/admin/vouchers");
     } catch (error: any) {
       const serverErrors = error.response?.data?.errors || [];
@@ -94,13 +96,19 @@ const EditVoucher = () => {
             setError("code", { type: "server", message: msg });
           }
         });
+        if (serverErrors.length > 0) {
+          toast.error("Vui lòng kiểm tra lại thông tin nhập!", { duration: 2000 });
+        }
       } else {
-        alert(error.response?.data?.message || "Đã xảy ra lỗi!");
+        const msg =
+          error.response?.data?.message || "Đã xảy ra lỗi khi cập nhật voucher!";
+        toast.error(msg, { duration: 2000 });
       }
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
@@ -169,6 +177,13 @@ const EditVoucher = () => {
             valueAsNumber: true,
             required: "Vui lòng nhập giá trị giảm",
             min: { value: 1, message: "Phải > 0" },
+            validate: (val) => {
+              const numVal = Number(val);
+              if (discountType === "percent" && numVal > 100) {
+                return "Giảm giá phần trăm không được vượt quá 100";
+              }
+              return true;
+            },
           })}
           className="w-full border rounded px-3 py-2"
         />
@@ -209,9 +224,16 @@ const EditVoucher = () => {
           {...register("maxDiscountValue", {
             valueAsNumber: true,
             min: { value: 1, message: "Phải > 0" },
+            validate: (val) => {
+              if (discountType === "percent" && val && Number(val) <= 0) {
+                return "Giảm tối đa phải lớn hơn 0";
+              }
+              return true;
+            },
           })}
-          className={`w-full border rounded px-3 py-2 ${discountType === "fixed" ? "bg-gray-100 cursor-not-allowed" : ""
-            }`}
+          className={`w-full border rounded px-3 py-2 ${
+            discountType === "fixed" ? "bg-gray-100 cursor-not-allowed" : ""
+          }`}
         />
         {errors.maxDiscountValue && (
           <p className="text-red-500 text-sm">
@@ -265,15 +287,15 @@ const EditVoucher = () => {
       {/* Số lần sử dụng */}
       <div>
         <label className="block font-medium mb-1">
-          <span className="text-red-500">*</span> Giới hạn số lần sử dụng
+          Giới hạn số lần sử dụng
         </label>
         <input
           type="number"
           {...register("usageLimit", {
             valueAsNumber: true,
-            required: "Vui lòng nhập số lần sử dụng",
             min: { value: 1, message: "Phải >= 1" },
           })}
+          placeholder="Để trống nếu không giới hạn"
           className="w-full border rounded px-3 py-2"
         />
         {errors.usageLimit && (

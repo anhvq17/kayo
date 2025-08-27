@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { RotateCw, Trash2 } from "lucide-react";
+import { RotateCw, Trash2, AlertTriangle } from "lucide-react";
 import axios from "axios";
+import { toast } from "sonner";
 
 type Voucher = {
   _id: string;
@@ -15,6 +16,45 @@ type Voucher = {
   status: "activated" | "inactivated";
 };
 
+// Custom confirm toast
+const confirmToast = (message: string): Promise<boolean> => {
+  return new Promise((resolve) => {
+    toast.custom((t) => (
+      <div className="bg-white p-6 rounded-xl shadow-2xl border border-gray-200 max-w-md w-full mx-auto animate-in fade-in zoom-in-95">
+        <div className="flex items-center gap-3 mb-4">
+          <AlertTriangle className="text-red-600" size={24} />
+          <h3 className="text-lg font-semibold text-gray-800">Xác nhận hành động</h3>
+        </div>
+        <p className="text-sm text-gray-600 mb-6">{message}</p>
+        <div className="flex justify-end gap-3">
+          <button
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+            onClick={() => {
+              toast.dismiss(t);
+              resolve(false);
+            }}
+          >
+            Hủy
+          </button>
+          <button
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+            onClick={() => {
+              toast.dismiss(t);
+              resolve(true);
+            }}
+          >
+            Xác nhận
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 0,
+      position: "top-center",
+      style: { background: "transparent", padding: 0, border: "none" },
+    });
+  });
+};
+
 const TrashVoucher = () => {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -24,8 +64,14 @@ const TrashVoucher = () => {
       const res = await axios.get("http://localhost:3000/voucher/trash");
       setVouchers(res.data.data);
       setSelectedIds([]);
-    } catch (error) {
+      toast.success("Tải thùng rác voucher thành công!", { duration: 2000 });
+    } catch (error: unknown) {
       console.error("Lỗi khi lấy thùng rác voucher:", error);
+      const msg =
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message || "Lỗi khi lấy thùng rác voucher"
+          : "Lỗi khi lấy thùng rác voucher";
+      toast.error(msg, { duration: 2000 });
     }
   };
 
@@ -40,54 +86,72 @@ const TrashVoucher = () => {
   };
 
   const handleRestore = async (id: string) => {
+    const confirmed = await confirmToast("Bạn có chắc muốn khôi phục voucher này?");
+    if (!confirmed) return;
     try {
       await axios.patch(`http://localhost:3000/voucher/restore/${id}`);
-      alert("Khôi phục thành công");
+      toast.success("Khôi phục voucher thành công!", { duration: 2000 });
       fetchTrash();
-    } catch (error) {
-      alert("Khôi phục thất bại");
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message || "Khôi phục voucher thất bại"
+          : "Khôi phục voucher thất bại";
+      toast.error(msg, { duration: 2000 });
     }
   };
 
   const handleHardDelete = async (id: string) => {
-    const confirm = window.confirm("Xóa vĩnh viễn voucher này?");
-    if (!confirm) return;
+    const confirmed = await confirmToast("Bạn có chắc muốn xóa vĩnh viễn voucher này?");
+    if (!confirmed) return;
     try {
       await axios.delete(`http://localhost:3000/voucher/hard/${id}`);
-      alert("Đã xóa vĩnh viễn");
+      toast.success("Đã xóa vĩnh viễn voucher!", { duration: 2000 });
       fetchTrash();
-    } catch (error) {
-      alert("Xóa thất bại");
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message || "Xóa vĩnh viễn voucher thất bại"
+          : "Xóa vĩnh viễn voucher thất bại";
+      toast.error(msg, { duration: 2000 });
     }
   };
 
   const handleRestoreMany = async () => {
     if (selectedIds.length === 0) return;
-    const confirm = window.confirm("Khôi phục các voucher đã chọn?");
-    if (!confirm) return;
+    const confirmed = await confirmToast(`Bạn có chắc muốn khôi phục ${selectedIds.length} voucher đã chọn?`);
+    if (!confirmed) return;
     try {
       await axios.patch("http://localhost:3000/voucher/restore-many", {
         ids: selectedIds,
       });
-      alert("Khôi phục thành công");
+      toast.success(`Đã khôi phục ${selectedIds.length} voucher thành công!`, { duration: 2000 });
       fetchTrash();
-    } catch (error) {
-      alert("Khôi phục thất bại");
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message || "Khôi phục nhiều voucher thất bại"
+          : "Khôi phục nhiều voucher thất bại";
+      toast.error(msg, { duration: 2000 });
     }
   };
 
   const handleHardDeleteMany = async () => {
     if (selectedIds.length === 0) return;
-    const confirm = window.confirm("Xóa vĩnh viễn các voucher đã chọn?");
-    if (!confirm) return;
+    const confirmed = await confirmToast(`Bạn có chắc muốn xóa vĩnh viễn ${selectedIds.length} voucher đã chọn?`);
+    if (!confirmed) return;
     try {
       await axios.delete("http://localhost:3000/voucher/hard-delete-many", {
         data: { ids: selectedIds },
       });
-      alert("Đã xóa vĩnh viễn");
+      toast.success(`Đã xóa vĩnh viễn ${selectedIds.length} voucher!`, { duration: 2000 });
       fetchTrash();
-    } catch (error) {
-      alert("Xóa thất bại");
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message || "Xóa vĩnh viễn nhiều voucher thất bại"
+          : "Xóa vĩnh viễn nhiều voucher thất bại";
+      toast.error(msg, { duration: 2000 });
     }
   };
 
@@ -99,20 +163,22 @@ const TrashVoucher = () => {
           <button
             onClick={handleRestoreMany}
             disabled={selectedIds.length === 0}
-            className={`px-3 h-8 rounded text-sm text-white transition ${selectedIds.length === 0
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-green-600 hover:bg-green-700"
-              }`}
+            className={`px-3 h-8 rounded text-sm text-white transition ${
+              selectedIds.length === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700"
+            }`}
           >
             Khôi phục ({selectedIds.length})
           </button>
           <button
             onClick={handleHardDeleteMany}
             disabled={selectedIds.length === 0}
-            className={`px-3 h-8 rounded text-sm text-white transition ${selectedIds.length === 0
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-red-600 hover:bg-red-700"
-              }`}
+            className={`px-3 h-8 rounded text-sm text-white transition ${
+              selectedIds.length === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-red-600 hover:bg-red-700"
+            }`}
           >
             Xóa vĩnh viễn ({selectedIds.length})
           </button>
@@ -173,10 +239,14 @@ const TrashVoucher = () => {
                 {new Date(voucher.startDate).toLocaleDateString("vi-VN")} -{" "}
                 {new Date(voucher.endDate).toLocaleDateString("vi-VN")}
                 <div>
-                  <span className={`mt-1 inline-block text-xs font-medium rounded px-2 py-0.5 
-                    ${new Date(voucher.endDate) < new Date()
-                      ? "bg-red-100 text-red-600"
-                      : "bg-green-100 text-green-600"}`}>
+                  <span
+                    className={`mt-1 inline-block text-xs font-medium rounded px-2 py-0.5 
+                    ${
+                      new Date(voucher.endDate) < new Date()
+                        ? "bg-red-100 text-red-600"
+                        : "bg-green-100 text-green-600"
+                    }`}
+                  >
                     {new Date(voucher.endDate) < new Date() ? "Hết hạn" : "Còn hạn"}
                   </span>
                 </div>
@@ -187,10 +257,14 @@ const TrashVoucher = () => {
                   : `${voucher.usedCount} / ∞`}
               </td>
               <td className="px-4 py-2">
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold 
-                  ${voucher.status === "activated"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-yellow-100 text-yellow-700"}`}>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-semibold 
+                  ${
+                    voucher.status === "activated"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-yellow-100 text-yellow-700"
+                  }`}
+                >
                   {voucher.status === "activated" ? "Kích hoạt" : "Tạm dừng"}
                 </span>
               </td>

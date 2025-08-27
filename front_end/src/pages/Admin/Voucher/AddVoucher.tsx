@@ -7,12 +7,12 @@ type FormData = {
   code: string;
   description?: string;
   discountType: "percent" | "fixed";
-  discountValue?: number;
+  discountValue: number;
   minOrderValue?: number;
   maxDiscountValue?: number | null;
   startDate: string;
   endDate: string;
-  usageLimit?: number;
+  usageLimit?: number | null;
   status: "activated" | "inactivated";
 };
 
@@ -34,6 +34,7 @@ const AddVoucher = () => {
       discountType: "percent",
       maxDiscountValue: null,
       status: "activated",
+      usageLimit: null,
     },
   });
 
@@ -56,6 +57,9 @@ const AddVoucher = () => {
         serverErrors.forEach((msg: string) => {
           if (msg.includes("Mã")) {
             setError("code", { type: "server", message: msg });
+          }
+          if (msg.includes("Giá trị giảm")) {
+            setError("discountValue", { type: "server", message: msg });
           }
         });
       } else {
@@ -134,29 +138,37 @@ const AddVoucher = () => {
             valueAsNumber: true,
             required: "Vui lòng nhập giá trị giảm",
             min: { value: 1, message: "Phải > 0" },
+            validate: (val) =>
+              discountType === "percent" && val > 100
+                ? "Giá trị giảm theo % phải ≤ 100"
+                : true,
           })}
           className="w-full border rounded px-3 py-2"
         />
         {errors.discountValue && (
-          <p className="text-red-500 text-sm">{errors.discountValue.message}</p>
+          <p className="text-red-500 text-sm">
+            {errors.discountValue.message}
+          </p>
         )}
       </div>
 
       {/* Giá trị tối thiểu đơn hàng */}
       <div>
         <label className="block font-medium mb-1">
-          <span className="text-red-500">*</span>Giá trị tối thiểu đơn hàng</label>
+          Giá trị tối thiểu đơn hàng
+        </label>
         <input
           type="number"
           {...register("minOrderValue", {
-            required: "Vui lòng nhập giá trị tối thiểu đơn hàng",
             valueAsNumber: true,
             min: { value: 1, message: "Phải > 0" },
           })}
           className="w-full border rounded px-3 py-2"
         />
         {errors.minOrderValue && (
-          <p className="text-red-500 text-sm">{errors.minOrderValue.message}</p>
+          <p className="text-red-500 text-sm">
+            {errors.minOrderValue.message}
+          </p>
         )}
       </div>
 
@@ -177,7 +189,9 @@ const AddVoucher = () => {
           }`}
         />
         {errors.maxDiscountValue && (
-          <p className="text-red-500 text-sm">{errors.maxDiscountValue.message}</p>
+          <p className="text-red-500 text-sm">
+            {errors.maxDiscountValue.message}
+          </p>
         )}
       </div>
 
@@ -191,6 +205,12 @@ const AddVoucher = () => {
             type="date"
             {...register("startDate", {
               required: "Vui lòng chọn ngày bắt đầu",
+              validate: (value) => {
+                const today = new Date().toISOString().split("T")[0];
+                return (
+                  value >= today || "Ngày bắt đầu không được trong quá khứ"
+                );
+              },
             })}
             className="w-full border rounded px-3 py-2"
           />
@@ -226,16 +246,16 @@ const AddVoucher = () => {
       {/* Giới hạn số lần sử dụng */}
       <div>
         <label className="block font-medium mb-1">
-          <span className="text-red-500">*</span> Giới hạn số lần sử dụng
+          Giới hạn số lần sử dụng
         </label>
         <input
           type="number"
           {...register("usageLimit", {
             valueAsNumber: true,
-            required: "Vui lòng nhập số lần sử dụng",
             min: { value: 1, message: "Phải >= 1" },
           })}
           className="w-full border rounded px-3 py-2"
+          placeholder="Để trống nếu không giới hạn"
         />
         {errors.usageLimit && (
           <p className="text-red-500 text-sm">{errors.usageLimit.message}</p>
