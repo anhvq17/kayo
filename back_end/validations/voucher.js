@@ -24,7 +24,13 @@ export const voucherSchema = Joi.object({
       "any.required": "Loại giảm giá là bắt buộc",
     }),
 
-  discountValue: Joi.number().min(1).required().messages({
+  discountValue: Joi.number().min(1).required().when("discountType", {
+    is: "percent",
+    then: Joi.number().max(100).messages({
+      "number.max": "Giá trị giảm theo % phải nhỏ hơn hoặc bằng 100",
+    }),
+  })
+  .messages({
     "number.base": "Giá trị giảm giá phải là số",
     "number.min": "Giá trị giảm giá phải > 0",
     "any.required": "Giá trị giảm giá là bắt buộc",
