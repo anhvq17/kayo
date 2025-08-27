@@ -649,6 +649,28 @@ const DetailOrder = () => {
               <p className="text-gray-700 text-sm mb-4">
                 Bạn muốn xử lý yêu cầu hoàn hàng này như thế nào?
               </p>
+              {order && (
+                <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded">
+                  {(order as any).returnReason && (
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-orange-800">Lý do khách hàng:</p>
+                      <p className="text-sm text-orange-700">{(order as any).returnReason}</p>
+                    </div>
+                  )}
+                  {Array.isArray((order as any).returnImages) && (order as any).returnImages.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-800 mb-2">Ảnh minh chứng:</p>
+                      <div className="grid grid-cols-5 gap-2">
+                        {(order as any).returnImages.map((img: string, idx: number) => (
+                          <a key={idx} href={resolveImageUrl(img)} target="_blank" rel="noreferrer" className="block w-16 h-16 border rounded overflow-hidden">
+                            <img src={resolveImageUrl(img)} alt="return" className="w-full h-full object-cover" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               
               <div className="mb-4">
                 <div className="space-y-2">
@@ -674,15 +696,8 @@ const DetailOrder = () => {
                   </label>
                 </div>
               </div>
-
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700 mb-2">
-                {returnAction === 'approve' 
-                  ? 'Đồng ý hoàn hàng sẽ chuyển trạng thái đơn hàng thành "Đã hoàn hàng". Nếu thanh toán qua VNPAY, trạng thái thanh toán sẽ tự động chuyển thành "Đã hoàn tiền".'
-                  : 'Từ chối hoàn hàng sẽ chuyển trạng thái đơn hàng thành "Từ chối hoàn hàng"'
-                }
-              </div>
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
-                Lưu ý: Khi đơn hàng chuyển sang trạng thái "Đã nhận hàng", trạng thái thanh toán sẽ tự động chuyển thành "Đã thanh toán" (áp dụng cho cả COD và VNPAY)
+                Lưu ý: Đọc kỹ nội dung khi ấn đồng ý hoàn hàng hoặc từ chối hoàn hàng.
               </div>
             </div>
             <div className="flex justify-end space-x-1">

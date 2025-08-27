@@ -61,6 +61,14 @@ const orderSchema = new mongoose.Schema(
     discountValue: { type: Number, default: undefined },
     cancelReason: { type: String },
     returnReason: { type: String },
+    returnItems: [
+      {
+        orderItemId: { type: mongoose.Schema.Types.ObjectId, ref: 'OrderItem' },
+        variantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Variant' },
+        quantity: { type: Number, default: 0 },
+      },
+    ],
+    returnImages: [{ type: String }],
   },
   { timestamps: true }
 );
