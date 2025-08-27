@@ -236,7 +236,7 @@ const OrderList = () => {
         form.append('orderStatus', 'Yêu cầu hoàn hàng');
         form.append('returnReason', returnReason.trim());
         form.append('returnItems', JSON.stringify(returnItems));
-        returnImages.forEach((file) => form.append('returnImages', file));
+        returnImages.slice(0, 3).forEach((file) => form.append('returnImages', file));
         await updateOrder(selectedOrderId, form as any);
       } else {
         await updateOrder(selectedOrderId, { 
@@ -667,7 +667,7 @@ const OrderList = () => {
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Lý do hoàn hàng <span className="text-red-500">*</span>
+                  Lý do hoàn hàng (tối đa 250 ký tự) <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={returnReason}
@@ -675,23 +675,31 @@ const OrderList = () => {
                   placeholder="Vui lòng nhập lý do hoàn hàng..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
                   rows={4}
+                  maxLength={250}
                   required
                 />
+                <div className="mt-1 text-xs text-gray-500 text-right">{returnReason.length}/250</div>
                 {(!returnReason.trim() || Object.values(returnSelections).every(v => (v||0) === 0)) && (
                   <p className="text-red-500 text-xs mt-1">Chọn ít nhất 1 sản phẩm & bắt buộc nhập lý do hoàn hàng</p>
                 )}
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ảnh minh chứng (tối đa 6 ảnh)
+                  Ảnh minh chứng (tối đa 3 ảnh)
                 </label>
                 <input
                   type="file"
                   accept="image/*"
                   multiple
                   onChange={(e) => {
-                    const files = Array.from(e.target.files || []).slice(0, 6);
-                    setReturnImages(files as File[]);
+                    const selected = Array.from(e.target.files || []);
+                    if (selected.length === 0) return;
+                    setReturnImages((prev) => {
+                      const merged = [...prev, ...selected];
+                      return merged.slice(0, 3) as File[];
+                    });
+                    // allow choosing the same file again if needed
+                    (e.target as HTMLInputElement).value = '';
                   }}
                   className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
                 />
