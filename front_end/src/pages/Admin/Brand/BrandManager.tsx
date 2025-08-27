@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Edit, Trash, Plus, AlertTriangle } from "lucide-react";
 import axios from "axios";
-import { Edit, Trash, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 interface Brand {
   _id: string;
@@ -11,6 +12,45 @@ interface Brand {
   updatedAt: string;
   productCount?: number;
 }
+
+// Custom confirm
+const confirmToast = (message: string): Promise<boolean> => {
+  return new Promise((resolve) => {
+    toast.custom((t) => (
+      <div className="bg-white p-6 rounded-xl shadow-2xl border border-gray-200 max-w-md w-full mx-auto animate-in fade-in zoom-in-95">
+        <div className="flex items-center gap-3 mb-4">
+          <AlertTriangle className="text-red-600" size={24} />
+          <h3 className="text-lg font-semibold text-gray-800">Xác nhận hành động</h3>
+        </div>
+        <p className="text-sm text-gray-600 mb-6">{message}</p>
+        <div className="flex justify-end gap-3">
+          <button
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+            onClick={() => {
+              toast.dismiss(t);
+              resolve(false);
+            }}
+          >
+            Hủy
+          </button>
+          <button
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+            onClick={() => {
+              toast.dismiss(t);
+              resolve(true);
+            }}
+          >
+            Xác nhận
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 0,
+      position: "top-center",
+      style: { background: "transparent", padding: 0, border: "none" },
+    });
+  });
+};
 
 const BrandManager = () => {
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -23,9 +63,9 @@ const BrandManager = () => {
       const { data } = await axios.get("http://localhost:3000/brands");
       setBrands(data.data);
       setSelectedIds([]);
-    } catch (error) {
-      alert("Lỗi khi lấy danh sách thương hiệu!");
-      console.error(error);
+    } catch (error: unknown) {
+      console.error("Lỗi khi lấy danh sách thương hiệu:", error);
+      toast.error("Lỗi khi lấy danh sách thương hiệu", { duration: 2000 });
     }
   };
 
@@ -44,17 +84,23 @@ const BrandManager = () => {
     if (!brand) return;
 
     if ((brand.productCount ?? 0) > 0) {
-      alert("Không thể xoá thương hiệu còn sản phẩm!");
+      toast.error(`Không thể xoá thương hiệu ${brand.name} vì còn sản phẩm`, { duration: 2000 });
       return;
     }
 
-    if (!window.confirm("Bạn có chắc muốn xoá thương hiệu này?")) return;
+    const confirmed = await confirmToast("Bạn có chắc muốn xoá thương hiệu này?");
+    if (!confirmed) return;
+
     try {
       await axios.delete(`http://localhost:3000/brands/soft/${id}`);
-      alert("Đã chuyển vào thùng rác");
+      toast.success("Đã chuyển thương hiệu vào thùng rác", { duration: 2000 });
       getBrandList();
-    } catch (error) {
-      alert("Xoá thất bại");
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message || "Xoá thất bại"
+          : "Xoá thất bại";
+      toast.error(msg, { duration: 2000 });
     }
   };
 
@@ -67,21 +113,25 @@ const BrandManager = () => {
 
     if (nonDeletableBrands.length > 0) {
       const names = nonDeletableBrands.map((b) => `- ${b.name}`).join("\n");
-      alert(`Không thể xoá các thương hiệu đang có sản phẩm:\n${names}`);
+      toast.error(`Không thể xoá các thương hiệu đang có sản phẩm:\n${names}`, { duration: 4000 });
       return;
     }
 
-    const confirm = window.confirm("Bạn có chắc muốn xoá các thương hiệu đã chọn?");
-    if (!confirm) return;
+    const confirmed = await confirmToast("Bạn có chắc muốn xoá các thương hiệu đã chọn?");
+    if (!confirmed) return;
 
     try {
       await axios.delete("http://localhost:3000/brands/soft-delete-many", {
         data: { ids: selectedIds },
       });
-      alert("Đã chuyển các thương hiệu vào thùng rác");
+      toast.success("Đã chuyển các thương hiệu vào thùng rác", { duration: 2000 });
       getBrandList();
-    } catch (error) {
-      alert("Xoá nhiều thất bại");
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message || "Xoá nhiều thất bại"
+          : "Xoá nhiều thất bại";
+      toast.error(msg, { duration: 2000 });
     }
   };
 
@@ -212,7 +262,7 @@ const BrandManager = () => {
             onClick={() => handlePageChange(i + 1)}
             className={`px-3 py-1 rounded ${currentPage === i + 1
               ? "bg-blue-600 text-white"
-              : "bg-gray-100"
+              : "bg-gray-200"
               }`}
           >
             {i + 1}

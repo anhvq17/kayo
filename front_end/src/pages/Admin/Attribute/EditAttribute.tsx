@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 type FormData = {
   name: string;
@@ -33,9 +34,9 @@ const EditAttribute = () => {
       const res = await axios.get(`http://localhost:3000/attribute/${id}`);
       const { name, attributeCode, description } = res.data.data;
       reset({ name, attributeCode, description });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Lỗi khi lấy dữ liệu thuộc tính:", error);
-      alert("Không tìm thấy thuộc tính");
+      toast.error("Không tìm thấy thuộc tính", { duration: 2000 });
       navigate("/admin/attributes");
     }
   };
@@ -48,12 +49,19 @@ const EditAttribute = () => {
   const onSubmit = async (data: FormData) => {
     try {
       await axios.put(`http://localhost:3000/attribute/${id}`, data);
-      alert("Cập nhật thuộc tính thành công!");
+      toast.success("Cập nhật thuộc tính thành công!", { duration: 2000 });
       navigate("/admin/attributes");
-    } catch (error: any) {
-      const msg = error.response?.data?.message || "Lỗi khi cập nhật!";
-      if (Array.isArray(error.response?.data?.errors)) {
-        error.response.data.errors.forEach((err: string) => {
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message || "Lỗi khi cập nhật!"
+          : "Lỗi khi cập nhật!";
+      if (
+        error instanceof Error &&
+        "response" in error &&
+        Array.isArray((error as any).response?.data?.errors)
+      ) {
+        (error as any).response.data.errors.forEach((err: string) => {
           if (err.includes("name")) {
             setError("name", { type: "server", message: err });
           }
@@ -62,7 +70,7 @@ const EditAttribute = () => {
           }
         });
       } else {
-        alert(msg);
+        toast.error(msg, { duration: 2000 });
       }
     }
   };
@@ -106,9 +114,7 @@ const EditAttribute = () => {
           placeholder="VD: volume"
         />
         {errors.attributeCode && (
-          <p className="text-red-500 text-sm">
-            {errors.attributeCode.message}
-          </p>
+          <p className="text-red-500 text-sm">{errors.attributeCode.message}</p>
         )}
       </div>
 

@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface FormData {
   name: string;
@@ -15,11 +16,13 @@ const AddBrand = () => {
     reset,
     formState: { errors },
   } = useForm<FormData>();
-
   const navigate = useNavigate();
   const [preview, setPreview] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const onSubmit = async (data: FormData) => {
+    if (isLoading) return; // Prevent multiple clicks
+    setIsLoading(true);
     try {
       const file = data.image[0];
       const formData = new FormData();
@@ -38,14 +41,19 @@ const AddBrand = () => {
         image: imageUrl,
       });
 
-      alert("Thêm thương hiệu thành công!");
+      toast.success("Thêm thương hiệu thành công!", { duration: 2000 });
       reset();
       navigate("/admin/brands");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Thêm brand lỗi:", error);
-      alert("Thêm thương hiệu thất bại!");
+      const msg =
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message || "Thêm thương hiệu thất bại!"
+          : "Thêm thương hiệu thất bại!";
+      toast.error(msg, { duration: 2000 });
+    } finally {
+      setIsLoading(false);
     }
-
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,6 +89,7 @@ const AddBrand = () => {
           })}
           className="w-full border rounded px-3 py-2"
           placeholder="VD: Gucci"
+          disabled={isLoading}
         />
         {errors.name && (
           <p className="text-red-500 text-sm">{errors.name.message}</p>
@@ -102,6 +111,7 @@ const AddBrand = () => {
           })}
           onChange={handleImageChange}
           className="w-full"
+          disabled={isLoading}
         />
         {errors.image && (
           <p className="text-red-500 text-sm">{errors.image.message}</p>
@@ -119,14 +129,17 @@ const AddBrand = () => {
       <div className="flex gap-x-4 mt-4">
         <button
           type="submit"
-          className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          className={`px-6 py-2 rounded text-white flex items-center justify-center transition
+            ${isLoading ? "bg-green-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
+          disabled={isLoading}
         >
-          Thêm thương hiệu
+          {isLoading ? "Loading..." : "Thêm thương hiệu"}
         </button>
         <button
           type="button"
           onClick={() => navigate("/admin/brands")}
           className="px-6 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+          disabled={isLoading}
         >
           Quay lại
         </button>

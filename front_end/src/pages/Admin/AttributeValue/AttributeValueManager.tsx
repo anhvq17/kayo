@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Edit, Trash, Plus } from "lucide-react";
+import { Edit, Trash, Plus, AlertTriangle } from "lucide-react";
 import axios from "axios";
+import { toast } from "sonner";
 
 type Attribute = {
   _id: string;
@@ -25,6 +26,45 @@ type GroupedValues = {
   values: AttributeValue[];
 };
 
+// Custom confirm
+const confirmToast = (message: string): Promise<boolean> => {
+  return new Promise((resolve) => {
+    toast.custom((t) => (
+      <div className="bg-white p-6 rounded-xl shadow-2xl border border-gray-200 max-w-md w-full mx-auto animate-in fade-in zoom-in-95">
+        <div className="flex items-center gap-3 mb-4">
+          <AlertTriangle className="text-red-600" size={24} />
+          <h3 className="text-lg font-semibold text-gray-800">Xác nhận hành động</h3>
+        </div>
+        <p className="text-sm text-gray-600 mb-6">{message}</p>
+        <div className="flex justify-end gap-3">
+          <button
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+            onClick={() => {
+              toast.dismiss(t);
+              resolve(false);
+            }}
+          >
+            Hủy
+          </button>
+          <button
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+            onClick={() => {
+              toast.dismiss(t);
+              resolve(true);
+            }}
+          >
+            Xác nhận
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 0, 
+      position: "top-center",
+      style: { background: "transparent", padding: 0, border: "none" },
+    });
+  });
+};
+
 const AttributeValueManager = () => {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [attributeValues, setAttributeValues] = useState<AttributeValue[]>([]);
@@ -38,8 +78,9 @@ const AttributeValueManager = () => {
     try {
       const res = await axios.get("http://localhost:3000/attribute"); // API lấy tất cả thuộc tính
       setAttributes(res.data.data);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Lỗi khi lấy danh sách thuộc tính:", error);
+      toast.error("Lỗi khi lấy danh sách thuộc tính", { duration: 2000 });
     }
   };
 
@@ -47,25 +88,26 @@ const AttributeValueManager = () => {
     try {
       const res = await axios.get("http://localhost:3000/attribute-value");
       setAttributeValues(res.data.data);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Lỗi khi lấy danh sách giá trị thuộc tính:", error);
+      toast.error("Lỗi khi lấy danh sách giá trị thuộc tính", { duration: 2000 });
     }
   };
 
   const handleSoftDelete = async (id: string) => {
-    const confirm = window.confirm("Bạn có chắc muốn xóa giá trị này?");
-    if (!confirm) return;
+    const confirmed = await confirmToast("Bạn có chắc muốn xóa giá trị này?");
+    if (!confirmed) return;
 
     try {
       await axios.delete(`http://localhost:3000/attribute-value/soft/${id}`);
-      alert("Đã chuyển vào thùng rác");
+      toast.success("Đã chuyển giá trị vào thùng rác", { duration: 2000 });
       fetchAttributeValues();
-    } catch (error: any) {
-      if (error.response?.data?.message) {
-        alert(error.response.data.message);
-      } else {
-        alert("Xóa thất bại");
-      }
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message || "Xóa thất bại"
+          : "Xóa thất bại";
+      toast.error(msg, { duration: 2000 });
     }
   };
 

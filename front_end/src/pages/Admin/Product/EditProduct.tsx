@@ -1,35 +1,75 @@
-import { useEffect, useState } from "react"
-import axios from "axios"
-import { useForm } from "react-hook-form"
-import AttributeSelector from "./AttributeSelector"
-import { Trash2, Upload } from "lucide-react"
-import type { AttributeValue, GroupedAttribute, VariantInput, VariantErrors, ProductInput } from "../../../types/Product"
-import { validateVariantField, validateAllVariants } from "./validate"
-import { useNavigate } from "react-router-dom"
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useForm } from "react-hook-form";
+import AttributeSelector from "./AttributeSelector";
+import { Trash2, Upload, AlertTriangle } from "lucide-react";
+import type { AttributeValue, GroupedAttribute, VariantInput, VariantErrors, ProductInput } from "../../../types/Product";
+import { validateVariantField, validateAllVariants } from "./validate";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
+// Custom confirm toast function with polished UI
+const confirmToast = (message: string): Promise<boolean> => {
+  return new Promise((resolve) => {
+    toast.custom((t) => (
+      <div className="bg-white p-6 rounded-xl shadow-2xl border border-gray-200 max-w-md w-full mx-auto animate-in fade-in zoom-in-95">
+        <div className="flex items-center gap-3 mb-4">
+          <AlertTriangle className="text-red-600" size={24} />
+          <h3 className="text-lg font-semibold text-gray-800">Xác nhận hành động</h3>
+        </div>
+        <p className="text-sm text-gray-600 mb-6">{message}</p>
+        <div className="flex justify-end gap-3">
+          <button
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+            onClick={() => {
+              toast.dismiss(t);
+              resolve(false);
+            }}
+          >
+            Hủy
+          </button>
+          <button
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+            onClick={() => {
+              toast.dismiss(t);
+              resolve(true);
+            }}
+          >
+            Xác nhận
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 0, // Keep toast open until user interacts
+      position: "top-center",
+      style: { background: "transparent", padding: 0, border: "none" },
+    });
+  });
+};
 
 const EditProduct = () => {
-  const navigate = useNavigate()
-  // Lấy productId từ URL (giả sử URL có dạng /admin/products/edit/:id)
+  const navigate = useNavigate();
+  // Lấy productId từ URL
   const getProductIdFromUrl = () => {
-    const path = window.location.pathname
-    const segments = path.split("/")
-    return segments[segments.length - 1] // Lấy segment cuối cùng
-  }
+    const path = window.location.pathname;
+    const segments = path.split("/");
+    return segments[segments.length - 1]; // Lấy segment cuối cùng
+  };
 
-  const [productId] = useState(() => getProductIdFromUrl())
-  const [attributes, setAttributes] = useState<GroupedAttribute[]>([])
-  const [selectedValues, setSelectedValues] = useState<{ [key: string]: AttributeValue[] }>({})
-  const [variants, setVariants] = useState<VariantInput[]>([])
-  const [categories, setCategories] = useState<{ _id: string; name: string }[]>([])
-  const [brands, setBrands] = useState<{ _id: string; name: string }[]>([])
-  const [variantErrors, setVariantErrors] = useState<VariantErrors[]>([])
-  const [hasSubmitted, setHasSubmitted] = useState(false)
-  const [productImagePreview, setProductImagePreview] = useState<string>("")
-  const [isUploading, setIsUploading] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [attributesLoaded, setAttributesLoaded] = useState(false)
-  const [variantDuplicationError, setVariantDuplicationError] = useState<string>("")
-  const [originalVariantIds, setOriginalVariantIds] = useState<string[]>([]) // xóa biến thể
+  const [productId] = useState(() => getProductIdFromUrl());
+  const [attributes, setAttributes] = useState<GroupedAttribute[]>([]);
+  const [selectedValues, setSelectedValues] = useState<{ [key: string]: AttributeValue[] }>({});
+  const [variants, setVariants] = useState<VariantInput[]>([]);
+  const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
+  const [brands, setBrands] = useState<{ _id: string; name: string }[]>([]);
+  const [variantErrors, setVariantErrors] = useState<VariantErrors[]>([]);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [productImagePreview, setProductImagePreview] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [attributesLoaded, setAttributesLoaded] = useState(false);
+  const [variantDuplicationError, setVariantDuplicationError] = useState<string>("");
+  const [originalVariantIds, setOriginalVariantIds] = useState<string[]>([]);
 
   const {
     register,
@@ -37,111 +77,111 @@ const EditProduct = () => {
     formState: { errors },
     watch,
     setValue,
-  } = useForm<ProductInput>()
+  } = useForm<ProductInput>();
 
-  const imageFile = watch("image")
+  const imageFile = watch("image");
 
   // Preview ảnh sản phẩm chính
   useEffect(() => {
     if (imageFile && imageFile.length > 0) {
-      const file = imageFile[0]
-      const reader = new FileReader()
+      const file = imageFile[0];
+      const reader = new FileReader();
       reader.onloadend = () => {
-        setProductImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
+        setProductImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-  }, [imageFile])
+  }, [imageFile]);
 
   // Fetch initial data (attributes, categories, brands)
   useEffect(() => {
     // Kiểm tra productId có hợp lệ không
     if (!productId || productId === "edit" || productId === "add") {
-      alert("ID sản phẩm không hợp lệ")
-      window.location.href = "/admin/products"
-      return
+      toast.error("ID sản phẩm không hợp lệ", { duration: 2000 });
+      navigate("/admin/products");
+      return;
     }
 
-    fetchInitialData()
-  }, [productId])
+    fetchInitialData();
+  }, [productId, navigate]);
 
   // Fetch product details khi attributes đã được load
   useEffect(() => {
     if (attributesLoaded && attributes.length > 0) {
-      console.log("Attributes loaded, now fetching product details...")
-      console.log("Loaded attributes:", attributes)
+      console.log("Attributes loaded, now fetching product details...");
+      console.log("Loaded attributes:", attributes);
       fetchProductDetails(attributes);
     }
-  }, [attributesLoaded, attributes])
+  }, [attributesLoaded, attributes]);
 
   const fetchInitialData = async () => {
     try {
-      setLoading(true)
-      console.log("Fetching data for product ID:", productId)
+      setLoading(true);
+      console.log("Fetching data for product ID:", productId);
 
       // Fetch attributes, categories, brands
       const [attributeRes, categoryRes, brandRes] = await Promise.all([
         axios.get("http://localhost:3000/attribute-value"),
         axios.get("http://localhost:3000/categories"),
         axios.get("http://localhost:3000/brands"),
-      ])
+      ]);
 
       // Group attributes
-      const values: AttributeValue[] = attributeRes.data.data
-      const grouped: { [key: string]: GroupedAttribute } = {}
+      const values: AttributeValue[] = attributeRes.data.data;
+      const grouped: { [key: string]: GroupedAttribute } = {};
       values.forEach((val) => {
-        const attrId = val.attributeId._id
+        const attrId = val.attributeId._id;
         if (!grouped[attrId]) {
           grouped[attrId] = {
             attributeId: attrId,
             name: val.attributeId.name,
             values: [],
-          }
+          };
         }
-        grouped[attrId].values.push(val)
-      })
+        grouped[attrId].values.push(val);
+      });
 
-      const groupedAttributes = Object.values(grouped)
-      console.log("Grouped attributes:", groupedAttributes)
+      const groupedAttributes = Object.values(grouped);
+      console.log("Grouped attributes:", groupedAttributes);
 
-      setAttributes(groupedAttributes)
-      setCategories(categoryRes.data.data)
-      setBrands(brandRes.data.data)
+      setAttributes(groupedAttributes);
+      setCategories(categoryRes.data.data);
+      setBrands(brandRes.data.data);
 
       // Đánh dấu attributes đã được load
-      setAttributesLoaded(true)
-    } catch (error) {
-      console.error("Lỗi khi tải dữ liệu:", error)
-      alert("Không thể tải dữ liệu sản phẩm")
-      setLoading(false)
+      setAttributesLoaded(true);
+    } catch (error: unknown) {
+      console.error("Lỗi khi tải dữ liệu:", error);
+      toast.error("Không thể tải dữ liệu sản phẩm", { duration: 2000 });
+      setLoading(false);
     }
-  }
+  };
 
   const fetchProductDetails = async (currentAttributes: GroupedAttribute[]) => {
     try {
-      console.log("Fetching product details for ID:", productId)
-      console.log("Using attributes:", currentAttributes)
+      console.log("Fetching product details for ID:", productId);
+      console.log("Using attributes:", currentAttributes);
 
       // Fetch product info
-      const productRes = await axios.get(`http://localhost:3000/products/${productId}`)
-      const product = productRes.data.data
+      const productRes = await axios.get(`http://localhost:3000/products/${productId}`);
+      const product = productRes.data.data;
 
-      console.log("Product data:", product)
+      console.log("Product data:", product);
 
       // Set form values
-      setValue("name", product.name)
-      setValue("description", product.description)
-      setValue("priceDefault", product.priceDefault.toString())
-      setValue("categoryId", product.categoryId._id)
-      setValue("brandId", product.brandId._id)
-      setProductImagePreview(product.image)
+      setValue("name", product.name);
+      setValue("description", product.description);
+      setValue("priceDefault", product.priceDefault.toString());
+      setValue("categoryId", product.categoryId._id);
+      setValue("brandId", product.brandId._id);
+      setProductImagePreview(product.image);
 
       // Lấy tất cả variants
       try {
-        const variantRes = await axios.get(`http://localhost:3000/variant/product/${productId}`)
-        const existingVariants = variantRes.data.data
+        const variantRes = await axios.get(`http://localhost:3000/variant/product/${productId}`);
+        const existingVariants = variantRes.data.data;
 
-        console.log("Variants data:", existingVariants)
+        console.log("Variants data:", existingVariants);
 
         // Convert variants to VariantInput format
         const convertedVariants: VariantInput[] = existingVariants.map((variant: any) => ({
@@ -154,68 +194,67 @@ const EditProduct = () => {
           stock: variant.stock_quantity.toString(),
           image: null,
           imagePreview: variant.image,
-        }))
+        }));
         console.log("convertedVariants:", convertedVariants);
 
-        setVariants(convertedVariants)
-        setOriginalVariantIds(existingVariants.map((v: any) => v._id)) // lưu lại ID các variant cũ
-        setVariantErrors(new Array(convertedVariants.length).fill(0).map(() => ({})))
-
+        setVariants(convertedVariants);
+        setOriginalVariantIds(existingVariants.map((v: any) => v._id));
+        setVariantErrors(new Array(convertedVariants.length).fill(0).map(() => ({})));
 
         // Set selected attribute values based on existing variants
-        const selectedAttrs: { [key: string]: AttributeValue[] } = {}
+        const selectedAttrs: { [key: string]: AttributeValue[] } = {};
 
         existingVariants.forEach((variant: any) => {
           variant.attributes.forEach((attr: any) => {
-            const attrId = attr.attributeId
-            const valueId = attr.valueId
+            const attrId = attr.attributeId;
+            const valueId = attr.valueId;
 
-            console.log("Processing attribute:", attrId, "value:", valueId)
+            console.log("Processing attribute:", attrId, "value:", valueId);
 
             // Find the attribute value using currentAttributes parameter
-            const attrGroup = currentAttributes.find((a) => a.attributeId === attrId)
-            console.log("Found attribute group:", attrGroup)
+            const attrGroup = currentAttributes.find((a) => a.attributeId === attrId);
+            console.log("Found attribute group:", attrGroup);
 
             if (attrGroup) {
-              const attrValue = attrGroup.values.find((v) => v._id === valueId)
-              console.log("Found attribute value:", attrValue)
+              const attrValue = attrGroup.values.find((v) => v._id === valueId);
+              console.log("Found attribute value:", attrValue);
 
               if (attrValue) {
                 if (!selectedAttrs[attrId]) {
-                  selectedAttrs[attrId] = []
+                  selectedAttrs[attrId] = [];
                 }
                 if (!selectedAttrs[attrId].find((v) => v._id === valueId)) {
-                  selectedAttrs[attrId].push(attrValue)
+                  selectedAttrs[attrId].push(attrValue);
                 }
               }
             }
-          })
-        })
+          });
+        });
 
-        console.log("Final selected attributes:", selectedAttrs)
-        setSelectedValues(selectedAttrs)
-      } catch (variantError) {
-        console.log("Không có variants hoặc lỗi khi tải variants:", variantError)
+        console.log("Final selected attributes:", selectedAttrs);
+        setSelectedValues(selectedAttrs);
+      } catch (variantError: unknown) {
+        console.log("Không có variants hoặc lỗi khi tải variants:", variantError);
         // Không có variants thì để trống
-        setVariants([])
-        setVariantErrors([])
-        setSelectedValues({})
+        setVariants([]);
+        setVariantErrors([]);
+        setSelectedValues({});
       }
-    } catch (error) {
-      console.error("Lỗi khi tải chi tiết sản phẩm:", error)
-      alert("Không thể tải chi tiết sản phẩm. Vui lòng kiểm tra ID sản phẩm.")
-      window.location.href = "/admin/products"
+    } catch (error: unknown) {
+      console.error("Lỗi khi tải chi tiết sản phẩm:", error);
+      toast.error("Không thể tải chi tiết sản phẩm. Vui lòng kiểm tra ID sản phẩm.", { duration: 2000 });
+      navigate("/admin/products");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSelectValues = (attributeId: string, selectedIds: string[]) => {
-    const group = attributes.find((a) => a.attributeId === attributeId)
-    if (!group) return
-    const selected = group.values.filter((val) => selectedIds.includes(val._id))
-    setSelectedValues((prev) => ({ ...prev, [attributeId]: selected }))
-  }
+    const group = attributes.find((a) => a.attributeId === attributeId);
+    if (!group) return;
+    const selected = group.values.filter((val) => selectedIds.includes(val._id));
+    setSelectedValues((prev) => ({ ...prev, [attributeId]: selected }));
+  };
 
   function cartesianProduct(arr: AttributeValue[][]): AttributeValue[][] {
     return arr.reduce(
@@ -235,28 +274,27 @@ const EditProduct = () => {
   }
 
   const generateVariants = () => {
-    const entries = Object.entries(selectedValues)
-    const attrVals = entries.map(([_, vals]) => vals)
-    if (attrVals.some((arr) => arr.length === 0)) return
+    const entries = Object.entries(selectedValues);
+    const attrVals = entries.map(([_, vals]) => vals);
+    if (attrVals.some((arr) => arr.length === 0)) return;
 
-    const cartesian = cartesianProduct(attrVals)
+    const cartesian = cartesianProduct(attrVals);
 
-    const newVariants: VariantInput[] = []
-    const duplicatedVariants: string[] = []
+    const newVariants: VariantInput[] = [];
+    const duplicatedVariants: string[] = [];
 
     cartesian.forEach((combo) => {
       const attrs = combo.map((val) => ({
         attributeId: val.attributeId._id,
         valueId: val._id,
-      }))
+      }));
 
-      const isDuplicate = variants.some((v) => areAttributesEqual(v.attributes, attrs))
+      const isDuplicate = variants.some((v) => areAttributesEqual(v.attributes, attrs));
 
       if (isDuplicate) {
-        // Mô tả lỗi trùng
-        const comboLabel = combo.map((v) => v.value).join(" - ")
-        duplicatedVariants.push(comboLabel)
-        return
+        const comboLabel = combo.map((v) => v.value).join(" - ");
+        duplicatedVariants.push(comboLabel);
+        return;
       }
 
       newVariants.push({
@@ -265,92 +303,90 @@ const EditProduct = () => {
         stock: "",
         image: null,
         imagePreview: "",
-      })
-    })
+      });
+    });
 
     if (newVariants.length > 0) {
-      setVariants((prev) => [...prev, ...newVariants])
-      setVariantErrors((prev) => [...prev, ...new Array(newVariants.length).fill(0).map(() => ({}))])
+      setVariants((prev) => [...prev, ...newVariants]);
+      setVariantErrors((prev) => [...prev, ...new Array(newVariants.length).fill(0).map(() => ({}))]);
     }
 
     if (duplicatedVariants.length > 0) {
-      const message = `Các biến thể sau đã tồn tại và không được tạo lại:\n- ${duplicatedVariants.join("\n- ")}`
-      setVariantDuplicationError(message)
+      const message = `Các biến thể sau đã tồn tại và không được tạo lại:\n- ${duplicatedVariants.join("\n- ")}`;
+      setVariantDuplicationError(message);
     } else {
-      setVariantDuplicationError("")
+      setVariantDuplicationError("");
     }
-  }
+  };
 
   const handleVariantChange = (index: number, field: keyof VariantInput, value: any) => {
     setVariants((prev) => {
-      const updated = [...prev]
-      updated[index][field] = value
+      const updated = [...prev];
+      updated[index][field] = value;
 
       // Nếu là file ảnh, tạo preview
       if (field === "image" && value) {
-        const reader = new FileReader()
+        const reader = new FileReader();
         reader.onloadend = () => {
           setVariants((prevVariants) => {
-            const updatedVariants = [...prevVariants]
-            updatedVariants[index].imagePreview = reader.result as string
-            return updatedVariants
-          })
-        }
-        reader.readAsDataURL(value)
+            const updatedVariants = [...prevVariants];
+            updatedVariants[index].imagePreview = reader.result as string;
+            return updatedVariants;
+          });
+        };
+        reader.readAsDataURL(value);
       }
 
-      return updated
-    })
+      return updated;
+    });
 
     // Validate field immediately
-    validateVariantField(variants, index, field, value, setVariantErrors)
-  }
+    validateVariantField(variants, index, field, value, setVariantErrors);
+  };
 
-  const removeVariant = (index: number) => {
-    const confirmDelete = window.confirm(
-      `Bạn có chắc muốn xóa biến thể này?`
-    );
-    if (!confirmDelete) return;
+  const removeVariant = async (index: number) => {
+    const confirmed = await confirmToast("Bạn có chắc muốn xóa biến thể này?");
+    if (!confirmed) return;
 
     setVariants((prev) => prev.filter((_, i) => i !== index));
     setVariantErrors((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const canGenerateVariants = attributes.every((attr) => selectedValues[attr.attributeId]?.length > 0)
+  const canGenerateVariants = attributes.every((attr) => selectedValues[attr.attributeId]?.length > 0);
 
   // Upload ảnh lên Cloudinary
   const uploadToCloudinary = async (file: File): Promise<string> => {
-    const formData = new FormData()
-    formData.append("file", file)
-    formData.append("upload_preset", "DATN_upload")
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "DATN_upload");
 
-    const cloudRes = await axios.post("https://api.cloudinary.com/v1_1/dvourchjx/image/upload", formData)
-    return cloudRes.data.secure_url
-  }
+    const cloudRes = await axios.post("https://api.cloudinary.com/v1_1/dvourchjx/image/upload", formData);
+    return cloudRes.data.secure_url;
+  };
 
   const onSubmit = async (data: ProductInput) => {
-    setHasSubmitted(true)
-    setIsUploading(true)
+    setHasSubmitted(true);
+    setIsUploading(true);
 
     if (variants.length === 0) {
-      alert("Bạn phải tạo ít nhất một biến thể.")
-      setIsUploading(false)
-      return
+      toast.error("Bạn phải tạo ít nhất một biến thể.", { duration: 2000 });
+      setIsUploading(false);
+      return;
     }
 
     if (!validateAllVariants(variants, setVariantErrors)) {
-      alert("Vui lòng kiểm tra và sửa các lỗi trong biến thể.")
-      setIsUploading(false)
-      return
+      toast.error("Vui lòng kiểm tra và sửa các lỗi trong biến thể.", { duration: 2000 });
+      setIsUploading(false);
+      return;
     }
 
     try {
       // Upload ảnh sản phẩm chính nếu có thay đổi
-      let productImageUrl = productImagePreview
+      let productImageUrl = productImagePreview;
       if (data.image && data.image.length > 0) {
-        console.log("Uploading product image to Cloudinary...")
-        productImageUrl = await uploadToCloudinary(data.image[0])
-        console.log("Product image uploaded:", productImageUrl)
+        console.log("Uploading product image to Cloudinary...");
+        productImageUrl = await uploadToCloudinary(data.image[0]);
+        console.log("Product image uploaded:", productImageUrl);
       }
 
       // Update product
@@ -361,25 +397,25 @@ const EditProduct = () => {
         categoryId: data.categoryId,
         brandId: data.brandId,
         image: productImageUrl,
-      }
+      };
 
-      console.log("Updating product with data:", productData)
+      console.log("Updating product with data:", productData);
       await axios.put(`http://localhost:3000/products/${productId}`, productData, {
         headers: {
           "Content-Type": "application/json",
         },
-      })
+      });
 
       // Xử lý từng biến thể: update nếu có _id, tạo mới nếu không
       for (let i = 0; i < variants.length; i++) {
-        const variant = variants[i]
+        const variant = variants[i];
 
         // Upload ảnh nếu có file mới
-        let variantImageUrl = variant.imagePreview || ""
+        let variantImageUrl = variant.imagePreview || "";
         if (variant.image) {
-          console.log(`Uploading variant ${i + 1} image to Cloudinary...`)
-          variantImageUrl = await uploadToCloudinary(variant.image)
-          console.log(`Variant ${i + 1} image uploaded:`, variantImageUrl)
+          console.log(`Uploading variant ${i + 1} image to Cloudinary...`);
+          variantImageUrl = await uploadToCloudinary(variant.image);
+          console.log(`Variant ${i + 1} image uploaded:`, variantImageUrl);
         }
 
         const variantData = {
@@ -388,52 +424,51 @@ const EditProduct = () => {
           stock_quantity: Number.parseInt(variant.stock),
           image: variantImageUrl,
           attributes: variant.attributes,
-        }
+        };
 
         if (variant._id) {
           // Cập nhật biến thể cũ
           await axios.put(`http://localhost:3000/variant/${variant._id}`, variantData, {
             headers: { "Content-Type": "application/json" },
-          })
-          console.log(`Updated variant ${i + 1}`)
+          });
+          console.log(`Updated variant ${i + 1}`);
         } else {
           // Thêm mới biến thể
           await axios.post("http://localhost:3000/variant", variantData, {
             headers: { "Content-Type": "application/json" },
-          })
-          console.log(`Created variant ${i + 1}`)
+          });
+          console.log(`Created variant ${i + 1}`);
         }
       }
 
-      //  Xử lý xóa những biến thể đã bị loại khỏi danh sách hiện tại
-      const currentVariantIds = variants.filter(v => v._id).map(v => v._id)
-      const deletedVariantIds = originalVariantIds.filter(id => !currentVariantIds.includes(id))
+      // Xử lý xóa những biến thể đã bị loại khỏi danh sách hiện tại
+      const currentVariantIds = variants.filter((v) => v._id).map((v) => v._id);
+      const deletedVariantIds = originalVariantIds.filter((id) => !currentVariantIds.includes(id));
 
       for (const variantId of deletedVariantIds) {
         try {
-          await axios.delete(`http://localhost:3000/variant/soft/${variantId}`)
-          console.log(`Deleted variant ${variantId}`)
-        } catch (deleteError) {
-          console.error(`Error deleting variant ${variantId}:`, deleteError)
+          await axios.delete(`http://localhost:3000/variant/soft/${variantId}`);
+          console.log(`Deleted variant ${variantId}`);
+        } catch (deleteError: unknown) {
+          console.error(`Error deleting variant ${variantId}:`, deleteError);
         }
       }
 
-      alert("Cập nhật sản phẩm thành công!")
-      navigate("/admin/products")
-    } catch (error: any) {
-      console.error("Error updating product:", error)
-      if (error?.response?.data) {
-        const errorMessage = error.response.data.message || error.response.data.error || "Lỗi không xác định"
-        alert(`Cập nhật sản phẩm thất bại: ${errorMessage}`)
-      } else if (error?.message) {
-        alert(`Cập nhật sản phẩm thất bại: ${error.message}`)
-      } else {
-        alert("Cập nhật sản phẩm thất bại: Lỗi kết nối")
-      }
+      toast.success("Cập nhật sản phẩm thành công!", { duration: 2000 });
+      navigate("/admin/products");
+    } catch (error: unknown) {
+      console.error("Error updating product:", error);
+      const errorMessage =
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message ||
+            (error as any).response?.data?.error ||
+            error.message
+          : "Lỗi không xác định";
+      toast.error(`Cập nhật sản phẩm thất bại: ${errorMessage}`, { duration: 2000 });
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -442,7 +477,7 @@ const EditProduct = () => {
           <div className="text-lg">Đang tải dữ liệu sản phẩm ID: {productId}...</div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -476,8 +511,8 @@ const EditProduct = () => {
               })}
               value={watch("priceDefault")?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") || ""}
               onChange={(e) => {
-                const rawValue = e.target.value.replace(/\./g, ""); // bỏ dấu chấm
-                setValue("priceDefault", rawValue, { shouldValidate: true }); // lưu số và validate lại
+                const rawValue = e.target.value.replace(/\./g, "");
+                setValue("priceDefault", rawValue, { shouldValidate: true });
               }}
               className="border rounded px-3 py-2 w-full"
               placeholder="VD: 1.000.000"
@@ -569,8 +604,7 @@ const EditProduct = () => {
           <button
             type="button"
             onClick={generateVariants}
-            className={`mt-2 px-4 py-2 rounded text-white ${canGenerateVariants ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"
-              }`}
+            className={`mt-2 px-4 py-2 rounded text-white ${canGenerateVariants ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"}`}
             disabled={!canGenerateVariants}
           >
             Tạo lại biến thể
@@ -616,25 +650,25 @@ const EditProduct = () => {
                       {attributes.map((attr) => {
                         const foundAttr = v.attributes.find(
                           (a) => a.attributeId?.toString() === attr.attributeId?.toString()
-                        )
+                        );
                         const foundVal = attr.values.find(
                           (val) => val._id?.toString() === foundAttr?.valueId?.toString()
-                        )
+                        );
                         return (
                           <td key={attr.attributeId} className="border px-2 py-1">
                             {foundVal?.value}
                           </td>
-                        )
+                        );
                       })}
-                      {/* giá biến thể  */}
+                      {/* giá biến thể */}
                       <td className="border px-2 py-1">
                         <div className="space-y-1">
                           <input
                             type="text"
                             value={v.price?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") || ""}
                             onChange={(e) => {
-                              const rawValue = e.target.value.replace(/\./g, ""); // bỏ dấu chấm
-                              handleVariantChange(i, "price", rawValue); // lưu giá trị số dạng chuỗi
+                              const rawValue = e.target.value.replace(/\./g, "");
+                              handleVariantChange(i, "price", rawValue);
                             }}
                             className={`w-24 border px-1 py-1 rounded ${variantErrors[i]?.price ? "border-red-500" : "border-gray-300"}`}
                             placeholder="0"
@@ -642,7 +676,7 @@ const EditProduct = () => {
                           {variantErrors[i]?.price && <p className="text-red-500 text-xs">{variantErrors[i].price}</p>}
                         </div>
                       </td>
-                      {/* quantity biến thể  */}
+                      {/* số lượng biến thể */}
                       <td className="border px-2 py-1">
                         <div className="space-y-1">
                           <input
@@ -655,7 +689,7 @@ const EditProduct = () => {
                           {variantErrors[i]?.stock && <p className="text-red-500 text-xs">{variantErrors[i].stock}</p>}
                         </div>
                       </td>
-                      {/* ảnh biến thể  */}
+                      {/* ảnh biến thể */}
                       <td className="border px-2 py-1">
                         <div className="space-y-1">
                           <input
@@ -700,8 +734,7 @@ const EditProduct = () => {
           <button
             type="submit"
             disabled={isUploading}
-            className={`px-4 py-2 rounded text-white transition-colors ${isUploading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
-              }`}
+            className={`px-4 py-2 rounded text-white transition-colors ${isUploading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
           >
             {isUploading ? (
               <div className="flex items-center gap-2">
@@ -713,15 +746,17 @@ const EditProduct = () => {
             )}
           </button>
 
-          <a href="/admin/products">
-            <button type="button" className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50">
-              Hủy
-            </button>
-          </a>
+          <button
+            type="button"
+            onClick={() => navigate("/admin/products")}
+            className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            Hủy
+          </button>
         </div>
       </form>
     </div>
-  )
-}
+  );
+};
 
-export default EditProduct
+export default EditProduct;

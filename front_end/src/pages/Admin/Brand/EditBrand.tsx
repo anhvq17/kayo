@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import { toast } from "sonner";
 
 interface Brand {
   _id: string;
@@ -34,8 +35,9 @@ const EditBrand = () => {
       const brand = res.data.data;
       reset(brand);
       setOldImage(brand.image);
-    } catch (error) {
-      alert("Lỗi khi tải chi tiết thương hiệu");
+    } catch (error: unknown) {
+      console.error("Lỗi khi tải chi tiết thương hiệu:", error);
+      toast.error("Lỗi khi tải chi tiết thương hiệu", { duration: 2000 });
     } finally {
       setLoading(false);
     }
@@ -71,11 +73,15 @@ const EditBrand = () => {
         image: imageUrl,
       });
 
-      alert("Cập nhật thương hiệu thành công");
+      toast.success("Cập nhật thương hiệu thành công!", { duration: 2000 });
       nav("/admin/brands");
-    } catch (error) {
-      alert("Lỗi khi cập nhật thương hiệu");
-      console.error(error);
+    } catch (error: unknown) {
+      console.error("Lỗi khi cập nhật thương hiệu:", error);
+      const msg =
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message || "Cập nhật thương hiệu thất bại!"
+          : "Cập nhật thương hiệu thất bại!";
+      toast.error(msg, { duration: 2000 });
     }
   };
 

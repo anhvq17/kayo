@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 interface CategoryForm {
   name: string;
@@ -24,9 +25,14 @@ const EditCategory = () => {
       try {
         const res = await axios.get(`http://localhost:3000/categories/${id}`);
         reset(res.data.data);
-      } catch (error) {
-        alert("Lỗi khi tải chi tiết danh mục");
-        console.error(error);
+        toast.success("Tải chi tiết danh mục thành công!", { duration: 2000 });
+      } catch (error: unknown) {
+        console.error("Lỗi khi tải chi tiết danh mục:", error);
+        const msg =
+          error instanceof Error && "response" in error
+            ? (error as any).response?.data?.message || "Lỗi khi tải chi tiết danh mục"
+            : "Lỗi khi tải chi tiết danh mục";
+        toast.error(msg, { duration: 2000 });
       }
     }
     if (id) {
@@ -37,11 +43,15 @@ const EditCategory = () => {
   const onSubmit = async (data: CategoryForm) => {
     try {
       await axios.patch(`http://localhost:3000/categories/${id}`, data);
-      alert("Cập nhật danh mục thành công");
+      toast.success("Cập nhật danh mục thành công!", { duration: 2000 });
       navigate("/admin/categories");
-    } catch (error) {
-      alert("Lỗi khi cập nhật danh mục");
-      console.error(error);
+    } catch (error: unknown) {
+      console.error("Lỗi khi cập nhật danh mục:", error);
+      const msg =
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message || "Lỗi khi cập nhật danh mục"
+          : "Lỗi khi cập nhật danh mục";
+      toast.error(msg, { duration: 2000 });
     }
   };
 
@@ -84,7 +94,7 @@ const EditCategory = () => {
           className="w-full border rounded px-3 py-2"
         >
           <option value="activated">Hoạt động</option>
-          <option value="deactivated">Tạm khoá</option>
+          <option value="deactivated">Tạm khóa</option>
         </select>
       </div>
 

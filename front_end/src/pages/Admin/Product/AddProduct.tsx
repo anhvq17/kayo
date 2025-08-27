@@ -1,25 +1,26 @@
-import { useEffect, useState } from "react"
-import axios from "axios"
-import { useForm } from "react-hook-form"
-import AttributeSelector from "./AttributeSelector"
-import { Trash2, Upload } from "lucide-react"
-import type { AttributeValue, GroupedAttribute, ProductInput, VariantErrors, VariantInput } from "../../../types/Product"
-import { validateVariantField, validateAllVariants } from "./validate"
-import { areAttributesEqual } from "../../../utils/compareAttributes"
-import { useNavigate } from "react-router-dom"
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useForm } from "react-hook-form";
+import AttributeSelector from "./AttributeSelector";
+import { Trash2, Upload } from "lucide-react";
+import type { AttributeValue, GroupedAttribute, ProductInput, VariantErrors, VariantInput } from "../../../types/Product";
+import { validateVariantField, validateAllVariants } from "./validate";
+import { areAttributesEqual } from "../../../utils/compareAttributes";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const AddProduct = () => {
   const navigate = useNavigate();
-  const [attributes, setAttributes] = useState<GroupedAttribute[]>([])
-  const [selectedValues, setSelectedValues] = useState<{ [key: string]: AttributeValue[] }>({})
-  const [variants, setVariants] = useState<VariantInput[]>([])
-  const [categories, setCategories] = useState<{ _id: string; name: string }[]>([])
-  const [brands, setBrands] = useState<{ _id: string; name: string }[]>([])
-  const [variantErrors, setVariantErrors] = useState<VariantErrors[]>([])
-  const [hasSubmitted, setHasSubmitted] = useState(false)
-  const [productImagePreview, setProductImagePreview] = useState<string>("")
-  const [isUploading, setIsUploading] = useState(false)
-  const [variantDuplicationError, setVariantDuplicationError] = useState("")
+  const [attributes, setAttributes] = useState<GroupedAttribute[]>([]);
+  const [selectedValues, setSelectedValues] = useState<{ [key: string]: AttributeValue[] }>({});
+  const [variants, setVariants] = useState<VariantInput[]>([]);
+  const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
+  const [brands, setBrands] = useState<{ _id: string; name: string }[]>([]);
+  const [variantErrors, setVariantErrors] = useState<VariantErrors[]>([]);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [productImagePreview, setProductImagePreview] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [variantDuplicationError, setVariantDuplicationError] = useState("");
 
   const {
     register,
@@ -27,86 +28,96 @@ const AddProduct = () => {
     setValue,
     formState: { errors },
     watch,
-    reset, // Thêm reset method
-  } = useForm<ProductInput>()
+    reset,
+  } = useForm<ProductInput>();
 
-  const imageFile = watch("image")
+  const imageFile = watch("image");
 
   // Preview ảnh sản phẩm chính
   useEffect(() => {
     if (imageFile && imageFile.length > 0) {
-      const file = imageFile[0]
-      const reader = new FileReader()
+      const file = imageFile[0];
+      const reader = new FileReader();
       reader.onloadend = () => {
-        setProductImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
+        setProductImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     } else {
-      setProductImagePreview("")
+      setProductImagePreview("");
     }
-  }, [imageFile])
+  }, [imageFile]);
 
   useEffect(() => {
     const fetchAttributes = async () => {
-      const res = await axios.get("http://localhost:3000/attribute-value")
-      const values: AttributeValue[] = res.data.data
-      const grouped: { [key: string]: GroupedAttribute } = {}
-      values.forEach((val) => {
-        const attrId = val.attributeId._id
-        if (!grouped[attrId]) {
-          grouped[attrId] = {
-            attributeId: attrId,
-            name: val.attributeId.name,
-            values: [],
+      try {
+        const res = await axios.get("http://localhost:3000/attribute-value");
+        const values: AttributeValue[] = res.data.data;
+        const grouped: { [key: string]: GroupedAttribute } = {};
+        values.forEach((val) => {
+          const attrId = val.attributeId._id;
+          if (!grouped[attrId]) {
+            grouped[attrId] = {
+              attributeId: attrId,
+              name: val.attributeId.name,
+              values: [],
+            };
           }
-        }
-        grouped[attrId].values.push(val)
-      })
-      setAttributes(Object.values(grouped))
-    }
+          grouped[attrId].values.push(val);
+        });
+        setAttributes(Object.values(grouped));
+      } catch (error: unknown) {
+        console.error("Lỗi khi lấy danh sách thuộc tính:", error);
+        toast.error("Lỗi khi lấy danh sách thuộc tính", { duration: 2000 });
+      }
+    };
 
     const fetchMeta = async () => {
-      const [catRes, brandRes] = await Promise.all([
-        axios.get("http://localhost:3000/categories"),
-        axios.get("http://localhost:3000/brands"),
-      ])
-      setCategories(catRes.data.data)
-      setBrands(brandRes.data.data)
-    }
+      try {
+        const [catRes, brandRes] = await Promise.all([
+          axios.get("http://localhost:3000/categories"),
+          axios.get("http://localhost:3000/brands"),
+        ]);
+        setCategories(catRes.data.data);
+        setBrands(brandRes.data.data);
+      } catch (error: unknown) {
+        console.error("Lỗi khi lấy danh mục và thương hiệu:", error);
+        toast.error("Lỗi khi lấy danh mục và thương hiệu", { duration: 2000 });
+      }
+    };
 
-    fetchAttributes()
-    fetchMeta()
-  }, [])
+    fetchAttributes();
+    fetchMeta();
+  }, []);
 
   const handleSelectValues = (attributeId: string, selectedIds: string[]) => {
-    const group = attributes.find((a) => a.attributeId === attributeId)
-    if (!group) return
-    const selected = group.values.filter((val) => selectedIds.includes(val._id))
-    setSelectedValues((prev) => ({ ...prev, [attributeId]: selected }))
-  }
+    const group = attributes.find((a) => a.attributeId === attributeId);
+    if (!group) return;
+    const selected = group.values.filter((val) => selectedIds.includes(val._id));
+    setSelectedValues((prev) => ({ ...prev, [attributeId]: selected }));
+  };
 
   const generateVariants = () => {
-    const entries = Object.entries(selectedValues)
-    const attrVals = entries.map(([_, vals]) => vals)
-    if (attrVals.some((arr) => arr.length === 0)) return
+    const entries = Object.entries(selectedValues);
+    const attrVals = entries.map(([_, vals]) => vals);
+    if (attrVals.some((arr) => arr.length === 0)) return;
     const cartesian = attrVals.reduce<AttributeValue[][]>(
       (acc, curr) => acc.flatMap((a) => curr.map((b) => [...a, b])),
       [[]],
-    )
-    const existingVariants = [...variants]
-    const duplicatedVariants: string[] = []
-    const addedVariants: VariantInput[] = []
+    );
+    const existingVariants = [...variants];
+    const duplicatedVariants: string[] = [];
+    const addedVariants: VariantInput[] = [];
 
     cartesian.forEach((combo) => {
       const attrs = combo.map((val) => ({
         attributeId: val.attributeId._id,
         valueId: val._id,
-      }))
+      }));
 
-      const isDuplicate = existingVariants.some((v) => areAttributesEqual(v.attributes, attrs))
+      const isDuplicate = existingVariants.some((v) => areAttributesEqual(v.attributes, attrs));
       if (isDuplicate) {
-        duplicatedVariants.push(combo.map((v) => v.value).join(" - "))
-        return
+        duplicatedVariants.push(combo.map((v) => v.value).join(" - "));
+        return;
       }
 
       addedVariants.push({
@@ -115,63 +126,63 @@ const AddProduct = () => {
         stock: "",
         image: null,
         imagePreview: "",
-      })
-    })
+      });
+    });
 
     if (addedVariants.length > 0) {
-      setVariants((prev) => [...prev, ...addedVariants])
-      setVariantErrors((prev) => [...prev, ...new Array(addedVariants.length).fill({})])
+      setVariants((prev) => [...prev, ...addedVariants]);
+      setVariantErrors((prev) => [...prev, ...new Array(addedVariants.length).fill({})]);
     }
 
     if (duplicatedVariants.length > 0) {
-      setVariantDuplicationError(`Các biến thể sau đã tồn tại:\n- ${duplicatedVariants.join("\n- ")}`)
+      setVariantDuplicationError(`Các biến thể sau đã tồn tại:\n- ${duplicatedVariants.join("\n- ")}`);
     } else {
-      setVariantDuplicationError("")
+      setVariantDuplicationError("");
     }
-  }
+  };
 
   const handleVariantChange = (index: number, field: keyof VariantInput, value: any) => {
     setVariants((prev) => {
-      const updated = [...prev]
-      updated[index][field] = value
+      const updated = [...prev];
+      updated[index][field] = value;
 
       // Nếu là file ảnh, tạo preview
       if (field === "image" && value) {
-        const reader = new FileReader()
+        const reader = new FileReader();
         reader.onloadend = () => {
           setVariants((prevVariants) => {
-            const updatedVariants = [...prevVariants]
-            updatedVariants[index].imagePreview = reader.result as string
-            return updatedVariants
-          })
-        }
-        reader.readAsDataURL(value)
+            const updatedVariants = [...prevVariants];
+            updatedVariants[index].imagePreview = reader.result as string;
+            return updatedVariants;
+          });
+        };
+        reader.readAsDataURL(value);
       }
 
-      return updated
-    })
+      return updated;
+    });
 
     // Validate field immediately
-    validateVariantField(variants, index, field, value, setVariantErrors)
-  }
+    validateVariantField(variants, index, field, value, setVariantErrors);
+  };
 
   const removeVariant = (index: number) => {
-    setVariants((prev) => prev.filter((_, i) => i !== index))
-    setVariantErrors((prev) => prev.filter((_, i) => i !== index))
-  }
+    setVariants((prev) => prev.filter((_, i) => i !== index));
+    setVariantErrors((prev) => prev.filter((_, i) => i !== index));
+  };
 
-  const canGenerateVariants = attributes.every((attr) => selectedValues[attr.attributeId]?.length > 0)
+  const canGenerateVariants = attributes.every((attr) => selectedValues[attr.attributeId]?.length > 0);
 
   // Upload ảnh lên Cloudinary
   const uploadToCloudinary = async (file: File): Promise<string> => {
-    const formData = new FormData()
-    formData.append("file", file)
-    formData.append("upload_preset", "DATN_upload")
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "DATN_upload");
 
-    const cloudRes = await axios.post("https://api.cloudinary.com/v1_1/dvourchjx/image/upload", formData)
+    const cloudRes = await axios.post("https://api.cloudinary.com/v1_1/dvourchjx/image/upload", formData);
 
-    return cloudRes.data.secure_url
-  }
+    return cloudRes.data.secure_url;
+  };
 
   const onSubmit = async (data: ProductInput) => {
     setHasSubmitted(true);
@@ -179,7 +190,7 @@ const AddProduct = () => {
 
     // Kiểm tra có biến thể không
     if (variants.length === 0) {
-      alert("Bạn phải tạo ít nhất một biến thể.");
+      toast.error("Bạn phải tạo ít nhất một biến thể.", { duration: 2000 });
       setIsUploading(false);
       return;
     }
@@ -187,7 +198,7 @@ const AddProduct = () => {
     // Kiểm tra biến thể có hợp lệ không
     const isVariantValid = validateAllVariants(variants, setVariantErrors);
     if (!isVariantValid) {
-      alert("Vui lòng kiểm tra và sửa các lỗi trong biến thể.");
+      toast.error("Vui lòng kiểm tra và sửa các lỗi trong biến thể.", { duration: 2000 });
       setIsUploading(false);
       return;
     }
@@ -251,17 +262,17 @@ const AddProduct = () => {
             },
           });
           console.log(`Variant ${i + 1} created successfully`);
-        } catch (variantError: any) {
+        } catch (variantError: unknown) {
           console.error(`Error creating variant ${i + 1}:`, variantError);
-          if (variantError?.response?.data) {
-            console.error("Variant error response:", variantError.response.data);
+          if (variantError instanceof Error && "response" in variantError) {
+            console.error("Variant error response:", (variantError as any).response?.data);
           }
           throw variantError;
         }
       }
 
       // Thành công
-      alert("Tạo sản phẩm thành công!");
+      toast.success("Tạo sản phẩm thành công!", { duration: 2000 });
 
       // Reset lại form
       setVariants([]);
@@ -270,17 +281,17 @@ const AddProduct = () => {
       setProductImagePreview("");
       setHasSubmitted(false);
       reset();
-
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating product:", error);
 
       const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        "Lỗi không xác định";
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message ||
+            (error as any).response?.data?.error ||
+            error.message
+          : "Lỗi không xác định";
 
-      alert(`Tạo sản phẩm thất bại: ${errorMessage}`);
+      toast.error(`Tạo sản phẩm thất bại: ${errorMessage}`, { duration: 2000 });
     } finally {
       setIsUploading(false);
     }
@@ -311,8 +322,8 @@ const AddProduct = () => {
               })}
               value={watch("priceDefault")?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") || ""}
               onChange={(e) => {
-                const rawValue = e.target.value.replace(/\./g, ""); // bỏ dấu chấm
-                setValue("priceDefault", rawValue); // lưu giá trị dạng số
+                const rawValue = e.target.value.replace(/\./g, "");
+                setValue("priceDefault", rawValue);
               }}
               className="border rounded px-3 py-2 w-full"
               placeholder="VD: 1.000.000"
@@ -406,8 +417,7 @@ const AddProduct = () => {
           <button
             type="button"
             onClick={generateVariants}
-            className={`mt-2 px-4 py-2 rounded text-white ${canGenerateVariants ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"
-              }`}
+            className={`mt-2 px-4 py-2 rounded text-white ${canGenerateVariants ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"}`}
             disabled={!canGenerateVariants}
           >
             Tạo biến thể
@@ -449,15 +459,15 @@ const AddProduct = () => {
                     <tr key={i} className="text-center">
                       <td className="border px-2 py-1">{i + 1}</td>
                       {attributes.map((attr) => {
-                        const foundAttr = v.attributes.find((a) => a.attributeId === attr.attributeId)
-                        const foundVal = attr.values.find((val) => val._id === foundAttr?.valueId)
+                        const foundAttr = v.attributes.find((a) => a.attributeId === attr.attributeId);
+                        const foundVal = attr.values.find((val) => val._id === foundAttr?.valueId);
                         return (
                           <td key={attr.attributeId} className="border px-2 py-1">
                             {foundVal?.value}
                           </td>
-                        )
+                        );
                       })}
-                      {/* giá biến thể  */}
+                      {/* giá biến thể */}
                       <td className="border px-2 py-1">
                         <div className="space-y-1">
                           <input
@@ -473,7 +483,7 @@ const AddProduct = () => {
                           {variantErrors[i]?.price && <p className="text-red-500 text-xs">{variantErrors[i].price}</p>}
                         </div>
                       </td>
-                      {/* quantity biến thể  */}
+                      {/* số lượng biến thể */}
                       <td className="border px-2 py-1">
                         <div className="space-y-1">
                           <input
@@ -486,7 +496,7 @@ const AddProduct = () => {
                           {variantErrors[i]?.stock && <p className="text-red-500 text-xs">{variantErrors[i].stock}</p>}
                         </div>
                       </td>
-                      {/* ảnh biến thể  */}
+                      {/* ảnh biến thể */}
                       <td className="border px-2 py-1">
                         <div className="space-y-1">
                           <input
@@ -530,8 +540,7 @@ const AddProduct = () => {
         <button
           type="submit"
           disabled={isUploading}
-          className={`px-4 py-2  rounded text-white transition-colors ${isUploading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
-            }`}
+          className={`px-4 py-2 rounded text-white transition-colors ${isUploading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
         >
           {isUploading ? (
             <div className="flex items-center gap-2">
@@ -552,7 +561,7 @@ const AddProduct = () => {
         </button>
       </form>
     </div>
-  )
-}
+  );
+};
 
-export default AddProduct
+export default AddProduct;

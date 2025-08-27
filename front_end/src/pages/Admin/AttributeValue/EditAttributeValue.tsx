@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 type FormData = {
   value: string;
@@ -44,9 +45,9 @@ const EditAttributeValue = () => {
           valueCode,
           attributeId: attributeId._id, // Chuyển về ID chuỗi
         });
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Lỗi khi tải dữ liệu:", error);
-        alert("Không thể tải dữ liệu cần thiết");
+        toast.error("Không thể tải dữ liệu cần thiết", { duration: 2000 });
         navigate("/admin/attribute-values");
       }
     };
@@ -57,12 +58,19 @@ const EditAttributeValue = () => {
   const onSubmit = async (data: FormData) => {
     try {
       await axios.put(`http://localhost:3000/attribute-value/${id}`, data);
-      alert("Cập nhật thành công!");
+      toast.success("Cập nhật giá trị thành công!", { duration: 2000 });
       navigate("/admin/attribute-values");
-    } catch (error: any) {
-      const msg = error.response?.data?.message || "Lỗi khi cập nhật!";
-      if (Array.isArray(error.response?.data?.errors)) {
-        error.response.data.errors.forEach((err: string) => {
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error && "response" in error
+          ? (error as any).response?.data?.message || "Lỗi khi cập nhật!"
+          : "Lỗi khi cập nhật!";
+      if (
+        error instanceof Error &&
+        "response" in error &&
+        Array.isArray((error as any).response?.data?.errors)
+      ) {
+        (error as any).response.data.errors.forEach((err: string) => {
           if (err.includes("value")) {
             setError("value", { type: "server", message: err });
           }
@@ -74,7 +82,7 @@ const EditAttributeValue = () => {
           }
         });
       } else {
-        alert(msg);
+        toast.error(msg, { duration: 2000 });
       }
     }
   };
