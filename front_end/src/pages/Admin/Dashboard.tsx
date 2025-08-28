@@ -275,51 +275,6 @@ export default function Dashboard() {
     return "Không xác định";
   };
 
-const topCustomers = Object.values(
-  orders.reduce((acc, order) => {
-    if (!order.userId) return acc;
-    // Bỏ qua các đơn đã hoàn hàng/đã hoàn tiền khi tính tổng chi tiêu
-    if (
-      order.orderStatus === "Đã hoàn hàng" ||
-      order.paymentStatus === "Đã hoàn tiền"
-    ) {
-      return acc;
-    }
-
-    const id = order.userId._id;
-    const name = order.userId.username;
-    const total = order.originalAmount ?? order.totalAmount ?? 0;
-
-    if (!acc[id]) {
-      acc[id] = { id, name, total: 0 };
-    }
-    acc[id].total += total;
-
-    return acc;
-  }, {} as Record<string, { id: string; name: string; total: number }>)
-)
-  .sort((a, b) => b.total - a.total)
-  .slice(0, 5);
-
-  const getRank = (total: number) => {
-    if (total > 50000000) return "Vàng";
-    if (total > 25000000) return "Bạc";
-    return "Đồng";
-  };
-
-  const getRankColorClass = (rank: string) => {
-    switch (rank) {
-      case "Vàng":
-        return "text-yellow-500 font-semibold";
-      case "Bạc":
-        return "text-gray-500 font-semibold";
-      case "Đồng":
-        return "text-orange-500 font-semibold";
-      default:
-        return "";
-    }
-  };
-
   if (loading) {
     return (
       <div className="p-6">
@@ -349,7 +304,7 @@ const topCustomers = Object.values(
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">BẢNG ĐIỀU KHIỂN</h1>
+      <h1 className="text-2xl font-bold">TỔNG QUAN</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="rounded-xl border bg-white shadow p-4 flex items-center justify-between">
           <div>
@@ -564,37 +519,6 @@ const topCustomers = Object.values(
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="gap-6">
-        <div className="rounded-xl border bg-white shadow p-4">
-          <p className="text-lg font-semibold mb-2">
-            Top khách hàng mua nhiều nhất
-          </p>
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-2">Khách hàng</th>
-                <th className="text-left py-2">Tổng chi tiêu</th>
-                <th className="text-left py-2">Thứ hạng</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topCustomers.map((c) => {
-                const rank = getRank(c.total);
-                return (
-                  <tr key={c.id} className="border-b">
-                    <td className="py-2">{c.name}</td>
-                    <td className="py-2 text-red-600 font-bold">
-                      {totalRevenue.toLocaleString()}
-                    </td>
-                    <td className={`py-2 ${getRankColorClass(rank)}`}>{rank}</td>
-                  </tr>
-                );
-              })}
             </tbody>
           </table>
         </div>
