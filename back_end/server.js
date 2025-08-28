@@ -1,13 +1,9 @@
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
-
-
 import cors from "cors";
-
 import connectMongoDB from "./config/db.js";
 import path from "path";
-
 import commentRouter from "./routes/comment.js";
 import productRouter from "./routes/productRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
@@ -17,60 +13,49 @@ import orderRouter from "./routes/orderRoutes.js";
 import paymentRouter from "./routes/paymentRoutes.js";
 import cartRoutes from './routes/cartRoutes.js';
 import chatbotRoute from './routes/chatbot.js';
-
 import userRoutes from './routes/authRoutes.js';
 import attributeRouter from "./routes/attributeRoutes.js";
 import attributeValueRouter from "./routes/attributeValueRouter.js";
 import variantRouter from "./routes/variantRoutes.js";
-
 import http from "http";
 import { Server } from "socket.io";
 import voucherRouter from "./routes/voucherRoutes.js";
 import voucherUserRouter from "./routes/voucherUserRouter.js";
-
 import walletRoutes from "./routes/wallet.js";
 import cookieParser from "cookie-parser";
 import faqRouter from "./routes/FaqRoutes.js";
- 
 
 console.log("JWT_SECRET:", process.env.JWT_SECRET);
 connectMongoDB(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/datn");
 
 const app = express();
-const server = http.createServer(app); // Tạo HTTP server từ Express
+const server = http.createServer(app);
 
-//  Tạo socket.io server
 export const io = new Server(server, {
   cors: {
-    origin: true, // chấp nhận mọi origin (thuận tiện khi dùng dev proxy)
+    origin: true,
     methods: ["GET", "POST"],
   },
 });
 
-//  Lắng nghe kết nối từ client
 io.on("connection", (socket) => {
-  console.log("🔌 Client connected:", socket.id);
-
+  console.log("Client connected:", socket.id);
   socket.on("disconnect", () => {
     console.log(" Client disconnected:", socket.id);
   });
 });
 
-//  Hàm gọi từ controller khi cập nhật đơn hàng
 export const notifyOrderStatus = (orderId, status, userId) => {
   io.emit("orderStatusChanged", { orderId, status, userId });
 };
 
-// Middleware
 app.use(express.json());
-app.use(cookieParser()); // cần để đọc cookie trong protect middleware
-
+app.use(cookieParser());
 app.use(cors({
   origin: "http://localhost:5173",
-  credentials: true // cho phép FE gửi cookie
+  credentials: true
 }));
 
-// Routes
 app.get('/', (req, res) => res.send('Hello from Home'));
 app.use('/cart', cartRoutes);
 app.use('/products', productRouter);
@@ -88,12 +73,8 @@ app.use("/voucher-user", voucherUserRouter);
 app.use('/', authRouter);
 app.use('/uploads', express.static(path.join(path.resolve(), 'uploads')));
 app.use('/api/chatbot', chatbotRoute);
-
 app.use("/api/wallet", walletRoutes);
 app.use('/api/faqs', faqRouter);
- 
-
-
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
