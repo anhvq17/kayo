@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      letterSpacing: {
+        'mega-tight': '-0.12em'
+      },
       keyframes: {
         marqueeSlow: {
           '0%': { transform: 'translateX(0)' },

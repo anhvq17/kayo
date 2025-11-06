@@ -20,6 +20,7 @@ import NewsList from "../pages/Client/NewsList";
 import Wallet from "../pages/Client/Wallet";
 import FaqList from "../components/ChatBot";
 import About from "../pages/Client/About/About";
+import Work from "../pages/Client/Work/Work";
 
 const ClientRoutes = {
   path: '/',
@@ -27,6 +28,7 @@ const ClientRoutes = {
   children: [
     { path: '', element: <Homepage /> },
     { path: 'about', element: <About /> },
+    { path: 'work', element: <Work /> },
     { path: 'login', element: <Login /> },
     { path: 'register', element: <Register /> },
     { path: 'cart', element: <Cart /> },
