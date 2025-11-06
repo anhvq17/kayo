@@ -107,7 +107,7 @@ export default function ChatbotWidget() {
         <div className="chat-window">
           <div className="chat-header">
             <span>
-              <MessageOutlined /> Chat với Sevend
+              <MessageOutlined />
             </span>
             <button onClick={() => setIsOpen(false)}>✖</button>
 
@@ -142,7 +142,7 @@ export default function ChatbotWidget() {
             <input
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Nhập tin nhắn..."
+              placeholder="..."
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               disabled={isSending}
             />

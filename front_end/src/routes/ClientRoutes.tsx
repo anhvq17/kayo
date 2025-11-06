@@ -1,5 +1,5 @@
 import ClientLayout from "../layouts/ClientLayout";
-import Homepage from "../pages/Client/home/Homepage";
+import Homepage from "../pages/Client/Home/Homepage";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
 import Cart from "../pages/Client/Cart";
@@ -19,12 +19,14 @@ import ReviewPage from "../pages/Client/ReviewPage";
 import NewsList from "../pages/Client/NewsList";
 import Wallet from "../pages/Client/Wallet";
 import FaqList from "../components/ChatBot";
+import About from "../pages/Client/About/About";
 
 const ClientRoutes = {
   path: '/',
   element: <ClientLayout />,
   children: [
     { path: '', element: <Homepage /> },
+    { path: 'about', element: <About /> },
     { path: 'login', element: <Login /> },
     { path: 'register', element: <Register /> },
     { path: 'cart', element: <Cart /> },

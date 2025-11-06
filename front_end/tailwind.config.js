@@ -5,7 +5,17 @@ export default {
     "./index.html",
   ],
   theme: {
-    extend: {},
+    extend: {
+      keyframes: {
+        marqueeSlow: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+      },
+      animation: {
+        'marquee-slow': 'marqueeSlow 90s linear infinite',
+      },
+    }
   },
   plugins: [],
 }
