@@ -15,8 +15,6 @@ const ClientRoutes = {
     { path: 'work', element: <Work /> },
     { path: 'login', element: <Login /> },
     { path: 'register', element: <Register /> },
-
-    // Khi đường dẫn sai hoặc không tồn tại, dẫn đến trang NotFound
     { path: '*', element: <NotFound homePath="/"/> },
   ]
 }
