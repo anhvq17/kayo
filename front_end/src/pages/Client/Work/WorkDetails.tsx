@@ -23,7 +23,7 @@ const WorkDetails = () => {
         <img 
           src={project.coverImg} 
           alt={project.title} 
-          className="w-full max-h-[500px] object-cover rounded-lg shadow-lg mb-6"
+          className="w-full max-h-[500px] object-cover mb-6"
         />
 
         <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-2">
@@ -33,7 +33,7 @@ const WorkDetails = () => {
         {project.content.map((block, idx) => {
           if (block.type === "text") {
             return (
-              <p key={idx} className="text-gray-700 leading-relaxed text-[1.05rem] max-w-[800px] mb-6">
+              <p key={idx} className="font-serif text-gray-700 leading-relaxed text-[1.05rem] max-w-[800px] mt-3 mb-6">
                 {block.text}
               </p>
             );
@@ -42,7 +42,7 @@ const WorkDetails = () => {
               <img 
                 key={idx} 
                 src={block.src}  
-                className="w-full rounded-lg shadow-md mb-6 object-cover"
+                className="w-full mb-6 object-cover"
               />
             );
           }
