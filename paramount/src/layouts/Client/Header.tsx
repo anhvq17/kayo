@@ -58,7 +58,7 @@ const ClientHeader = () => {
           <button
             ref={buttonRef}
             onClick={() => setOpen(!open)}
-            className="relative px-4 py-2 rounded-full overflow-hidden text-black bg-[#eae7da] duration-300 flex items-center gap-1 font-normal transition"
+            className="relative px-4 py-2 rounded-full overflow-hidden text-black bg-[#eae7da] duration-300 flex items-center gap-1 font-normal font-mono transition"
           >
             Menu
             <ChevronDown
@@ -71,7 +71,7 @@ const ClientHeader = () => {
 
           <Link
             to="/contact"
-            className="relative px-4 py-2 rounded-full overflow-hidden text-white bg-[#e34447] font-normal transition-all duration-300"
+            className="relative px-4 py-2 rounded-full overflow-hidden text-white bg-[#e34447] font-normal font-mono transition-all duration-300"
           >
             <span className="absolute inset-0 bg-red-600 origin-left scale-x-0 hover:scale-x-100 transition-transform duration-300 ease-out"></span>
             <span className="relative z-10">Contact</span>
@@ -99,15 +99,15 @@ const ClientHeader = () => {
               }}
             >
               <div>
-                <h3 className="font-serif text-black text-3xl mb-3">Pages</h3>
+                <h3 className="font-orbitron font-bold text-black text-xl tracking-wider mb-3">Pages</h3>
                 <motion.ul
                   variants={{
                     hidden: { transition: { staggerChildren: 0.05, staggerDirection: -1 } },
                     visible: { transition: { staggerChildren: 0.05 } },
                   }}
-                  className="text-gray-600 text-sm space-y-1"
+                  className="text-gray-600 font-mono text-sm space-y-1"
                 >
-                  {["Main Page", "About Us", "Our Services", "Get in Touch"].map((page) => (
+                  {["Main Page", "About Us", "Our Services", "Get In Touch"].map((page) => (
                     <motion.li
                       key={page}
                       variants={{
@@ -134,13 +134,13 @@ const ClientHeader = () => {
               }}
             >
               <div>
-                <h3 className="font-serif text-black text-3xl mb-3">Projects</h3>
+                <h3 className="font-orbitron font-bold text-black text-xl tracking-wider mb-3">Projects</h3>
                 <motion.ul
                   variants={{
                     hidden: { transition: { staggerChildren: 0.05, staggerDirection: -1 } },
                     visible: { transition: { staggerChildren: 0.05 } },
                   }}
-                  className="text-gray-600 text-sm space-y-1"
+                  className="text-gray-600 font-mono text-sm space-y-1"
                 >
                   {["All Projects", "Our Blog", "Blog Post", "Team Member"].map((page) => (
                     <motion.li
@@ -169,13 +169,13 @@ const ClientHeader = () => {
               }}
             >
               <div>
-                <h3 className="font-serif text-black text-3xl mb-3">Help</h3>
+                <h3 className="font-orbitron font-bold text-black text-xl tracking-wider mb-3">Help</h3>
                 <motion.ul
                   variants={{
                     hidden: { transition: { staggerChildren: 0.05, staggerDirection: -1 } },
                     visible: { transition: { staggerChildren: 0.05 } },
                   }}
-                  className="text-gray-600 text-sm space-y-1"
+                  className="text-gray-600 font-mono text-sm space-y-1"
                 >
                   {["Style Guide", "Licenses", "Changelog", "Instructions"].map((page) => (
                     <motion.li
@@ -204,13 +204,13 @@ const ClientHeader = () => {
               }}
             >
               <div>
-                <h3 className="font-serif text-black text-3xl mb-3">Social</h3>
+                <h3 className="font-orbitron font-bold text-black text-xl tracking-wider mb-3">Social</h3>
                 <motion.ul
                   variants={{
                     hidden: { transition: { staggerChildren: 0.05, staggerDirection: -1 } },
                     visible: { transition: { staggerChildren: 0.05 } },
                   }}
-                  className="text-gray-600 text-sm space-y-1"
+                  className="text-gray-600 font-mono text-sm space-y-1"
                 >
                   {["Facebook", "X (Twitter)", "Instagram", "LinkedIn"].map((page) => (
                     <motion.li

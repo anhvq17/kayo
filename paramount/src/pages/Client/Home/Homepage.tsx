@@ -1,9 +1,5 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import ScrollText from "../../../components/Home/ScrollText";
-import ScrollSlogan from "../../../components/Home/ScrollSlogan";
-import LatestUpdates from "../../../components/Home/LatestUpdates";
-import SelectedWork from "../../../components/Home/SelectedWork";
 
 const Homepage = () => {
   const ref = useRef(null);
@@ -31,14 +27,6 @@ const Homepage = () => {
           <img src="/img/banner.jpg" className="w-[280px] h-[420px] object-cover" />
         </motion.div>
       </section>
-
-      <ScrollText />
-
-      <SelectedWork />
-      
-      <ScrollSlogan />
-
-      <LatestUpdates />
     </div>
   )
 }
